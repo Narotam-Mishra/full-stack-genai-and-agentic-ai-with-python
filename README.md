@@ -648,7 +648,399 @@ Functions help to:
 
 ---
 
+## 41. Scope and Named Space in functions (12:04)
 
+## Python Functions – Scopes (Simple Notes)
 
+## What is Scope?
+
+**Scope** means **where a variable can be accessed in the program**.
+
+In simple words:
+
+> Scope defines **the visibility and lifetime of a variable**.
+
+Example idea:
+
+* Some variables are usable **only inside a function**
+* Some variables are usable **everywhere**
+
+---
+
+## Cafe Example 
+
+Imagine a **chai cafe** called **Global Sip**.
+
+* The **owner has a master notepad** (global data)
+* Each **worker has their own notepad** (local data)
+
+If a worker writes an order in their notebook, it **does not change the owner's notebook**.
+
+Same idea in programming:
+
+* Variables inside functions **do not affect variables outside**
+
+---
+
+## Name Resolution (Important Concept)
+
+When Python sees a variable, it decides **where to find it**.
+
+This process is called:
+
+**Name Resolution**
+
+Python searches variables in this order:
+
+### LEGB Rule
+
+| Level | Meaning   |
+| ----- | --------- |
+| L     | Local     |
+| E     | Enclosing |
+| G     | Global    |
+| B     | Built-in  |
+
+Python checks variables in this order.
+
+---
+
+## 1. Local Scope
+
+Local scope means:
+
+> Variables declared **inside a function**.
+
+They **only exist inside that function**.
+
+---
+
+## Example
+
+```python
+def serve_chai():
+    chai_type = "Masala Chai"   # local variable
+    print("Inside function:", chai_type)
+
+serve_chai()
+```
+
+Output
+
+```
+Inside function: Masala Chai
+```
+
+---
+
+### Accessing Outside (Error)
+
+```python
+def serve_chai():
+    chai_type = "Masala Chai"
+
+serve_chai()
+
+print(chai_type)
+```
+
+Output
+
+```
+NameError: chai_type is not defined
+```
+
+Because **local variables cannot be accessed outside the function**.
+
+---
+
+## 2. Global Scope
+
+Global scope means:
+
+> Variables defined **outside any function**.
+
+They can be accessed **throughout the program**.
+
+---
+
+## Example
+
+```python
+chai_type = "Lemon Chai"
+
+def serve_chai():
+    print("Inside function:", chai_type)
+
+serve_chai()
+
+print("Outside function:", chai_type)
+```
+
+Output
+
+```
+Inside function: Lemon Chai
+Outside function: Lemon Chai
+```
+
+Because **global variables are accessible everywhere**.
+
+---
+
+## Local vs Global Example
+
+```python
+chai_type = "Lemon Chai"
+
+def serve_chai():
+    chai_type = "Masala Chai"
+    print("Inside:", chai_type)
+
+serve_chai()
+
+print("Outside:", chai_type)
+```
+
+Output
+
+```
+Inside: Masala Chai
+Outside: Lemon Chai
+```
+
+Explanation:
+
+* Inside function → local variable used
+* Outside → global variable used
+
+---
+
+## 3. Enclosing Scope (Nested Functions)
+
+Enclosing scope occurs when:
+
+> A function is defined **inside another function**.
+
+The inner function can access variables from the **outer function**.
+
+---
+
+## Example
+
+```python
+def chai_counter():
+
+    chai_order = "Lemon Chai"
+
+    def inner_function():
+        print("Inner:", chai_order)
+
+    inner_function()
+    print("Outer:", chai_order)
+
+chai_counter()
+```
+
+Output
+
+```
+Inner: Lemon Chai
+Outer: Lemon Chai
+```
+
+Explanation:
+
+* `chai_order` belongs to outer function
+* Inner function can still access it
+
+---
+
+## Nested Scope Example with Different Values
+
+```python
+def chai_counter():
+
+    chai_order = "Lemon Chai"
+
+    def inner_function():
+        chai_order = "Ginger Chai"
+        print("Inner:", chai_order)
+
+    inner_function()
+
+    print("Outer:", chai_order)
+
+chai_counter()
+```
+
+Output
+
+```
+Inner: Ginger Chai
+Outer: Lemon Chai
+```
+
+Explanation:
+
+* Inner function creates its **own local variable**
+* Outer variable remains unchanged
+
+---
+
+## 4. Built-in Scope
+
+Built-in scope contains **Python's predefined functions**.
+
+Examples:
+
+* `print()`
+* `len()`
+* `range()`
+* `type()`
+
+These functions are always available.
+
+---
+
+## Example
+
+```python
+numbers = [1, 2, 3, 4]
+
+print(len(numbers))
+```
+
+Output
+
+```
+4
+```
+
+Here `len()` comes from **built-in scope**.
+
+---
+
+## Combined Example (LEGB)
+
+```python
+chai_order = "Tulsi Chai"   # Global
+
+def cafe():
+
+    chai_order = "Lemon Chai"   # Enclosing
+
+    def kitchen():
+        chai_order = "Ginger Chai"  # Local
+        print("Kitchen:", chai_order)
+
+    kitchen()
+
+    print("Cafe:", chai_order)
+
+cafe()
+
+print("Global:", chai_order)
+```
+
+Output
+
+```
+Kitchen: Ginger Chai
+Cafe: Lemon Chai
+Global: Tulsi Chai
+```
+
+Explanation:
+
+* Local → Ginger
+* Enclosing → Lemon
+* Global → Tulsi
+
+---
+
+## Important Pointers
+
+### 1. Variables inside functions are local
+
+```python
+def test():
+    x = 10
+```
+
+`x` only exists inside `test()`.
+
+---
+
+### 2. Global variables exist outside functions
+
+```python
+x = 10
+```
+
+Accessible anywhere.
+
+---
+
+### 3. Nested functions create enclosing scope
+
+```python
+def outer():
+    def inner():
+        pass
+```
+
+Inner can access outer variables.
+
+---
+
+### 4. Python follows LEGB order
+
+Python searches variables in this order:
+
+```
+Local
+↓
+Enclosing
+↓
+Global
+↓
+Built-in
+```
+
+---
+
+## Simple Visual Diagram
+
+```
+Global Scope
+│
+├── Function A
+│     └── Local Variables
+│
+├── Function B
+│     └── Local Variables
+│
+└── Built-in Functions
+```
+
+Each function acts like **its own house**.
+
+Variables inside a house **stay inside the house**.
+
+---
+
+## Key Takeaways
+
+- Scope controls **where variables can be accessed**
+- Python uses **LEGB rule** for variable lookup
+- Local variables exist **inside functions**
+- Global variables exist **outside functions**
+- Nested functions create **enclosing scope**
+- Built-in functions always exist
+
+---
+
+## 42. Non local vs Global scopes (09:08)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
