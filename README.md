@@ -1043,4 +1043,372 @@ Variables inside a house **stay inside the house**.
 
 ## 42. Non local vs Global scopes (09:08)
 
+## Python Scopes – `nonlocal` and `global`
+
+In the previous lesson, we learned about **Python scope (LEGB rule)**:
+
+| Scope     | Meaning                           |
+| --------- | --------------------------------- |
+| Local     | Inside current function           |
+| Enclosing | Outer function (nested functions) |
+| Global    | Top level of script               |
+| Built-in  | Python’s built-in functions       |
+
+Now we learn how to **modify variables from outer scopes** using:
+
+* `nonlocal`
+* `global`
+
+---
+
+## 1. Problem Without `nonlocal`
+
+Suppose we have a **function inside another function**.
+
+Example:
+
+```python
+def update_order():
+
+    chai_type = "Elaichi"
+
+    def kitchen():
+        chai_type = "Kesar"
+
+    kitchen()
+
+    print("After kitchen update:", chai_type)
+
+update_order()
+```
+
+### Output
+
+```
+After kitchen update: Elaichi
+```
+
+### Why?
+
+Because:
+
+* `chai_type = "Kesar"` creates a **new local variable**
+* It does **not modify the outer variable**
+
+---
+
+## 2. Using `nonlocal`
+
+`nonlocal` allows the **inner function to modify variables from the outer function**.
+
+### Example
+
+```python
+def update_order():
+
+    chai_type = "Elaichi"
+
+    def kitchen():
+        nonlocal chai_type
+        chai_type = "Kesar"
+
+    kitchen()
+
+    print("After kitchen update:", chai_type)
+
+update_order()
+```
+
+### Output
+
+```
+After kitchen update: Kesar
+```
+
+### Explanation
+
+`nonlocal chai_type` tells Python:
+
+> Use the variable from the **outer function**, not create a new one.
+
+---
+
+## Important Pointer About `nonlocal`
+
+`nonlocal` works **only with enclosing functions**.
+
+It **cannot access global variables directly**.
+
+Example:
+
+```python
+chai_type = "Masala"
+
+def kitchen():
+    nonlocal chai_type
+```
+
+This will cause an error.
+
+Because **nonlocal searches only the enclosing function**, not global.
+
+---
+
+## 3. Global Keyword
+
+`global` allows functions to **modify global variables**.
+
+Global variables exist **outside all functions**.
+
+---
+
+## Example
+
+```python
+chai_type = "Plain Chai"
+
+def kitchen():
+    global chai_type
+    chai_type = "Irani Chai"
+
+kitchen()
+
+print("Final chai:", chai_type)
+```
+
+### Output
+
+```
+Final chai: Irani Chai
+```
+
+### Explanation
+
+`global chai_type` tells Python:
+
+> Use the **global variable**, not create a new local variable.
+
+---
+
+## Example Without `global`
+
+```python
+chai_type = "Plain Chai"
+
+def kitchen():
+    chai_type = "Irani Chai"
+
+kitchen()
+
+print(chai_type)
+```
+
+### Output
+
+```
+Plain Chai
+```
+
+Why?
+
+Because a **new local variable** is created inside the function.
+
+---
+
+## Difference Between `nonlocal` and `global`
+
+| Keyword  | Access Level               |
+| -------- | -------------------------- |
+| nonlocal | Outer (enclosing) function |
+| global   | Entire program             |
+
+---
+
+### Example Structure
+
+```
+Global Scope
+   |
+   |-- outer_function
+          |
+          |-- inner_function
+```
+
+* `nonlocal` → accesses `outer_function`
+* `global` → accesses **global scope**
+
+---
+
+## Example Showing All Scopes
+
+```python
+chai_type = "Tulsi"
+
+def cafe():
+
+    chai_type = "Lemon"
+
+    def kitchen():
+        nonlocal chai_type
+        chai_type = "Ginger"
+
+    kitchen()
+
+    print("Cafe:", chai_type)
+
+cafe()
+
+print("Global:", chai_type)
+```
+
+### Output
+
+```
+Cafe: Ginger
+Global: Tulsi
+```
+
+Explanation:
+
+* `nonlocal` updated the **outer function variable**
+* Global variable remained unchanged
+
+---
+
+## Why Using `global` Can Be Dangerous
+
+Imagine many developers working on the same project.
+
+Example:
+
+```python
+global_config = True
+```
+
+Multiple functions might change it.
+
+Example:
+
+```python
+def functionA():
+    global global_config
+    global_config = "Ginger"
+```
+
+Another function expects it to be boolean:
+
+```python
+def functionB():
+    if global_config:
+        print("Working")
+```
+
+Now the program **breaks** because:
+
+```
+global_config = "Ginger"
+```
+
+So behavior becomes unpredictable.
+
+---
+
+## Best Practice
+
+Avoid using `global` unless absolutely necessary.
+
+Better approach:
+
+Use **function parameters and return values**.
+
+---
+
+### Good Design Example
+
+```python
+def update_order(chai_type):
+    chai_type = "Kesar"
+    return chai_type
+
+chai = "Elaichi"
+
+chai = update_order(chai)
+
+print(chai)
+```
+
+Output
+
+```
+Kesar
+```
+
+This approach is:
+
+* safer
+* easier to debug
+* better for teamwork
+
+---
+
+## Key Points to Remember
+
+### `nonlocal`
+
+* Used inside **nested functions**
+* Modifies **outer function variable**
+
+### `global`
+
+* Used to modify **global variables**
+* Accessible from anywhere
+
+### Important Warning
+
+`global` can break large programs because:
+
+* Many functions may modify the same variable
+
+---
+
+## Quick Visual Diagram
+
+```
+Global Scope
+   |
+   |-- Function A
+   |       |
+   |       |-- Inner Function
+   |
+   |-- Function B
+```
+
+Access rules:
+
+```
+Inner Function
+   ↓
+Local
+   ↓
+Enclosing
+   ↓
+Global
+   ↓
+Built-in
+```
+
+---
+
+## Final Takeaways
+
+✔ Python variables follow **LEGB scope rule**
+✔ `nonlocal` modifies **outer function variables**
+✔ `global` modifies **global variables**
+✔ Avoid excessive use of `global`
+✔ Prefer **function parameters and return values**
+
+---
+
+## 42. Handling Arguments in function (15:01)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
