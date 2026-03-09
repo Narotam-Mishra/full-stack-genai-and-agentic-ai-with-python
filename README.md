@@ -1838,15 +1838,15 @@ func(argument)
 
 ## 14. Key Concepts from the Tutorial
 
-✔ Function parameters accept many types of values
-✔ Immutable values don't change original data
-✔ Mutable values can change original data
-✔ Positional arguments depend on order
-✔ Keyword arguments use parameter names
-✔ `*args` collects unlimited positional arguments (tuple)
-✔ `**kwargs` collects unlimited keyword arguments (dictionary)
-✔ Avoid mutable default values like `[]`
-✔ Use `None` instead
+- Function parameters accept many types of values
+- Immutable values don't change original data
+- Mutable values can change original data
+- Positional arguments depend on order
+- Keyword arguments use parameter names
+- `*args` collects unlimited positional arguments (tuple)
+- `**kwargs` collects unlimited keyword arguments (dictionary)
+- Avoid mutable default values like `[]`
+- Use `None` instead
 
 ---
 
