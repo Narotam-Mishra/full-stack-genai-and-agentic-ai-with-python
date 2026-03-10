@@ -1852,4 +1852,398 @@ func(argument)
 
 ## 42. Handle Multiple Return (10:43)
 
+## What is `return` in Python?
+
+The **`return` keyword** is used inside a function to **send a value back to the place where the function was called**.
+
+Think of it like a **tea seller giving chai to the customer** ☕
+
+* Function prepares something
+* `return` gives the result back
+
+---
+
+## Basic Function Without Return
+
+Example:
+
+```python
+def make_chai():
+    print("Here is your Masala Chai")
+
+make_chai()
+```
+
+Output:
+
+```
+Here is your Masala Chai
+```
+
+Here the function **prints** the result but **does not return anything**.
+
+---
+
+## Function With Return
+
+Example:
+
+```python
+def make_chai():
+    return "Here is your Masala Chai"
+
+print(make_chai())
+```
+
+Output:
+
+```
+Here is your Masala Chai
+```
+
+Explanation:
+
+* Function returns a value
+* `print()` displays it
+
+---
+
+## Storing Returned Value in a Variable
+
+Instead of printing directly, you can store the result.
+
+Example:
+
+```python
+def make_chai():
+    return "Masala Chai"
+
+chai = make_chai()
+
+print(chai)
+```
+
+Output:
+
+```
+Masala Chai
+```
+
+This is **more readable and flexible**.
+
+---
+
+## Important Rule: Functions Stop After `return`
+
+When Python executes `return`, the function **immediately stops**.
+
+Example:
+
+```python
+def test():
+    print("Start")
+    return "Done"
+    print("This will never run")
+
+print(test())
+```
+
+Output:
+
+```
+Start
+Done
+```
+
+The last print statement **never executes**.
+
+---
+
+## Case 1: Function Returns Nothing (Returns `None`)
+
+If a function **does not return anything**, Python automatically returns **`None`**.
+
+Example:
+
+```python
+def chai_maker():
+    pass
+
+result = chai_maker()
+
+print(result)
+```
+
+Output:
+
+```
+None
+```
+
+Explanation:
+
+* Python automatically returns **None**
+* This is called **implicit return**
+
+---
+
+## Case 2: Returning One Value
+
+Example:
+
+```python
+def sold_cups():
+    return 120
+
+total = sold_cups()
+
+print(total)
+```
+
+Output:
+
+```
+120
+```
+
+The function returns **one value**.
+
+---
+
+## Case 3: Early Return (Short Circuit)
+
+You can **exit a function early using return**.
+
+Example:
+
+```python
+def chai_status(cups_left):
+
+    if cups_left == 0:
+        return "Sorry, chai is over"
+
+    return "Chai is ready"
+
+print(chai_status(0))
+print(chai_status(5))
+```
+
+Output:
+
+```
+Sorry, chai is over
+Chai is ready
+```
+
+Explanation:
+
+If condition is true → function returns immediately.
+
+---
+
+## Case 4: Returning Multiple Values
+
+Python allows functions to **return multiple values**.
+
+Example:
+
+```python
+def chai_report():
+    return 120, 20
+```
+
+Receiving values:
+
+```python
+sold, remaining = chai_report()
+
+print("Sold:", sold)
+print("Remaining:", remaining)
+```
+
+Output:
+
+```
+Sold: 120
+Remaining: 20
+```
+
+Python actually returns a **tuple internally**.
+
+---
+
+## Returning Three Values
+
+Example:
+
+```python
+def chai_report():
+    return 120, 10, 20
+```
+
+Receiving values:
+
+```python
+sold, unpaid, remaining = chai_report()
+
+print(sold, unpaid, remaining)
+```
+
+Output:
+
+```
+120 10 20
+```
+
+---
+
+## Ignoring Unwanted Returned Values
+
+Sometimes you don't need all values.
+
+Use `_` (underscore).
+
+Example:
+
+```python
+def chai_report():
+    return 120, 10, 20
+
+sold, _, remaining = chai_report()
+
+print(sold)
+print(remaining)
+```
+
+Output:
+
+```
+120
+20
+```
+
+Explanation:
+
+`_` means:
+
+> I know a value exists but I don't need it.
+
+---
+
+## What Can a Function Return?
+
+A function can return **any Python object**:
+
+| Type       | Example                   |
+| ---------- | ------------------------- |
+| Integer    | `return 10`               |
+| String     | `return "chai"`           |
+| Boolean    | `return True`             |
+| List       | `return [1,2,3]`          |
+| Dictionary | `return {"tea":"masala"}` |
+| Tuple      | `return 1,2`              |
+
+Example:
+
+```python
+def data():
+    return [1,2,3]
+
+print(data())
+```
+
+---
+
+## Print vs Return (Very Important Difference)
+
+| Print               | Return                |
+| ------------------- | --------------------- |
+| Displays output     | Sends value back      |
+| Cannot reuse result | Can store and reuse   |
+| Used for debugging  | Used in real programs |
+
+Example:
+
+Bad practice:
+
+```python
+def add(a,b):
+    print(a+b)
+```
+
+Better:
+
+```python
+def add(a,b):
+    return a+b
+```
+
+---
+
+## Real Programming Example
+
+Example:
+
+```python
+def calculate_total(price, tax):
+
+    total = price + tax
+
+    return total
+
+bill = calculate_total(100, 10)
+
+print("Total Bill:", bill)
+```
+
+Output:
+
+```
+Total Bill: 110
+```
+
+---
+
+## Important Points to Remember
+
+### 1️⃣ `return` sends a value back from a function.
+
+### 2️⃣ If no value is returned → Python returns `None`.
+
+### 3️⃣ Code after `return` **never runs**.
+
+### 4️⃣ A function can return **multiple values**.
+
+### 5️⃣ `_` can be used to **ignore unused return values**.
+
+### 6️⃣ `return` is preferred over `print` in real programs.
+
+---
+
+## Quick Visual Summary
+
+```
+Function Call
+      ↓
+Function Executes
+      ↓
+return value
+      ↓
+Value goes back to caller
+```
+
+Example:
+
+```
+result = add(5,3)
+           ↓
+        return 8
+           ↓
+result = 8
+```
+
+---
+
+## 43. Lambdas, Pure vs Impure functions (12:24)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
