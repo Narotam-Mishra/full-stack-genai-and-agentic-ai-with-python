@@ -2246,4 +2246,1249 @@ result = 8
 
 ## 43. Lambdas, Pure vs Impure functions (12:24)
 
+## Types of Functions in Python (Simple Notes)
+
+Functions are the **core building blocks** of large Python programs.
+Even though a function is just a block of code, developers often categorize them based on **how they behave**.
+
+Important types discussed:
+
+1. **Pure Functions**
+2. **Impure Functions**
+3. **Recursive Functions**
+4. **Lambda (Anonymous) Functions**
+
+---
+
+## 1. Pure Function
+
+### Definition
+
+A **pure function**:
+
+* Uses **only its input parameters**
+* **Does not modify external/global variables**
+* Always gives the **same output for the same input**
+
+These functions are **predictable and safe**, so they are recommended.
+
+### Example
+
+```python
+def pure_chai(cups):
+    return cups * 10
+```
+
+Usage:
+
+```python
+print(pure_chai(2))  
+```
+
+Output
+
+```
+20
+```
+
+### Why this is pure
+
+* It **only uses the parameter `cups`**
+* It **does not change any global variable**
+
+### Key Points
+
+✔ Works only with given inputs
+✔ No side effects
+✔ Recommended in real projects
+
+---
+
+## 2. Impure Function
+
+### Definition
+
+An **impure function**:
+
+* Modifies **global variables**
+* Depends on **external state**
+
+This makes code **harder to debug and maintain**.
+
+### Example
+
+```python
+total_chai = 0
+
+def impure_chai(cups):
+    global total_chai
+    total_chai += cups
+```
+
+Usage
+
+```python
+impure_chai(3)
+print(total_chai)
+```
+
+Output
+
+```
+3
+```
+
+### Why this is impure
+
+The function **changes the global variable** `total_chai`.
+
+### Problems with impure functions
+
+❌ Hard to track changes
+❌ Unexpected side effects
+❌ Not recommended for clean code
+
+### Key Idea
+
+Avoid modifying **global variables inside functions**.
+
+---
+
+## 3. Recursive Function
+
+### Definition
+
+A **recursive function** is a function that **calls itself**.
+
+But it must always have a **base condition** to stop the recursion.
+
+Otherwise it will run **forever (infinite recursion)**.
+
+---
+
+### Example
+
+```python
+def pour_chai(n):
+    if n == 0:
+        print("All cups poured")
+        return
+
+    print("Remaining cups:", n)
+    pour_chai(n - 1)
+```
+
+Usage
+
+```python
+pour_chai(3)
+```
+
+Output
+
+```
+Remaining cups: 3
+Remaining cups: 2
+Remaining cups: 1
+All cups poured
+```
+
+---
+
+### How recursion works
+
+If we call
+
+```
+pour_chai(3)
+```
+
+Execution flow:
+
+```
+pour_chai(3)
+   ↓
+pour_chai(2)
+   ↓
+pour_chai(1)
+   ↓
+pour_chai(0)
+```
+
+At `n == 0`, the function stops.
+
+---
+
+### Key Parts of Recursion
+
+1️⃣ **Base Case**
+Condition that stops recursion
+
+```python
+if n == 0:
+    return
+```
+
+2️⃣ **Recursive Call**
+
+```python
+pour_chai(n - 1)
+```
+
+---
+
+### Where recursion is used
+
+* Tree problems
+* Graph traversal
+* Factorial
+* Fibonacci
+* Backtracking problems
+
+---
+
+## 4. Lambda Functions (Anonymous Functions)
+
+### Definition
+
+A **lambda function** is a **small function without a name**.
+
+Also called **anonymous functions**.
+
+They are usually used **once (use and throw)**.
+
+---
+
+### Syntax
+
+```
+lambda arguments : expression
+```
+
+---
+
+### Example
+
+Normal function
+
+```python
+def square(x):
+    return x * x
+```
+
+Lambda version
+
+```python
+square = lambda x: x * x
+
+print(square(5))
+```
+
+Output
+
+```
+25
+```
+
+---
+
+## Lambda Example with Filter
+
+Suppose we have tea types:
+
+```python
+chai_types = ["light chai", "kadak chai", "ginger tea", "kadak chai"]
+```
+
+We want only **kadak chai**.
+
+---
+
+### Using lambda with filter
+
+```python
+strong_chai = list(
+    filter(
+        lambda chai: chai == "kadak chai",
+        chai_types
+    )
+)
+
+print(strong_chai)
+```
+
+Output
+
+```
+['kadak chai', 'kadak chai']
+```
+
+---
+
+### How it works
+
+`filter()` syntax
+
+```
+filter(function, iterable)
+```
+
+So here:
+
+```
+function → lambda chai: chai == "kadak chai"
+iterable → chai_types
+```
+
+The filter:
+
+1. Checks each element
+2. Keeps elements where condition = **True**
+
+---
+
+### Example 2 (Exclude kadak chai)
+
+```python
+normal_chai = list(
+    filter(
+        lambda chai: chai != "kadak chai",
+        chai_types
+    )
+)
+
+print(normal_chai)
+```
+
+Output
+
+```
+['light chai', 'ginger tea']
+```
+
+---
+
+## Important Points to Remember
+
+### Pure Function
+
+✔ Uses only input
+✔ No global variables
+✔ No side effects
+
+---
+
+### Impure Function
+
+❌ Modifies global variables
+❌ Not recommended
+
+---
+
+### Recursive Function
+
+✔ Function calls itself
+✔ Must have a **base condition**
+
+Structure
+
+```
+if base_case:
+    return
+
+recursive_call()
+```
+
+---
+
+### Lambda Function
+
+✔ Anonymous function
+✔ One-line function
+✔ Mostly used with:
+
+* `map()`
+* `filter()`
+* `sorted()`
+
+Syntax
+
+```
+lambda parameters : expression
+```
+
+Example
+
+```
+lambda x: x * 2
+```
+
+---
+
+## Quick Comparison
+
+| Function Type      | Key Idea                 |
+| ------------------ | ------------------------ |
+| Pure Function      | No external state        |
+| Impure Function    | Modifies global state    |
+| Recursive Function | Calls itself             |
+| Lambda Function    | Small anonymous function |
+
+---
+
+✅ **Interview Tip**
+
+Many companies prefer **pure functions** because they make:
+
+* debugging easier
+* testing easier
+* code predictable
+
+---
+
+## 44. Documenting your Functions and Built-in Functions (09:24)
+
+- [Built-in Functions](https://docs.python.org/3/library/functions.html)
+
+## Python Built-in Functions & Docstrings (Notes)
+
+Python already provides many **built-in functions**, so we don't always need to write everything ourselves.
+
+Examples of built-in functions:
+
+* `print()`
+* `len()`
+* `type()`
+* `min()`
+* `max()`
+* `filter()`
+* `zip()`
+* `sum()`
+* `help()`
+
+These functions are **always available in Python** without importing anything.
+
+---
+
+## 1. Built-in Functions
+
+### Definition
+
+**Built-in functions** are functions that are **already provided by Python**.
+
+You can use them directly.
+
+### Example
+
+```python
+numbers = [5, 2, 8, 1]
+
+print(len(numbers))   # length
+print(max(numbers))   # maximum value
+print(min(numbers))   # minimum value
+```
+
+Output
+
+```
+4
+8
+1
+```
+
+### Common Built-in Functions
+
+| Function   | Purpose            |
+| ---------- | ------------------ |
+| `len()`    | Length of object   |
+| `type()`   | Type of variable   |
+| `max()`    | Largest value      |
+| `min()`    | Smallest value     |
+| `sum()`    | Sum of numbers     |
+| `filter()` | Filter elements    |
+| `zip()`    | Combine iterables  |
+| `help()`   | Show documentation |
+
+---
+
+## 2. Default Parameters in Functions
+
+You can define **default values for parameters**.
+
+If the user doesn't provide a value, Python uses the default.
+
+### Example
+
+```python
+def chai_flavor(flavor="masala"):
+    return flavor
+```
+
+Usage
+
+```python
+print(chai_flavor())
+print(chai_flavor("ginger"))
+```
+
+Output
+
+```
+masala
+ginger
+```
+
+### Key Idea
+
+If no argument is passed → default value is used.
+
+---
+
+## 3. Docstrings (Function Documentation)
+
+### Definition
+
+A **docstring** is a string written at the **top of a function** that explains what the function does.
+
+Docstrings use **triple quotes**.
+
+```
+""" documentation """
+```
+
+---
+
+### Example
+
+```python
+def chai_flavor(flavor="masala"):
+    """
+    Returns the flavor of chai
+    """
+    return flavor
+```
+
+---
+
+### Accessing Docstring
+
+You can access the docstring using:
+
+```
+function.__doc__
+```
+
+Example:
+
+```python
+print(chai_flavor.__doc__)
+```
+
+Output
+
+```
+Returns the flavor of chai
+```
+
+---
+
+### Important Rule
+
+Docstring **must be the first line inside the function**.
+
+❌ Wrong
+
+```python
+def test():
+    x = 5
+    """This will not work"""
+```
+
+✔ Correct
+
+```python
+def test():
+    """This works"""
+    x = 5
+```
+
+---
+
+## 4. Dunder Methods
+
+### Definition
+
+**Dunder** means **Double UnderScore**.
+
+Example format:
+
+```
+__something__
+```
+
+Examples:
+
+* `__doc__`
+* `__name__`
+* `__init__`
+* `__str__`
+
+They are **special built-in attributes in Python**.
+
+---
+
+### Example 1 — `__doc__`
+
+```python
+def chai_flavor():
+    """Returns chai flavor"""
+    return "masala"
+
+print(chai_flavor.__doc__)
+```
+
+Output
+
+```
+Returns chai flavor
+```
+
+---
+
+### Example 2 — `__name__`
+
+```python
+def chai_flavor():
+    return "masala"
+
+print(chai_flavor.__name__)
+```
+
+Output
+
+```
+chai_flavor
+```
+
+### Why it is useful
+
+Helpful for:
+
+* debugging
+* logging
+* introspection
+
+---
+
+## 5. help() Function
+
+### Definition
+
+`help()` shows **documentation for any function, object, or module**.
+
+### Example
+
+```python
+help(len)
+```
+
+Output shows:
+
+* description
+* parameters
+* usage
+
+You can also do:
+
+```python
+help(print)
+help(list)
+help(str)
+```
+
+Exit help mode by pressing **q**.
+
+---
+
+## 6. Writing Good Function Documentation
+
+In large projects, many developers use your function.
+So it's good practice to **write documentation inside the function**.
+
+---
+
+### Example: Properly Documented Function
+
+```python
+def generate_bill(chai=0, samosa=0):
+    """
+    Calculate total bill for chai and samosa.
+
+    Parameters:
+    chai : number of chai cups (10 rupees each)
+    samosa : number of samosas (15 rupees each)
+
+    Returns:
+    total amount and a thank you message
+    """
+
+    total = chai * 10 + samosa * 15
+
+    return total, "Thank you for visiting!"
+```
+
+Usage
+
+```python
+bill = generate_bill(2, 3)
+
+print(bill)
+```
+
+Output
+
+```
+(65, 'Thank you for visiting!')
+```
+
+---
+
+## 7. Why Documentation is Important
+
+Good documentation helps:
+
+✔ Other developers understand your code
+✔ Easy debugging
+✔ Code becomes maintainable
+✔ Professional coding practice
+
+Large companies **require docstrings in production code**.
+
+---
+
+## Key Takeaways (Important)
+
+### Python Built-ins
+
+* Python provides many built-in functions.
+* No need to define them yourself.
+
+Examples:
+
+```
+len(), max(), min(), sum(), filter(), zip(), type()
+```
+
+---
+
+### Default Parameters
+
+```
+def func(param="default"):
+```
+
+Used when no argument is passed.
+
+---
+
+### Docstrings
+
+Used for **function documentation**.
+
+```
+"""
+Function explanation
+"""
+```
+
+Access using:
+
+```
+function.__doc__
+```
+
+---
+
+### Dunder Attributes
+
+Double underscore methods.
+
+Examples:
+
+```
+__doc__
+__name__
+```
+
+---
+
+### help() Function
+
+Used to view **documentation of functions**.
+
+```
+help(function_name)
+```
+
+---
+
+## Simple Visual Summary
+
+```
+Python Built-ins
+        │
+        ├── Built-in Functions
+        │     len(), max(), min()
+        │
+        ├── Default Parameters
+        │     def func(x=10)
+        │
+        ├── Docstrings
+        │     """function description"""
+        │
+        ├── Dunder Methods
+        │     __doc__, __name__
+        │
+        └── help()
+              help(len)
+```
+
+---
+
+## 44. Python Imports, Modules and Init File (14:41)
+
+## Python Imports (Complete Notes)
+
+In Python, **imports allow us to use code written in other files or libraries**.
+
+Instead of rewriting the same functions again and again, we **reuse them by importing**.
+
+Example scenario:
+
+You have a file:
+
+```
+masala_chai.py
+```
+
+It contains chai-making functions.
+
+Another file:
+
+```
+new_branch.py
+```
+
+Instead of rewriting the same code, you **import it**.
+
+---
+
+## 1. Basic Import
+
+### Concept
+
+Import the **entire module (file)**.
+
+### Syntax
+
+```python
+import module_name
+```
+
+### Example
+
+File: `masala_chai.py`
+
+```python
+def brew():
+    return "Masala chai is ready"
+```
+
+File: `new_branch.py`
+
+```python
+import masala_chai
+
+print(masala_chai.brew())
+```
+
+Output
+
+```
+Masala chai is ready
+```
+
+### How it works
+
+* Python imports the **whole file**
+* You access functions using **dot notation**
+
+```
+module.function()
+```
+
+---
+
+## 2. Import Specific Functions (Named Import)
+
+Sometimes we don't want the whole module.
+
+We only import **specific functions**.
+
+### Syntax
+
+```python
+from module_name import function_name
+```
+
+### Example
+
+```python
+from masala_chai import brew
+
+print(brew())
+```
+
+Output
+
+```
+Masala chai is ready
+```
+
+### Advantage
+
+You don't need to write:
+
+```
+module.function()
+```
+
+Just call the function directly.
+
+---
+
+## 3. Import Multiple Functions
+
+You can import **multiple functions** from a module.
+
+### Example
+
+```python
+from masala_chai import brew, prepare
+```
+
+Then use them directly:
+
+```python
+brew()
+prepare()
+```
+
+---
+
+## 4. Import with Alias (Rename Function)
+
+Sometimes you want to **rename the imported function**.
+
+### Syntax
+
+```python
+from module import function as new_name
+```
+
+### Example
+
+```python
+from masala_chai import brew as start_brewing
+
+print(start_brewing())
+```
+
+Output
+
+```
+Masala chai is ready
+```
+
+### Why use alias?
+
+* Avoid name conflicts
+* Shorter names
+* More readable code
+
+---
+
+## 5. Import Built-in Libraries
+
+Python also has **standard libraries**.
+
+Example: `datetime`
+
+### Example
+
+```python
+from datetime import datetime
+
+print(datetime.now())
+```
+
+---
+
+Another popular library:
+
+```
+requests
+```
+
+Used for making API calls.
+
+Example
+
+```python
+import requests
+```
+
+---
+
+## 6. Import from Folder (Package Import)
+
+Sometimes Python files are inside **folders**.
+
+Example project structure:
+
+```
+chai_business/
+│
+├── main.py
+│
+├── recipes/
+│     └── flavors.py
+│
+└── utils/
+      └── discounts.py
+```
+
+---
+
+### flavors.py
+
+```python
+def elaichi_chai():
+    return "Elaichi chai is ready"
+
+def ginger_chai():
+    return "Ginger chai is ready"
+```
+
+---
+
+### Import in main.py
+
+```python
+from recipes import flavors
+
+print(flavors.ginger_chai())
+```
+
+Output
+
+```
+Ginger chai is ready
+```
+
+---
+
+## 7. Import Specific Function from Folder
+
+Instead of importing the whole module:
+
+```python
+from recipes.flavors import ginger_chai
+
+print(ginger_chai())
+```
+
+---
+
+## 8. Relative Imports
+
+Relative imports are used when modules are **inside the same package**.
+
+Example syntax:
+
+```
+.
+```
+
+means **current directory**
+
+```
+..
+```
+
+means **parent directory**
+
+Example:
+
+```python
+from .flavors import ginger_chai
+```
+
+or
+
+```python
+from ..utils import discounts
+```
+
+Relative imports are **commonly used in large frameworks** like:
+
+* Django
+* FastAPI
+
+---
+
+## 9. Avoid Using `*` Import
+
+Bad practice:
+
+```python
+from masala_chai import *
+```
+
+### Why avoid this?
+
+Problems:
+
+* Hard to know what was imported
+* Can cause name conflicts
+* Makes debugging difficult
+
+Always prefer:
+
+```
+from module import specific_function
+```
+
+---
+
+## 10. `__init__.py` File
+
+You may see a file like:
+
+```
+__init__.py
+```
+
+Inside folders.
+
+Example:
+
+```
+recipes/
+    __init__.py
+    flavors.py
+```
+
+### Purpose
+
+Historically, it **converted a folder into a Python package**.
+
+Example:
+
+```
+recipes → becomes Python package
+```
+
+---
+
+### Important Update
+
+Since **Python 3.3**, this file is **not required anymore**.
+
+Python automatically treats folders as packages.
+
+However:
+
+* Many projects **still include it**
+* Frameworks still expect it sometimes
+
+So you will still see it in many repositories.
+
+---
+
+## 11. Common Import Patterns
+
+### Import whole module
+
+```python
+import math
+
+print(math.sqrt(16))
+```
+
+---
+
+### Import specific function
+
+```python
+from math import sqrt
+
+print(sqrt(16))
+```
+
+---
+
+### Import with alias
+
+```python
+import numpy as np
+```
+
+---
+
+### Import multiple functions
+
+```python
+from math import sqrt, pow
+```
+
+---
+
+## Quick Visual Summary
+
+```
+Python Imports
+      │
+      ├── import module
+      │       import math
+      │
+      ├── from module import function
+      │       from math import sqrt
+      │
+      ├── alias import
+      │       import numpy as np
+      │
+      ├── package import
+      │       from recipes.flavors import ginger_chai
+      │
+      ├── relative import
+      │       from .flavors import ginger_chai
+      │
+      └── avoid
+              from module import *
+```
+
+---
+
+## Important Points to Remember
+
+✔ Imports help **reuse code**
+✔ Python files are called **modules**
+✔ Folders containing modules are **packages**
+✔ Avoid `import *`
+✔ Use **specific imports** for clean code
+✔ `__init__.py` is optional in Python 3.3+
+
+---
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
