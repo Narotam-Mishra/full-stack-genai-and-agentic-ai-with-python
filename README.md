@@ -3491,4 +3491,424 @@ Python Imports
 
 ---
 
+## Sec 7 - Comprehensions in Python
+
+## 45. What are Comprehensions in python (06:39)
+
+## Python Comprehensions (Notes)
+
+## 1. What are Comprehensions?
+
+**Comprehensions** are a **short and concise way to create collections** (like lists, sets, dictionaries, or generators) in **one line of code**.
+
+Instead of writing multiple lines using loops, we can write **cleaner and shorter code**.
+
+### Basic Idea
+
+Normal loop:
+
+```python
+numbers = [1, 2, 3, 4]
+
+squares = []
+for n in numbers:
+    squares.append(n * n)
+
+print(squares)
+```
+
+Output
+
+```
+[1, 4, 9, 16]
+```
+
+Using **comprehension**
+
+```python
+numbers = [1, 2, 3, 4]
+
+squares = [n * n for n in numbers]
+
+print(squares)
+```
+
+Output
+
+```
+[1, 4, 9, 16]
+```
+
+Same result, but **shorter and cleaner code**.
+
+---
+
+## 2. Why Use Comprehensions?
+
+Even though loops can do the same work, comprehensions are used because they:
+
+### ✔ Make code shorter
+
+### ✔ Make code cleaner
+
+### ✔ Often run faster
+
+### ✔ Use less memory in some cases
+
+However:
+
+* They may feel **confusing at first**
+* But once you practice them, they become **very powerful**
+
+---
+
+## 3. Where Comprehensions Are Used in Real Life
+
+Comprehensions are commonly used in **production Python code**.
+
+### 1. Filtering Items
+
+Selecting only certain items from a collection.
+
+Example: Get only even numbers.
+
+Loop version:
+
+```python
+numbers = [1,2,3,4,5,6]
+
+evens = []
+for n in numbers:
+    if n % 2 == 0:
+        evens.append(n)
+
+print(evens)
+```
+
+Comprehension version:
+
+```python
+numbers = [1,2,3,4,5,6]
+
+evens = [n for n in numbers if n % 2 == 0]
+
+print(evens)
+```
+
+Output
+
+```
+[2, 4, 6]
+```
+
+---
+
+### 2. Transforming Data
+
+Changing or modifying values.
+
+Example: Convert prices from INR to USD.
+
+```python
+prices_inr = [100, 200, 300]
+
+prices_usd = [price / 83 for price in prices_inr]
+
+print(prices_usd)
+```
+
+Output
+
+```
+[1.20, 2.40, 3.61]
+```
+
+---
+
+### 3. Creating a New Collection
+
+Creating a new data structure from another.
+
+Example:
+
+```python
+tea_names = ["masala", "ginger", "green"]
+
+upper_case = [tea.upper() for tea in tea_names]
+
+print(upper_case)
+```
+
+Output
+
+```
+['MASALA', 'GINGER', 'GREEN']
+```
+
+---
+
+### 4. Flattening Nested Structures
+
+Flattening nested lists.
+
+Example:
+
+```python
+nested = [[1,2], [3,4], [5,6]]
+
+flat = [num for sublist in nested for num in sublist]
+
+print(flat)
+```
+
+Output
+
+```
+[1,2,3,4,5,6]
+```
+
+---
+
+## 4. General Syntax of Comprehension
+
+Basic format:
+
+```python
+[expression for item in iterable]
+```
+
+Example:
+
+```python
+[n * 2 for n in range(5)]
+```
+
+Output
+
+```
+[0,2,4,6,8]
+```
+
+---
+
+### With condition
+
+```python
+[expression for item in iterable if condition]
+```
+
+Example:
+
+```python
+[n for n in range(10) if n > 5]
+```
+
+Output
+
+```
+[6,7,8,9]
+```
+
+---
+
+## 5. Types of Comprehensions
+
+Python has **four types of comprehensions**.
+
+---
+
+## 1. List Comprehension
+
+Creates a **list**.
+
+Example:
+
+```python
+numbers = [1,2,3,4]
+
+squares = [n*n for n in numbers]
+
+print(squares)
+```
+
+Output
+
+```
+[1,4,9,16]
+```
+
+---
+
+## 2. Set Comprehension
+
+Creates a **set**.
+
+Example:
+
+```python
+numbers = [1,2,2,3,4]
+
+unique_squares = {n*n for n in numbers}
+
+print(unique_squares)
+```
+
+Output
+
+```
+{1,4,9,16}
+```
+
+Duplicates are removed automatically.
+
+---
+
+## 3. Dictionary Comprehension
+
+Creates a **dictionary**.
+
+Example:
+
+```python
+numbers = [1,2,3]
+
+square_dict = {n: n*n for n in numbers}
+
+print(square_dict)
+```
+
+Output
+
+```
+{1:1, 2:4, 3:9}
+```
+
+---
+
+## 4. Generator Comprehension
+
+Creates a **generator object** instead of a list.
+
+Example:
+
+```python
+numbers = (n*n for n in range(5))
+
+print(numbers)
+```
+
+Output
+
+```
+<generator object ...>
+```
+
+To see values:
+
+```python
+for n in numbers:
+    print(n)
+```
+
+Output
+
+```
+0
+1
+4
+9
+16
+```
+
+Generators are **memory efficient** because values are created **one at a time**.
+
+---
+
+## 6. Key Advantages of Comprehensions
+
+### Cleaner Code
+
+Example:
+
+```python
+[n*n for n in numbers]
+```
+
+Instead of:
+
+```python
+for n in numbers:
+    squares.append(n*n)
+```
+
+---
+
+### Faster Execution
+
+Sometimes faster than loops because Python optimizes them internally.
+
+---
+
+### Functional Programming Style
+
+They encourage writing **compact logic**.
+
+---
+
+## Important Points to Remember
+
+### 1️⃣ Comprehensions replace loops for simple tasks.
+
+### 2️⃣ They make code **shorter and cleaner**.
+
+### 3️⃣ They are widely used in **production Python code**.
+
+### 4️⃣ Beginners often find them confusing at first.
+
+### 5️⃣ Practice is required to master them.
+
+---
+
+## Simple Mental Model
+
+Think of comprehension like **English sentence logic**.
+
+Example:
+
+```python
+[n for n in numbers if n > 5]
+```
+
+Meaning:
+
+```
+Take n
+for each n in numbers
+if n is greater than 5
+```
+
+---
+
+## Quick Visual Summary
+
+```
+Comprehensions
+      │
+      ├── List Comprehension
+      │      [x for x in iterable]
+      │
+      ├── Set Comprehension
+      │      {x for x in iterable}
+      │
+      ├── Dictionary Comprehension
+      │      {k:v for k,v in iterable}
+      │
+      └── Generator Comprehension
+             (x for x in iterable)
+```
+
+---
+
+## 46. List Comprehensions in python (08:33)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
