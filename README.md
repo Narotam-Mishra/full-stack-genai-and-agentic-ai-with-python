@@ -3612,7 +3612,7 @@ Example: Convert prices from INR to USD.
 ```python
 prices_inr = [100, 200, 300]
 
-prices_usd = [price / 83 for price in prices_inr]
+prices_usd = [price / 93 for price in prices_inr]
 
 print(prices_usd)
 ```
@@ -3910,5 +3910,320 @@ Comprehensions
 ---
 
 ## 46. List Comprehensions in python (08:33)
+
+## Python List Comprehension (Notes)
+
+## 1. What is List Comprehension?
+
+**List comprehension** is a **short and clean way to create lists in Python** using a **single line of code**.
+
+Instead of writing a **for loop with multiple lines**, we can do the same thing in **one line**.
+
+It is commonly used in **real-world Python projects**.
+
+---
+
+## 2. Basic Syntax of List Comprehension
+
+General structure:
+
+```python
+[expression for item in iterable if condition]
+```
+
+### Meaning of each part
+
+| Part       | Meaning                                  |
+| ---------- | ---------------------------------------- |
+| expression | What you want to add to the new list     |
+| item       | Each element from the iterable           |
+| iterable   | A collection (list, tuple, string, etc.) |
+| condition  | Optional filter                          |
+
+---
+
+## 3. Example Without Comprehension (Using Loop)
+
+Suppose we want to collect **iced teas** from a menu.
+
+```python
+menu = [
+    "masala chai",
+    "iced lemon tea",
+    "green tea",
+    "iced peach tea",
+    "ginger tea"
+]
+
+iced_teas = []
+
+for tea in menu:
+    if "iced" in tea:
+        iced_teas.append(tea)
+
+print(iced_teas)
+```
+
+Output
+
+```
+['iced lemon tea', 'iced peach tea']
+```
+
+---
+
+## 4. Same Example Using List Comprehension
+
+```python
+menu = [
+    "masala chai",
+    "iced lemon tea",
+    "green tea",
+    "iced peach tea",
+    "ginger tea"
+]
+
+iced_teas = [tea for tea in menu if "iced" in tea]
+
+print(iced_teas)
+```
+
+Output
+
+```
+['iced lemon tea', 'iced peach tea']
+```
+
+This is **shorter and cleaner**.
+
+---
+
+## 5. Understanding the Syntax Step-by-Step
+
+Example:
+
+```python
+iced_teas = [tea for tea in menu if "iced" in tea]
+```
+
+Breakdown:
+
+### Expression
+
+```
+tea
+```
+
+This is the value that will be added to the new list.
+
+---
+
+### Loop
+
+```
+for tea in menu
+```
+
+This loops through every item in the list.
+
+---
+
+### Condition
+
+```
+if "iced" in tea
+```
+
+Only items containing `"iced"` are selected.
+
+---
+
+## 6. Important Concept: Variable Names Must Match
+
+Example:
+
+❌ Incorrect code
+
+```python
+iced_teas = [tea for my_tea in menu if "iced" in tea]
+```
+
+Error occurs because `tea` was not defined.
+
+---
+
+✔ Correct code
+
+```python
+iced_teas = [my_tea for my_tea in menu if "iced" in my_tea]
+```
+
+The **variable name must match everywhere**.
+
+---
+
+## 7. Using Other Conditions
+
+You can filter using **any condition**.
+
+Example: Select teas whose name length is greater than 12.
+
+```python
+menu = [
+    "masala chai",
+    "iced lemon tea",
+    "green tea",
+    "iced peach tea",
+    "ginger tea"
+]
+
+result = [tea for tea in menu if len(tea) > 12]
+
+print(result)
+```
+
+Output
+
+```
+['iced lemon tea', 'iced peach tea']
+```
+
+---
+
+## 8. Comprehension Without Condition
+
+Condition is optional.
+
+Example:
+
+Convert all tea names to uppercase.
+
+```python
+menu = ["masala chai", "green tea", "ginger tea"]
+
+upper_menu = [tea.upper() for tea in menu]
+
+print(upper_menu)
+```
+
+Output
+
+```
+['MASALA CHAI', 'GREEN TEA', 'GINGER TEA']
+```
+
+---
+
+## 9. Real Use Cases
+
+List comprehensions are commonly used for:
+
+### 1. Filtering data
+
+Example:
+
+```python
+numbers = [1,2,3,4,5,6]
+
+evens = [n for n in numbers if n % 2 == 0]
+
+print(evens)
+```
+
+Output
+
+```
+[2,4,6]
+```
+
+---
+
+### 2. Transforming data
+
+Example:
+
+```python
+numbers = [1,2,3,4]
+
+squares = [n*n for n in numbers]
+
+print(squares)
+```
+
+Output
+
+```
+[1,4,9,16]
+```
+
+---
+
+### 3. Creating new lists
+
+Example:
+
+```python
+names = ["ram", "shyam", "rahul"]
+
+capital_names = [name.capitalize() for name in names]
+
+print(capital_names)
+```
+
+Output
+
+```
+['Ram', 'Shyam', 'Rahul']
+```
+
+---
+
+## 10. Key Advantages
+
+### Cleaner Code
+
+Less lines compared to loops.
+
+---
+
+### Easier Data Transformation
+
+Very useful when working with **lists and data processing**.
+
+---
+
+### More Pythonic
+
+Python developers prefer this style.
+
+---
+
+## Important Points to Remember
+
+✔ List comprehension uses **square brackets**
+✔ Syntax follows **expression → loop → condition**
+✔ Condition is **optional**
+✔ Works with any **iterable** (list, tuple, string, etc.)
+✔ Variable names must be **consistent**
+
+---
+
+## Quick Visual Summary
+
+```
+List Comprehension Structure
+
+[expression for item in iterable if condition]
+        │        │        │
+        │        │        └── filter items
+        │        └────────── loop through data
+        └────────────────── value added to list
+```
+
+---
+
+## 47. Set Comprehensions in python (12:00)
+
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
