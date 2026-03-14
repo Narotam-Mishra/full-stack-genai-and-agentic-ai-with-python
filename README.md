@@ -4513,6 +4513,326 @@ Result → set of even numbers.
 
 ## 48. Dictionary Comprehensions in python (05:37)
 
+## Python Dictionary Comprehension (Notes)
+
+## 1. What is Dictionary Comprehension?
+
+**Dictionary comprehension** is a **short way to create a dictionary using a single line of code**.
+
+Just like **list and set comprehensions**, it helps write **cleaner and shorter Python code**.
+
+---
+
+## 2. Basic Syntax
+
+General syntax:
+
+```python
+{key_expression: value_expression for item in iterable}
+```
+
+Optional condition:
+
+```python
+{key_expression: value_expression for item in iterable if condition}
+```
+
+### Explanation
+
+| Part             | Meaning                    |
+| ---------------- | -------------------------- |
+| key_expression   | Key of the dictionary      |
+| value_expression | Value of the dictionary    |
+| item             | Each element from iterable |
+| iterable         | Collection to loop through |
+| condition        | Optional filter            |
+
+---
+
+## 3. Key Idea of Dictionary Comprehension
+
+Dictionary comprehension **must return a key-value pair**.
+
+Example:
+
+```python
+{key: value for item in iterable}
+```
+
+If you only return a **single value**, Python will treat it as a **set comprehension**.
+
+So dictionary comprehension always uses:
+
+```python
+key: value
+```
+
+---
+
+## 4. Example – Converting Tea Prices from INR to USD
+
+Suppose we have a dictionary of tea prices in **Indian Rupees (INR)**.
+
+```python
+tea_prices_inr = {
+    "masala chai": 40,
+    "green tea": 50,
+    "lemon tea": 200
+}
+```
+
+Goal: Convert prices into **USD**.
+
+Assume:
+
+```
+1 USD ≈ 80 INR
+```
+
+---
+
+## 5. Dictionary Comprehension Solution
+
+```python
+tea_prices_usd = {
+    tea: price / 80
+    for tea, price in tea_prices_inr.items()
+}
+
+print(tea_prices_usd)
+```
+
+Output
+
+```python
+{
+ 'masala chai': 0.5,
+ 'green tea': 0.625,
+ 'lemon tea': 2.5
+}
+```
+
+---
+
+## 6. Understanding the Code
+
+### Step 1 – Loop through dictionary
+
+```python
+for tea, price in tea_prices_inr.items()
+```
+
+`.items()` returns both:
+
+* key
+* value
+
+Example output of `.items()`:
+
+```
+("masala chai", 40)
+("green tea", 50)
+("lemon tea", 200)
+```
+
+---
+
+### Step 2 – Expression
+
+```python
+tea: price / 80
+```
+
+This creates the new dictionary entry.
+
+Example result:
+
+```
+"masala chai": 0.5
+```
+
+---
+
+## 7. Same Code Using Normal Loop
+
+Dictionary comprehension replaces this longer code:
+
+```python
+tea_prices_usd = {}
+
+for tea, price in tea_prices_inr.items():
+    tea_prices_usd[tea] = price / 80
+
+print(tea_prices_usd)
+```
+
+Comprehension version is **shorter and cleaner**.
+
+---
+
+## 8. Using Conditions in Dictionary Comprehension
+
+Example: Only convert teas that cost more than 50 INR.
+
+```python
+tea_prices_usd = {
+    tea: price / 80
+    for tea, price in tea_prices_inr.items()
+    if price > 50
+}
+
+print(tea_prices_usd)
+```
+
+Output
+
+```python
+{'lemon tea': 2.5}
+```
+
+---
+
+## 9. Another Example – Modify Values
+
+Example: Add tax to prices.
+
+```python
+tea_prices = {
+    "masala chai": 40,
+    "green tea": 50,
+    "lemon tea": 200
+}
+
+new_prices = {tea: price * 1.1 for tea, price in tea_prices.items()}
+
+print(new_prices)
+```
+
+Output
+
+```
+{
+ 'masala chai': 44.0,
+ 'green tea': 55.0,
+ 'lemon tea': 220.0
+}
+```
+
+---
+
+## 10. Transform Keys Example
+
+Example: Convert keys to uppercase.
+
+```python
+tea_prices = {
+    "masala chai": 40,
+    "green tea": 50
+}
+
+upper_keys = {tea.upper(): price for tea, price in tea_prices.items()}
+
+print(upper_keys)
+```
+
+Output
+
+```
+{'MASALA CHAI': 40, 'GREEN TEA': 50}
+```
+
+---
+
+## 11. Important Dictionary Methods
+
+### `.items()`
+
+Returns **both key and value**.
+
+```python
+dict.items()
+```
+
+Example:
+
+```python
+for key, value in dictionary.items():
+```
+
+---
+
+### `.keys()`
+
+Returns only keys.
+
+```python
+dictionary.keys()
+```
+
+---
+
+### `.values()`
+
+Returns only values.
+
+```python
+dictionary.values()
+```
+
+---
+
+## 12. Key Advantages of Dictionary Comprehension
+
+### Cleaner Code
+
+Less code compared to loops.
+
+---
+
+### Easy Data Transformation
+
+Very useful when **processing APIs or datasets**.
+
+---
+
+### Faster to Write
+
+Python developers prefer this style.
+
+---
+
+## Important Points to Remember
+
+✔ Dictionary comprehension uses **curly braces `{}`**
+✔ Expression must contain **key:value pair**
+✔ `.items()` is commonly used to loop through dictionaries
+✔ Conditions can be added
+✔ Helps transform keys or values easily
+
+---
+
+## Quick Visual Summary
+
+```
+Dictionary Comprehension
+
+{key: value for key, value in iterable if condition}
+       │        │          │
+       │        │          └ filter
+       │        └ loop
+       └ new dictionary entry
+```
+
+Example:
+
+```python
+{tea: price/80 for tea, price in tea_prices.items()}
+```
+
+---
+
+## 49. Generator Comprehensions for Memory Optimizations (07:07)
+
 
 
 
