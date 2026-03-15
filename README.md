@@ -5118,7 +5118,7 @@ minimum = min(x for x in range(10))
 
 ---
 
-# 14. Quick Comparison Table
+## 14. Quick Comparison Table
 
 | Feature      | List Comprehension | Generator        |
 | ------------ | ------------------ | ---------------- |
@@ -5137,5 +5137,9 @@ minimum = min(x for x in range(10))
 * Best used when handling **large data streams**.
 
 ---
+
+## Sec 8 - Generators and Decorators in python
+
+## 53. Generators with Yield and Next methods (10:34)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
