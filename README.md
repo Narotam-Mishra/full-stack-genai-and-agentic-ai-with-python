@@ -5835,6 +5835,444 @@ We control it using loops or `next()` so that it does not run forever.
 
 ## 54. Send Value to Generators (07:45)
 
+## 1. Idea Behind This Lesson
+
+So far we learned:
+
+* Generators **produce values using `yield`**
+* We get values using **`next()`**
+
+Example:
+
+```python
+def numbers():
+    yield 1
+    yield 2
+    yield 3
+```
+
+But Python generators can also **receive values from outside**.
+
+That is done using:
+
+```python
+generator.send(value)
+```
+
+This means:
+
+```text
+Generators can both SEND and RECEIVE data
+```
+
+---
+
+## 2. Key Concept
+
+Normally:
+
+```text
+Generator → sends data to caller
+```
+
+With `send()`:
+
+```text
+Caller → sends data to generator
+```
+
+So the communication becomes **two-way**.
+
+---
+
+## 3. Important Keywords
+
+### `yield`
+
+* pauses the generator
+* returns a value
+* waits for the next instruction
+
+### `next()`
+
+* resumes generator execution
+* used when no value is sent
+
+### `send(value)`
+
+* resumes generator
+* **passes a value into the generator**
+
+---
+
+## 4. Basic Generator with `send()`
+
+Example generator:
+
+```python
+def chai_customer():
+    print("Welcome!")
+    print("What chai would you like?")
+
+    order = yield
+
+    while True:
+        print(f"Preparing {order}")
+        order = yield
+```
+
+---
+
+## 5. How It Works
+
+Create the generator:
+
+```python
+stall = chai_customer()
+```
+
+Start the generator:
+
+```python
+next(stall)
+```
+
+Output:
+
+```
+Welcome!
+What chai would you like?
+```
+
+Now the generator **pauses at `yield`** waiting for input.
+
+---
+
+## 6. Sending Data to Generator
+
+Now send a chai order:
+
+```python
+stall.send("Masala Chai")
+```
+
+Output:
+
+```
+Preparing Masala Chai
+```
+
+Send another order:
+
+```python
+stall.send("Lemon Chai")
+```
+
+Output:
+
+```
+Preparing Lemon Chai
+```
+
+So the generator **keeps receiving new orders**.
+
+---
+
+## 7. Step-by-Step Execution
+
+Generator code:
+
+```python
+order = yield
+```
+
+Execution flow:
+
+### Step 1
+
+```python
+stall = chai_customer()
+```
+
+Generator is created but **not executed yet**.
+
+---
+
+### Step 2
+
+```python
+next(stall)
+```
+
+Runs until first `yield`.
+
+Output:
+
+```
+Welcome!
+What chai would you like?
+```
+
+Now generator pauses at:
+
+```python
+order = yield
+```
+
+---
+
+### Step 3
+
+```python
+stall.send("Masala Chai")
+```
+
+The value `"Masala Chai"` becomes:
+
+```python
+order = "Masala Chai"
+```
+
+Then generator continues.
+
+Output:
+
+```
+Preparing Masala Chai
+```
+
+---
+
+### Step 4
+
+Generator pauses again at:
+
+```python
+order = yield
+```
+
+Waiting for the next order.
+
+---
+
+### Step 5
+
+```python
+stall.send("Lemon Chai")
+```
+
+Output:
+
+```
+Preparing Lemon Chai
+```
+
+---
+
+## 8. Why Second `yield` is Necessary
+
+This part is important.
+
+Inside the loop:
+
+```python
+order = yield
+```
+
+This **pauses the generator again**.
+
+If this line is removed:
+
+```python
+while True:
+    print(f"Preparing {order}")
+```
+
+Then the loop becomes:
+
+```text
+Infinite loop
+```
+
+It keeps printing forever because **nothing pauses the generator**.
+
+---
+
+## 9. Why the Program Went Infinite
+
+Without this line:
+
+```python
+order = yield
+```
+
+The code becomes:
+
+```python
+while True:
+    print(order)
+```
+
+Which means:
+
+```
+print
+print
+print
+print
+print
+...
+```
+
+So the program **never pauses**.
+
+That’s why it runs infinitely.
+
+---
+
+## 10. Why Generators Pause
+
+Generators pause at `yield`.
+
+Example flow:
+
+```
+start
+↓
+yield
+↓ pause
+↓
+send(value)
+↓
+resume
+↓
+yield
+↓ pause
+```
+
+This pause-resume behavior is what makes generators powerful.
+
+---
+
+## 11. Real World Use Cases
+
+This type of generator is used in:
+
+### 1️⃣ Web frameworks
+
+Example:
+
+* streaming responses
+
+### 2️⃣ FastAPI
+
+Used for:
+
+* async processing
+* event streams
+
+### 3️⃣ Pipelines
+
+Data pipelines where:
+
+```
+input → process → output
+```
+
+---
+
+## 12. Simple Example (Calculator Generator)
+
+```python
+def calculator():
+    result = 0
+
+    while True:
+        number = yield result
+        result += number
+```
+
+Usage:
+
+```python
+calc = calculator()
+
+next(calc)
+
+print(calc.send(5))
+print(calc.send(10))
+print(calc.send(3))
+```
+
+Output:
+
+```
+5
+15
+18
+```
+
+The generator **keeps receiving numbers and updating the result**.
+
+---
+
+## 13. Important Points to Remember
+
+1️⃣ Generators normally **send values using `yield`**
+
+2️⃣ With `send()` we can **send data into generators**
+
+3️⃣ `next()` is required to **start the generator**
+
+4️⃣ `yield` pauses the generator
+
+5️⃣ `send(value)` resumes generator and **passes value to yield**
+
+6️⃣ Generators allow **two-way communication**
+
+7️⃣ Used in **frameworks, streaming, and pipelines**
+
+---
+
+## 14. Quick Summary
+
+Normal generator:
+
+```python
+yield value
+```
+
+Caller receives values.
+
+---
+
+Advanced generator:
+
+```python
+value = yield
+```
+
+Generator **receives values from caller**.
+
+---
+
+### Communication Flow
+
+```
+Generator → yield → caller
+Caller → send() → generator
+```
+
+---
+
+✅ **Final Simple Explanation**
+
+Generators can do more than just produce values.
+Using `send()`, they can **receive data from the caller**, making them useful for **interactive systems, pipelines, and frameworks**.
+
+---
+
+## 55. Yield From and Close the Generators (08:55)
 
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
