@@ -6274,5 +6274,391 @@ Using `send()`, they can **receive data from the caller**, making them useful fo
 
 ## 55. Yield From and Close the Generators (08:55)
 
+This tutorial explains **two more advanced generator features in Python**:
+
+1. **`yield from`** – getting values from another generator
+2. **`close()`** – stopping and cleaning up a generator
+
+Below is a **simple summary, important points, and clear code examples**.
+
+---
+
+## 1. Quick Recap of Generators
+
+Generators are functions that **produce values one at a time** using:
+
+```python
+yield
+```
+
+Instead of returning everything at once.
+
+Example:
+
+```python
+def chai_menu():
+    yield "Masala Chai"
+    yield "Ginger Chai"
+```
+
+Usage:
+
+```python
+for chai in chai_menu():
+    print(chai)
+```
+
+Output
+
+```
+Masala Chai
+Ginger Chai
+```
+
+---
+
+## 2. Concept 1: `yield from`
+
+Sometimes a generator **does not produce values itself**.
+
+Instead, it **gets values from another generator**.
+
+Python provides a special syntax for this:
+
+```python
+yield from generator_function()
+```
+
+This is called **delegation**.
+
+It means:
+
+```
+Take values from another generator and yield them here.
+```
+
+---
+
+## 3. Example: Multiple Generators
+
+Suppose we have **local chai options**.
+
+```python
+def local_chai():
+    yield "Masala Chai"
+    yield "Ginger Chai"
+```
+
+And **imported chai options**.
+
+```python
+def imported_chai():
+    yield "Matcha"
+    yield "Oolong"
+```
+
+---
+
+## 4. Combining Generators Using `yield from`
+
+Now we combine them into one menu.
+
+```python
+def full_menu():
+    yield from local_chai()
+    yield from imported_chai()
+```
+
+Usage:
+
+```python
+for chai in full_menu():
+    print(chai)
+```
+
+Output
+
+```
+Masala Chai
+Ginger Chai
+Matcha
+Oolong
+```
+
+### What happened?
+
+`yield from` automatically:
+
+* calls another generator
+* gets its values
+* yields them to the caller
+
+---
+
+## 5. Without `yield from`
+
+The same thing could be written manually:
+
+```python
+def full_menu():
+    for chai in local_chai():
+        yield chai
+        
+    for chai in imported_chai():
+        yield chai
+```
+
+But `yield from` is **shorter and cleaner**.
+
+---
+
+## 6. Concept 2: Closing a Generator
+
+Sometimes generators:
+
+* run **infinite loops**
+* stay in **memory**
+* wait for more data
+
+So we may want to **stop them manually**.
+
+Python provides:
+
+```python
+generator.close()
+```
+
+This **stops the generator and frees memory**.
+
+---
+
+## 7. Example: Chai Stall Generator
+
+Generator waiting for orders.
+
+```python
+def chai_stall():
+    try:
+        while True:
+            order = yield "Waiting for chai order..."
+    except GeneratorExit:
+        print("Stall closed. No more chai.")
+```
+
+---
+
+## 8. Using the Generator
+
+Create generator:
+
+```python
+stall = chai_stall()
+```
+
+Start generator:
+
+```python
+print(next(stall))
+```
+
+Output:
+
+```
+Waiting for chai order...
+```
+
+---
+
+## 9. Closing the Generator
+
+Now close it.
+
+```python
+stall.close()
+```
+
+Output:
+
+```
+Stall closed. No more chai.
+```
+
+The generator stops and memory is cleaned.
+
+---
+
+## 10. Why `close()` is Important
+
+Generators can remain active in memory.
+
+Example situations:
+
+* database connections
+* infinite generators
+* streaming systems
+
+Closing them ensures:
+
+* **no memory leaks**
+* **better performance**
+* **clean resource handling**
+
+---
+
+## 11. GeneratorExit Exception
+
+When we call:
+
+```python
+generator.close()
+```
+
+Python raises an internal exception:
+
+```
+GeneratorExit
+```
+
+That is why we often use:
+
+```python
+try:
+    ...
+except GeneratorExit:
+    cleanup code
+```
+
+This allows us to **clean resources properly**.
+
+---
+
+## 12. Real-World Example (Database Connection)
+
+Generators are often used like this:
+
+```python
+def database_connection():
+    connection = "DB Connected"
+    try:
+        yield connection
+    finally:
+        print("Closing database connection")
+```
+
+Usage:
+
+```python
+conn = database_connection()
+
+print(next(conn))
+
+conn.close()
+```
+
+Output
+
+```
+DB Connected
+Closing database connection
+```
+
+---
+
+## 13. Important Generator Features Learned
+
+### 1️⃣ `yield`
+
+Pauses and resumes function execution.
+
+```python
+yield value
+```
+
+---
+
+### 2️⃣ `next()`
+
+Gets the next value from generator.
+
+```python
+next(generator)
+```
+
+---
+
+### 3️⃣ `send(value)`
+
+Sends data **into the generator**.
+
+```python
+generator.send(value)
+```
+
+---
+
+### 4️⃣ `yield from`
+
+Gets values **from another generator**.
+
+```python
+yield from another_generator()
+```
+
+---
+
+### 5️⃣ `close()`
+
+Stops the generator and cleans memory.
+
+```python
+generator.close()
+```
+
+---
+
+## 14. Simple Visual Flow
+
+Generator lifecycle:
+
+```
+start generator
+      ↓
+yield value
+      ↓
+pause
+      ↓
+next() / send()
+      ↓
+resume
+      ↓
+close()
+      ↓
+cleanup
+```
+
+---
+
+## 15. Final Simple Summary
+
+Generators in Python can:
+
+1. **Generate values** → `yield`
+2. **Provide next value** → `next()`
+3. **Receive data** → `send()`
+4. **Use other generators** → `yield from`
+5. **Stop execution** → `close()`
+
+They are widely used for:
+
+* **data streaming**
+* **frameworks like FastAPI**
+* **database connections**
+* **large data processing**
+
+---
+
+## 55. Decorators in python (09:13)
+
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
