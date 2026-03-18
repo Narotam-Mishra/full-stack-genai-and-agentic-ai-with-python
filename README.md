@@ -7386,4 +7386,290 @@ A **logging decorator** is a decorator that **prints or records when a function 
 
 ## 56. Build an Authorization Decorator (05:45)
 
+## 🔐 Python Authentication Decorator – Simple Notes
+
+## 1. What is this Decorator?
+
+This is a **custom decorator** that:
+
+👉 **Allows only admin users to run a function**
+👉 Blocks others with an "Access Denied" message
+
+This is very common in real-world apps like:
+
+* dashboards
+* admin panels
+* APIs (especially in Django, FastAPI)
+
+---
+
+## 2. Basic Idea
+
+We wrap a function and check:
+
+```id="z3k38d"
+IF user is admin → allow function execution  
+ELSE → deny access
+```
+
+---
+
+## 3. Basic Structure of This Decorator
+
+```python id="z0c2g3"
+from functools import wraps
+
+def require_admin(func):
+
+    @wraps(func)
+    def wrapper(user_role):
+        if user_role != "admin":
+            print("Access denied: Admins only")
+        else:
+            return func(user_role)
+
+    return wrapper
+```
+
+---
+
+## 4. How It Works
+
+Step-by-step:
+
+1. Function is passed into decorator → `func`
+2. Wrapper receives argument → `user_role`
+3. Condition checks:
+
+   * if NOT admin → deny access
+   * if admin → call original function
+
+---
+
+## 5. Using the Decorator
+
+```python id="v4s7m5"
+@require_admin
+def access_inventory(user_role):
+    print("Access granted to tea inventory")
+```
+
+---
+
+## 6. Calling the Function
+
+```python id="5v6jgr"
+access_inventory("user")
+access_inventory("admin")
+```
+
+---
+
+## 7. Output
+
+```id="smgg29"
+Access denied: Admins only
+Access granted to tea inventory
+```
+
+---
+
+## 8. Important Concept: Wrapper Arguments
+
+In this example:
+
+```python id="n3l4a0"
+def wrapper(user_role):
+```
+
+We only accept **one argument** because we know the function needs only that.
+
+But in general, safer way is:
+
+```python id="38lg2j"
+def wrapper(*args, **kwargs):
+```
+
+👉 Use this when:
+
+* you don’t know number of arguments
+* making reusable decorators
+
+---
+
+## 9. Important Concept: Return Statement
+
+Inside decorator:
+
+```python id="u6k5lh"
+return func(user_role)
+```
+
+This ensures:
+
+* original function runs
+* its result is returned
+
+---
+
+## 10. Important Edge Case (VERY IMPORTANT)
+
+In this part:
+
+```python id="ydx6cr"
+if user_role != "admin":
+    print("Access denied")
+```
+
+We are **not returning anything**.
+
+Python may:
+
+* silently return `None`
+* or sometimes cause issues in strict codebases
+
+---
+
+## 11. Safe Practice (Recommended)
+
+Always return something explicitly:
+
+```python id="4u9k9x"
+if user_role != "admin":
+    print("Access denied")
+    return None
+```
+
+👉 Why?
+
+* avoids unexpected bugs
+* makes code predictable
+* useful in production systems
+
+---
+
+## 12. Full Correct Version
+
+```python id="t2gqv0"
+from functools import wraps
+
+def require_admin(func):
+
+    @wraps(func)
+    def wrapper(user_role):
+        if user_role != "admin":
+            print("Access denied: Admins only")
+            return None
+        else:
+            return func(user_role)
+
+    return wrapper
+
+
+@require_admin
+def access_inventory(user_role):
+    print("Access granted to tea inventory")
+
+
+access_inventory("user")
+access_inventory("admin")
+```
+
+---
+
+## 13. Key Concepts Learned
+
+### 1️⃣ Decorator for Access Control
+
+* Restrict function execution
+
+---
+
+### 2️⃣ Wrapper Function
+
+* Controls execution flow
+
+---
+
+### 3️⃣ Conditional Logic in Decorator
+
+```python id="akqbb9"
+if condition:
+    block
+else:
+    allow
+```
+
+---
+
+### 4️⃣ Always Return Value
+
+```python id="i6pwhb"
+return None
+```
+
+Important for:
+
+* stability
+* production code
+
+---
+
+### 5️⃣ Use `@wraps`
+
+```python id="rsh3to"
+@wraps(func)
+```
+
+Preserves:
+
+* function name
+* metadata
+
+---
+
+## 14. Real-World Example
+
+This is how it's used in real apps:
+
+```python id="gksf45"
+@require_admin
+def delete_user(user_role):
+    print("User deleted")
+```
+
+Only admin can delete users.
+
+---
+
+## 15. Mental Model
+
+Think like this:
+
+```id="bt60ts"
+User → Decorator → Check Role → Allow / Deny → Function
+```
+
+---
+
+## 16. Key Takeaways
+
+✔ Decorators can enforce rules (like authentication)
+✔ You can control function execution
+✔ Always handle all cases properly (return values)
+✔ Use precise arguments if known
+✔ Use `*args, **kwargs` for flexibility
+
+---
+
+## 17. One-Line Definition
+
+👉 **An authentication decorator controls access to a function based on user roles.**
+
+---
+
+## Sec 9 - OOPs in Python
+
+## 57. Building your 1st Class and Object on python (9:05)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
