@@ -6659,6 +6659,731 @@ They are widely used for:
 
 ## 55. Decorators in python (09:13)
 
+## Python Decorators – Simple Notes & Explanation
 
+## 1. What is a Decorator?
+
+A **decorator** in Python is a **function that wraps another function to add extra behavior without modifying the original function**.
+
+Think of it like **decoration on coffee ☕**:
+
+* Coffee = original function
+* Chocolate powder on top = decorator
+* Coffee still works the same, but something extra is added.
+
+So decorators allow you to:
+
+* add extra functionality
+* run code **before or after a function**
+* keep the original function unchanged
+
+---
+
+## 2. Basic Idea of Decorators
+
+Suppose you have many functions and you want to **log whenever a function runs**.
+
+Instead of editing every function, you can create **one decorator** that wraps them.
+
+Conceptual flow:
+
+```
+Decorator
+   |
+   v
+Extra code before function
+Original function runs
+Extra code after function
+```
+
+---
+
+## 3. Basic Decorator Syntax
+
+A decorator is just a **function that takes another function as argument**.
+
+### Example
+
+```python
+def my_decorator(func):
+    def wrapper():
+        print("Before function runs")
+
+        func()   # calling original function
+
+        print("After function runs")
+
+    return wrapper
+```
+
+### What happens here?
+
+* `func` = original function
+* `wrapper` = new function that adds extra behavior
+* wrapper runs:
+
+  * before code
+  * original function
+  * after code
+
+---
+
+## 4. Using a Decorator
+
+Python provides special syntax using **@**
+
+### Example
+
+```python
+@my_decorator
+def greet():
+    print("Hello from Chai Code")
+```
+
+Calling the function:
+
+```python
+greet()
+```
+
+### Output
+
+```
+Before function runs
+Hello from Chai Code
+After function runs
+```
+
+### What actually happens internally?
+
+This line:
+
+```
+@my_decorator
+def greet():
+```
+
+is equivalent to:
+
+```python
+def greet():
+    print("Hello from Chai Code")
+
+greet = my_decorator(greet)
+```
+
+So the original function gets **replaced with the wrapper function**.
+
+---
+
+## 5. Why Decorators Are Useful
+
+Decorators help avoid **repeating the same code**.
+
+Common real-world uses:
+
+* Logging
+* Authentication
+* Timing functions
+* Access control
+* Caching
+* Validation
+
+Example idea:
+
+```
+Check login
+Run function
+Log result
+```
+
+---
+
+## 6. Problem with Basic Decorators
+
+If you check the function name:
+
+```python
+print(greet.__name__)
+```
+
+You may get:
+
+```
+wrapper
+```
+
+Instead of:
+
+```
+greet
+```
+
+Why?
+
+Because the decorator **returns the wrapper function**, so Python thinks the function name is `wrapper`.
+
+This also affects other **metadata** like:
+
+* function name
+* documentation
+* annotations
+
+---
+
+## 7. What is Metadata?
+
+**Metadata = data about data**
+
+Example:
+
+For a song file:
+
+| Type        | Example                     |
+| ----------- | --------------------------- |
+| Actual Data | Music                       |
+| Metadata    | song length, format, artist |
+
+For functions:
+
+| Data           | Metadata                     |
+| -------------- | ---------------------------- |
+| Function logic | name, docstring, annotations |
+
+Decorators can accidentally overwrite this metadata.
+
+---
+
+## 8. Solution: functools.wraps
+
+Python provides **`wraps`** to preserve metadata.
+
+Import it like this:
+
+```python
+from functools import wraps
+```
+
+---
+
+## 9. Correct Decorator Using wraps
+
+```python
+from functools import wraps
+
+def my_decorator(func):
+
+    @wraps(func)
+    def wrapper():
+        print("Before function runs")
+
+        func()
+
+        print("After function runs")
+
+    return wrapper
+```
+
+Now:
+
+```python
+@my_decorator
+def greet():
+    print("Hello")
+```
+
+Checking name:
+
+```python
+print(greet.__name__)
+```
+
+Output:
+
+```
+greet
+```
+
+Metadata is preserved.
+
+---
+
+## 10. Full Working Example
+
+```python
+from functools import wraps
+
+def my_decorator(func):
+
+    @wraps(func)
+    def wrapper():
+        print("Before function runs")
+
+        func()
+
+        print("After function runs")
+
+    return wrapper
+
+
+@my_decorator
+def greet():
+    print("Hello from decorator example")
+
+
+greet()
+```
+
+### Output
+
+```
+Before function runs
+Hello from decorator example
+After function runs
+```
+
+---
+
+## 11. Decorator Flow (Step-by-Step)
+
+1. Python reads decorator
+
+```
+@my_decorator
+```
+
+2. Function is passed to decorator
+
+```
+my_decorator(greet)
+```
+
+3. Decorator returns `wrapper`
+
+4. `greet` now becomes `wrapper`
+
+5. Calling `greet()` runs wrapper
+
+---
+
+## 12. Key Points to Remember
+
+Important things from this tutorial:
+
+1️⃣ Decorators **wrap a function** to add extra behavior.
+
+2️⃣ A decorator is just a **function that takes another function as input**.
+
+3️⃣ It usually contains a **wrapper function**.
+
+4️⃣ Wrapper runs:
+
+* code before
+* original function
+* code after
+
+5️⃣ Use **@decorator_name** to apply decorators.
+
+6️⃣ Decorators **replace the original function with wrapper**.
+
+7️⃣ Metadata like function name may change.
+
+8️⃣ Use **`functools.wraps`** to preserve metadata.
+
+---
+
+## 13. Simple Mental Model
+
+Think like this:
+
+```
+Original function
+      ↓
+Decorator wraps it
+      ↓
+New function with extra behavior
+```
+
+---
+
+✅ **One-line definition**
+
+A **decorator is a function that modifies or extends another function without changing its source code.**
+
+---
+
+## 55. Build a Logger with Decorators (05:56)
+
+## Python Logging Decorator – Simple Notes
+
+## 1. What is a Logging Decorator?
+
+A **logging decorator** is a decorator that **prints or records information whenever a function runs**.
+
+It usually logs things like:
+
+* when a function starts
+* when it finishes
+* which function is running
+* what parameters were passed
+
+Example log:
+
+```
+Calling brew_chai
+Brewing masala chai
+Finished calling brew_chai
+```
+
+This helps in:
+
+* debugging
+* tracking program flow
+* monitoring applications
+
+---
+
+## 2. Structure of a Decorator (Always Same Pattern)
+
+Most decorators follow this structure:
+
+```python
+from functools import wraps
+
+def decorator_name(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # code before
+
+        result = func(*args, **kwargs)
+
+        # code after
+
+        return result
+
+    return wrapper
+```
+
+### Key parts
+
+| Part        | Purpose              |
+| ----------- | -------------------- |
+| `func`      | original function    |
+| `wrapper()` | wraps the function   |
+| `*args`     | positional arguments |
+| `**kwargs`  | keyword arguments    |
+| `wraps`     | preserves metadata   |
+
+---
+
+## 3. Importing `wraps`
+
+Always import `wraps` to preserve function metadata.
+
+```python
+from functools import wraps
+```
+
+Without `wraps`, Python may change:
+
+* function name
+* docstring
+* metadata
+
+---
+
+## 4. Creating a Logging Decorator
+
+Example logging decorator:
+
+```python
+from functools import wraps
+
+def log_activity(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        print(f"Calling {func.__name__}")
+
+        result = func(*args, **kwargs)
+
+        print(f"Finished calling {func.__name__}")
+
+        return result
+
+    return wrapper
+```
+
+---
+
+## 5. Why Use `*args` and `**kwargs`?
+
+Decorators must work with **any function**.
+
+Functions may have:
+
+* no parameters
+* one parameter
+* multiple parameters
+* keyword parameters
+
+So we use:
+
+| Syntax     | Meaning                                    |
+| ---------- | ------------------------------------------ |
+| `*args`    | accepts any number of positional arguments |
+| `**kwargs` | accepts any number of keyword arguments    |
+
+Example:
+
+```python
+def example(a, b, c=10):
+```
+
+Decorator can handle this using:
+
+```python
+wrapper(*args, **kwargs)
+```
+
+---
+
+## 6. Calling the Original Function
+
+Inside wrapper:
+
+```python
+result = func(*args, **kwargs)
+```
+
+This means:
+
+* call the original function
+* pass all arguments
+* store the returned result
+
+---
+
+## 7. Returning the Result
+
+Always return the result:
+
+```python
+return result
+```
+
+Otherwise the decorated function may return **None**.
+
+---
+
+## 8. Using the Logging Decorator
+
+Use `@decorator_name` above a function.
+
+Example:
+
+```python
+@log_activity
+def brew_chai(type):
+    print(f"Brewing {type} chai")
+```
+
+Calling function:
+
+```python
+brew_chai("masala")
+```
+
+### Output
+
+```
+Calling brew_chai
+Brewing masala chai
+Finished calling brew_chai
+```
+
+---
+
+## 9. Example with Multiple Parameters
+
+Functions can have multiple parameters.
+
+```python
+@log_activity
+def brew_chai(type, milk="No"):
+    print(f"Brewing {type} chai with milk: {milk}")
+```
+
+Calling function:
+
+```python
+brew_chai("Masala", milk="Yes")
+```
+
+Output:
+
+```
+Calling brew_chai
+Brewing Masala chai with milk: Yes
+Finished calling brew_chai
+```
+
+Notice:
+
+* decorator **still works**
+* because we used `*args` and `**kwargs`
+
+---
+
+## 10. Accessing Function Name
+
+Decorators can get the function name using:
+
+```python
+func.__name__
+```
+
+Example:
+
+```python
+print(func.__name__)
+```
+
+Output:
+
+```
+brew_chai
+```
+
+This helps for **logging and debugging**.
+
+---
+
+## 11. Full Example Code
+
+Complete working example:
+
+```python
+from functools import wraps
+
+def log_activity(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        print(f"Calling {func.__name__}")
+
+        result = func(*args, **kwargs)
+
+        print(f"Finished calling {func.__name__}")
+
+        return result
+
+    return wrapper
+
+
+@log_activity
+def brew_chai(type, milk="No"):
+    print(f"Brewing {type} chai with milk: {milk}")
+
+
+brew_chai("Masala", milk="Yes")
+```
+
+Output:
+
+```
+Calling brew_chai
+Brewing Masala chai with milk: Yes
+Finished calling brew_chai
+```
+
+---
+
+## 12. Advantages of Logging Decorators
+
+Decorators help you **separate logic**.
+
+Instead of writing logging inside every function:
+
+Bad approach:
+
+```python
+def brew_chai():
+    print("Starting function")
+    print("Brewing chai")
+    print("Ending function")
+```
+
+Better approach using decorator:
+
+```python
+@log_activity
+def brew_chai():
+    print("Brewing chai")
+```
+
+Cleaner and reusable.
+
+---
+
+## 13. Real World Use Cases
+
+Decorators are widely used in frameworks like:
+
+* **Django**
+* **FastAPI**
+* **Flask**
+
+Examples include:
+
+| Use            | Example                |
+| -------------- | ---------------------- |
+| Authentication | check login            |
+| Logging        | track function calls   |
+| Performance    | measure execution time |
+| Caching        | store results          |
+| Permissions    | restrict access        |
+
+---
+
+## 14. Key Takeaways
+
+Important things to remember:
+
+1️⃣ Decorators wrap functions.
+
+2️⃣ Logging decorators track function execution.
+
+3️⃣ Always use:
+
+```python
+*args
+**kwargs
+```
+
+4️⃣ Use `wraps` from `functools`.
+
+5️⃣ Use:
+
+```python
+func.__name__
+```
+
+to access function name.
+
+6️⃣ Always return result.
+
+---
+
+## 15. One Line Definition
+
+A **logging decorator** is a decorator that **prints or records when a function starts and finishes executing**.
+
+---
+
+## 56. Build an Authorization Decorator (05:45)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
