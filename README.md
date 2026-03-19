@@ -1,4 +1,4 @@
-# Gen AI Engineering with Python 
+# [Gen AI Engineering with Python](https://chatgpt.com/share/69bbb1b8-b64c-8004-a981-3a6ccd5ff19b) 
 
 ## Sec 6 - Functions in Python
 
@@ -7670,6 +7670,563 @@ User → Decorator → Check Role → Allow / Deny → Function
 
 ## Sec 9 - OOPs in Python
 
-## 57. Building your 1st Class and Object on python (9:05)
+## 60. Building your 1st Class and Object in python (9:05)
+
+## 🧠 Python OOP – Simple Notes
+
+## 1. What is OOP?
+
+👉 **OOP (Object-Oriented Programming)** is a **way (style) of writing code**
+
+* This “way” is called a **paradigm**
+* Other paradigms also exist (like **functional programming**)
+
+👉 In real-world code:
+
+* You’ll often see a **mix of OOP + functional programming**
+
+---
+
+## 2. Core Idea (Very Important)
+
+Think like this:
+
+```
+Class → Blueprint  
+Object → Real item created from blueprint
+```
+
+---
+
+## 3. Real-Life Example
+
+* Class = Car design
+* Objects = Individual cars made from that design
+
+Each car:
+
+* can have different color
+* can have different features
+  But all come from the same blueprint
+
+---
+
+## 4. Key Terminology
+
+## ✅ Class
+
+👉 Blueprint/template
+
+## ✅ Object
+
+👉 Instance created from class
+
+---
+
+## 5. Creating a Class in Python
+
+```python
+class Chai:
+    pass
+```
+
+### Explanation:
+
+* `class` → keyword
+* `Chai` → class name (should start with Capital letter)
+* `pass` → empty class (no logic yet)
+
+---
+
+## 6. Important Concept
+
+👉 In Python:
+
+```
+Everything is an object (even classes!)
+```
+
+---
+
+## 7. Checking Type of Class
+
+```python
+class Chai:
+    pass
+
+print(type(Chai))
+```
+
+### Output:
+
+```
+<class 'type'>
+```
+
+👉 Meaning:
+
+* Class itself is also an object of type `type`
+
+---
+
+## 8. Creating an Object
+
+```python
+ginger_tea = Chai()
+```
+
+👉 This creates an object from class `Chai`
+
+---
+
+## 9. Checking Object Type
+
+```python
+print(type(ginger_tea))
+```
+
+### Output:
+
+```
+<class '__main__.Chai'>
+```
+
+👉 Meaning:
+
+* This is an object of class `Chai`
+
+---
+
+## 10. Checking Object Belongs to Class
+
+Using `isinstance()`:
+
+```python
+print(isinstance(ginger_tea, Chai))
+```
+
+### Output:
+
+```
+True
+```
+
+---
+
+## 11. Checking Against Another Class
+
+```python
+class ChaiTime:
+    pass
+
+print(isinstance(ginger_tea, ChaiTime))
+```
+
+### Output:
+
+```
+False
+```
+
+👉 Because:
+
+* Object belongs to `Chai`
+* Not to `ChaiTime`
+
+---
+
+## 12. Full Example (Clean Code)
+
+```python
+class Chai:
+    pass
+
+class ChaiTime:
+    pass
+
+# create object
+ginger_tea = Chai()
+
+# check types
+print(type(Chai))           # class type
+print(type(ginger_tea))    # object type
+
+# check instance
+print(isinstance(ginger_tea, Chai))      # True
+print(isinstance(ginger_tea, ChaiTime))  # False
+```
+
+---
+
+## 13. Key Concepts to Remember
+
+### 🔹 1. Class = Blueprint
+
+* Defines structure
+
+---
+
+### 🔹 2. Object = Instance
+
+* Created using class
+
+---
+
+### 🔹 3. Syntax
+
+```python
+class ClassName:
+    pass
+
+obj = ClassName()
+```
+
+---
+
+### 🔹 4. Everything is Object in Python
+
+* even classes
+
+---
+
+### 🔹 5. `type()` vs `isinstance()`
+
+| Function       | Purpose             |
+| -------------- | ------------------- |
+| `type()`       | shows type          |
+| `isinstance()` | checks relationship |
+
+---
+
+## 14. Mental Model
+
+```
+Class → Create → Object → Use
+```
+
+Example:
+
+```
+Chai (class) → ginger_tea (object)
+```
+
+---
+
+## 15. One-Line Definition
+
+👉 **OOP is a way of writing code using classes (blueprints) and objects (instances).**
+
+---
+
+## 16. What’s Coming Next (Important for You)
+
+Since you already work with:
+
+* Node.js
+* Backend systems
+
+Next OOP topics will be very useful:
+
+* constructors (`__init__`)
+* attributes
+* methods
+* encapsulation
+* inheritance
+
+---
+
+## 61. Class and Object Namespace (08:19)
+
+- Each object has its own entity, that's called as namespace that doesn't bother other ones.
+
+## 62. Attribute Shadowing in python (06:14)
+
+## 🧠 Python OOP – Namespaces (Simple Notes)
+
+## 1. What is Namespace?
+
+👉 **Namespace = a container where variables live**
+
+In simple words:
+
+```text
+Each object has its own space to store data
+```
+
+---
+
+## 2. Core Idea
+
+👉 Every object created from a class:
+
+* has its **own data (properties)**
+* does **not affect other objects**
+* does **not affect the class**
+
+---
+
+## 3. Class with Properties
+
+```python
+class SimpleChai:
+    origin = "India"
+```
+
+👉 Here:
+
+* `origin` is a **property (variable inside class)**
+
+---
+
+## 4. Accessing Class Property
+
+```python
+print(SimpleChai.origin)
+```
+
+### Output:
+
+```
+India
+```
+
+---
+
+## 5. Adding Property to Class
+
+```python
+SimpleChai.is_hot = True
+```
+
+Now class has:
+
+* origin = India
+* is_hot = True
+
+---
+
+## 6. Creating Object
+
+```python
+masala = SimpleChai()
+```
+
+---
+
+## 7. Accessing Properties via Object
+
+```python
+print(masala.origin)
+print(masala.is_hot)
+```
+
+### Output:
+
+```
+India
+True
+```
+
+👉 Object can access class properties
+
+---
+
+## 8. Important Concept: Object Namespace
+
+Now change value in object:
+
+```python
+masala.is_hot = False
+```
+
+---
+
+## 9. Check Values Again
+
+```python
+print(SimpleChai.is_hot)  # class
+print(masala.is_hot)      # object
+```
+
+### Output:
+
+```
+True
+False
+```
+
+---
+
+## 🔥 Key Insight
+
+```text
+Changing object value DOES NOT change class value
+```
+
+👉 Because:
+
+* Object has its **own namespace**
+
+---
+
+## 10. Adding New Property to Object
+
+```python
+masala.flavor = "Masala"
+```
+
+Now:
+
+```python
+print(masala.flavor)
+```
+
+### Output:
+
+```
+Masala
+```
+
+---
+
+## ⚠️ Important
+
+👉 This property exists only in object:
+
+```text
+masala → has flavor  
+class → does NOT have flavor
+```
+
+---
+
+## 11. Full Example
+
+```python
+class SimpleChai:
+    origin = "India"
+
+# add class property
+SimpleChai.is_hot = True
+
+# create object
+masala = SimpleChai()
+
+# access properties
+print(masala.origin)   # India
+print(masala.is_hot)   # True
+
+# change object property
+masala.is_hot = False
+
+# compare
+print(SimpleChai.is_hot)  # True
+print(masala.is_hot)      # False
+
+# add new property to object
+masala.flavor = "Masala"
+print(masala.flavor)      # Masala
+```
+
+---
+
+## 12. Key Concepts to Remember
+
+### 🔹 1. Class Namespace
+
+* shared by all objects (initially)
+
+---
+
+### 🔹 2. Object Namespace
+
+* unique to each object
+* overrides class values if changed
+
+---
+
+### 🔹 3. Property (Important Term)
+
+```text
+Variable inside class = Property
+```
+
+---
+
+### 🔹 4. Object Independence
+
+```text
+Object changes → do NOT affect class
+Object changes → do NOT affect other objects
+```
+
+---
+
+## 13. Mental Model
+
+Think like this:
+
+```text
+Class = Blueprint
+
+Object 1 → own data
+Object 2 → own data
+Object 3 → own data
+```
+
+Even if they come from same class:
+
+* they behave independently
+
+---
+
+## 14. Real-Life Analogy
+
+T-shirt example:
+
+* Class → T-shirt design
+* Object → actual T-shirts
+
+Each T-shirt:
+
+* can have different size
+* different color
+* different fit
+
+But all came from same design
+
+---
+
+## 15. One-Line Definition
+
+👉 **Namespace means each object has its own separate storage for data.**
+
+---
+
+## 16. Why This Matters (Important for You)
+
+Since you're into **backend development (Node/Express)**:
+
+👉 This concept is used in:
+
+* user objects
+* API data handling
+* request/response objects
+* database models
+
+---
+
+## 17. Quick Summary
+
+✔ Class defines properties
+✔ Object gets properties
+✔ Object can override them
+✔ Object can add new ones
+✔ No effect on class or other objects
+
+---
+
+## 62. Attribute Shadowing in python (06:14)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
