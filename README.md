@@ -8413,5 +8413,424 @@ If you remove your customization → back to default (hot)
 
 ## 63. Self argument in python (07:31)
 
+## 🧠 What is `self`?
+
+**In simple words:**
+
+👉 `self` is a reference to the **current object (instance)**.
+
+* It lets you access **variables (attributes)** and **methods** inside a class.
+* It connects the method to the specific object calling it.
+
+---
+
+## 🔑 Key Idea
+
+When you call a method like:
+
+```python
+obj.method()
+```
+
+Python internally converts it to:
+
+```python
+Class.method(obj)
+```
+
+👉 That `obj` is passed as **`self`**
+
+---
+
+## 📌 Basic Class with Method
+
+```python
+class ChaiCup:
+    size = 150  # in ml
+
+    def describe(self):
+        return f"{self.size} ml chai cup"
+```
+
+---
+
+## ✅ Using the Method (Correct Way)
+
+```python
+cup = ChaiCup()
+print(cup.describe())
+```
+
+### Output:
+
+```
+150 ml chai cup
+```
+
+### ✔ Explanation
+
+* `cup` is passed automatically as `self`
+* So `self.size` = `cup.size`
+
+---
+
+## ⚠️ Important Rule
+
+👉 Inside class methods, always use:
+
+```python
+self.variable_name
+```
+
+❌ Wrong:
+
+```python
+return size   # ERROR
+```
+
+✅ Correct:
+
+```python
+return self.size
+```
+
+---
+
+## 🚨 Calling Method from Class (Common Confusion)
+
+```python
+ChaiCup.describe()
+```
+
+### ❌ Error:
+
+```
+missing 1 required positional argument: 'self'
+```
+
+### ✔ Why?
+
+* Class doesn’t know **which object** to use
+* No `self` is passed
+
+---
+
+## ✅ Fix: Pass Object Manually
+
+```python
+cup = ChaiCup()
+print(ChaiCup.describe(cup))
+```
+
+### ✔ Explanation
+
+* You manually pass `cup` as `self`
+
+---
+
+## 🔄 Multiple Objects Example
+
+```python
+class ChaiCup:
+    size = 150
+
+    def describe(self):
+        return f"{self.size} ml chai cup"
+
+
+cup1 = ChaiCup()
+cup2 = ChaiCup()
+
+cup2.size = 100  # override for this object
+
+print(cup1.describe())  # 150 ml
+print(cup2.describe())  # 100 ml
+```
+
+---
+
+## 🧩 What’s Happening Here?
+
+* `cup1` and `cup2` are different objects
+* Each object has its **own data**
+* `self` ensures correct object is used
+
+---
+
+## 🔍 Internal Working
+
+When you do:
+
+```python
+cup1.describe()
+```
+
+Python does:
+
+```python
+ChaiCup.describe(cup1)
+```
+
+When you do:
+
+```python
+cup2.describe()
+```
+
+Python does:
+
+```python
+ChaiCup.describe(cup2)
+```
+
+👉 That’s why results differ
+
+---
+
+## 📊 Summary Table
+
+| Concept          | Meaning                     |
+| ---------------- | --------------------------- |
+| `self`           | Reference to current object |
+| Method           | Function inside class       |
+| `self.attribute` | Access object data          |
+| Object call      | Automatically passes `self` |
+| Class call       | Must pass object manually   |
+
+---
+
+## 🎯 Key Takeaways
+
+* `self` = current object reference
+* Always write `self` as first parameter in methods
+* Use `self` to access variables and methods
+* Object automatically passes `self`
+* Class does NOT → you must pass it manually
+
+---
+
+## 🚀 Simple Analogy
+
+Think of `self` like:
+
+👉 “**This object**”
+
+Example:
+
+* cup1 says: “this cup is 150ml”
+* cup2 says: “this cup is 100ml”
+
+---
+
+## 64. Constructors and Init in python classes (08:20)
+
+## 🧠 What is `__init__`?
+
+**In simple words:**
+
+👉 `__init__` is a special method that runs **automatically when you create an object**.
+
+It is used to:
+
+* Initialize (set up) object data
+* Assign values to attributes
+
+---
+
+## 🔑 Key Idea
+
+When you create an object:
+
+```python
+obj = ClassName(...)
+```
+
+👉 Python automatically calls:
+
+```python
+ClassName.__init__(obj, ...)
+```
+
+---
+
+## 📌 Basic Syntax
+
+```python
+class ChaiOrder:
+    def __init__(self, type_, size):
+        self.type = type_
+        self.size = size
+```
+
+---
+
+## ✅ Example Usage
+
+```python
+order1 = ChaiOrder("masala", 200)
+order2 = ChaiOrder("ginger", 220)
+```
+
+---
+
+## 🧩 Adding a Method
+
+```python
+class ChaiOrder:
+    def __init__(self, type_, size):
+        self.type = type_
+        self.size = size
+
+    def summary(self):
+        return f"{self.size} ml of {self.type} chai"
+```
+
+---
+
+## ▶️ Running the Code
+
+```python
+order1 = ChaiOrder("masala", 200)
+print(order1.summary())
+
+order2 = ChaiOrder("ginger", 220)
+print(order2.summary())
+```
+
+### Output:
+
+```
+200 ml of masala chai
+220 ml of ginger chai
+```
+
+---
+
+## ⚠️ Important Concepts
+
+## 1. `__init__` is a constructor
+
+* Special method
+* Runs automatically on object creation
+
+---
+
+## 2. Always use `self`
+
+```python
+def __init__(self, ...):
+```
+
+👉 `self` refers to the current object
+
+---
+
+## 3. Assign values using `self`
+
+```python
+self.type = type_
+self.size = size
+```
+
+👉 Creates object-specific attributes
+
+---
+
+## 4. You don’t pass `self` manually
+
+```python
+ChaiOrder("masala", 200)  # correct
+```
+
+❌ Wrong:
+
+```python
+ChaiOrder(self, "masala", 200)
+```
+
+---
+
+## 🤔 Why Use `__init__`?
+
+Without `__init__`:
+
+```python
+class Chai:
+    pass
+
+c = Chai()
+c.type = "masala"
+c.size = 200
+```
+
+👉 Manual and messy
+
+---
+
+With `__init__`:
+
+```python
+c = ChaiOrder("masala", 200)
+```
+
+👉 Clean and automatic
+
+---
+
+## ⚡ Special Case: Using Reserved Names
+
+In the tutorial, this was used:
+
+```python
+def __init__(self, type_, size):
+```
+
+### ✔ Why `type_` instead of `type`?
+
+👉 Because `type` is a built-in function in Python
+
+```python
+type(10)  # returns <class 'int'>
+```
+
+So we avoid conflict by using:
+
+* `type_` (common practice)
+
+---
+
+## 📊 Summary Table
+
+| Concept    | Meaning                              |
+| ---------- | ------------------------------------ |
+| `__init__` | Constructor method                   |
+| Runs when  | Object is created                    |
+| Purpose    | Initialize object data               |
+| `self`     | Current object reference             |
+| `type_`    | Avoids conflict with built-in `type` |
+
+---
+
+## 🎯 Key Takeaways
+
+* `__init__` runs automatically
+* Used to initialize object properties
+* Always include `self`
+* Makes object creation clean and structured
+* Avoid using reserved keywords → use `type_`
+
+---
+
+## 🚀 Simple Analogy
+
+Think of `__init__` like:
+
+👉 “Setup instructions when a new object is born”
+
+Example:
+
+* You order chai → system sets type & size automatically
+
+## 65. Inheritance and Composition in python classes (18:03)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
