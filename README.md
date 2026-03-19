@@ -8228,5 +8228,190 @@ Since you're into **backend development (Node/Express)**:
 
 ## 62. Attribute Shadowing in python (06:14)
 
+## 🧠 What is Attribute Shadowing?
+
+**In simple words:**
+
+Attribute shadowing happens when an **object overrides (hides)** a variable (attribute) that is defined in its class.
+
+* Class has a default value
+* Object creates its own value
+* Object value **shadows (hides)** the class value
+
+---
+
+## 🔑 Key Idea
+
+👉 Python looks for attributes in this order:
+
+1. **Object (instance)**
+2. **Class**
+
+So:
+
+* If object has the attribute → use it
+* If not → fallback to class
+
+---
+
+## 📌 Basic Example
+
+```python
+class Chai:
+    temperature = "hot"
+
+cutting = Chai()
+
+print(cutting.temperature)  # hot (from class)
+```
+
+---
+
+## ⚡ Shadowing Example
+
+```python
+class Chai:
+    temperature = "hot"
+
+cutting = Chai()
+
+# Shadowing happens here
+cutting.temperature = "mild"
+
+print(cutting.temperature)  # mild (object value)
+print(Chai.temperature)     # hot (class value)
+```
+
+### ✔ Explanation
+
+* `cutting.temperature` → uses object value
+* `Chai.temperature` → still unchanged
+
+👉 Object value **shadows** class value
+
+---
+
+## 🔄 Fallback Behavior (Important)
+
+If you remove the object’s attribute:
+
+```python
+class Chai:
+    temperature = "hot"
+
+cutting = Chai()
+cutting.temperature = "mild"
+
+del cutting.temperature  # remove object attribute
+
+print(cutting.temperature)  # hot
+```
+
+### ✔ Why?
+
+* Object no longer has `temperature`
+* Python falls back to class
+
+👉 This is **shadow removed → fallback to class**
+
+---
+
+## ❌ No Fallback Case
+
+If attribute exists only in object:
+
+```python
+class Chai:
+    pass
+
+cutting = Chai()
+cutting.cup = "small"
+
+print(cutting.cup)  # small
+
+del cutting.cup
+
+print(cutting.cup)  # ERROR
+```
+
+### ✔ Why?
+
+* Attribute not in object anymore
+* Also not in class
+* So Python throws error
+
+---
+
+## 📊 Summary Table
+
+| Situation                            | Result            |
+| ------------------------------------ | ----------------- |
+| Attribute in object                  | Object value used |
+| Attribute not in object but in class | Class value used  |
+| Attribute not in both                | ❌ Error           |
+
+---
+
+## 🧩 Important Concepts
+
+## 1. Attribute = Variable in class/object
+
+```python
+class Chai:
+    strength = "strong"
+```
+
+---
+
+## 2. Shadowing = Overriding at object level
+
+```python
+obj.strength = "light"
+```
+
+---
+
+## 3. Fallback mechanism
+
+* Object → Class lookup chain
+
+---
+
+## 4. Deleting attributes
+
+```python
+del obj.attribute
+```
+
+---
+
+## 🎯 Real-Life Analogy
+
+Think of:
+
+* **Class = Template (default settings)**
+* **Object = Custom version**
+
+Example:
+
+* Default chai = hot
+* Your chai = mild
+
+If you remove your customization → back to default (hot)
+
+---
+
+## 🚀 Final Takeaways
+
+* Attribute shadowing = object overrides class attribute
+* Python always checks object first
+* If not found → fallback to class
+* If nowhere found → error
+* Deleting object attribute reveals class value again
+
+---
+
+## 63. Self argument in python (07:31)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
