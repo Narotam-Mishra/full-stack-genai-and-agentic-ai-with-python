@@ -9209,4 +9209,195 @@ You can test components separately
 
 ## 66. 3 Ways to Acess Base Class (07:19)
 
+## 📘 Accessing Base Class in Python (Simple Notes)
+
+## 🔑 Core Idea
+
+When using **inheritance**, a child class may need to use properties or methods from the **parent (base) class**.
+
+There are **3 ways** to access the base class:
+
+1. ❌ Code Duplication
+2. ⚠️ Explicit Call
+3. ✅ `super()` (Best & most used)
+
+---
+
+## 1️⃣ Code Duplication (Not Recommended)
+
+### 💡 Idea
+
+You rewrite the parent class code inside the child class.
+
+### ❌ Problem
+
+* Repeats code
+* Hard to maintain
+* Violates DRY (Don’t Repeat Yourself)
+
+### 🧑‍💻 Example
+
+```python
+class Chai:
+    def __init__(self, type_, strength):
+        self.type = type_
+        self.strength = strength
+
+
+class GingerChai(Chai):
+    def __init__(self, type_, strength, spice_level):
+        # ❌ Code duplication
+        self.type = type_
+        self.strength = strength
+        self.spice_level = spice_level
+```
+
+👉 Works fine, but **bad practice**
+
+---
+
+## 2️⃣ Explicit Call (Direct Parent Call)
+
+### 💡 Idea
+
+Call parent class constructor manually using its name.
+
+### 👍 Pros
+
+* Avoids duplication
+* Clear what's happening
+
+### ⚠️ Cons
+
+* Not flexible in complex inheritance (like multiple inheritance)
+
+### 🧑‍💻 Example
+
+```python
+class Chai:
+    def __init__(self, type_, strength):
+        self.type = type_
+        self.strength = strength
+
+
+class GingerChai(Chai):
+    def __init__(self, type_, strength, spice_level):
+        # ⚠️ Explicit call
+        Chai.__init__(self, type_, strength)
+        self.spice_level = spice_level
+```
+
+👉 You're directly calling:
+
+```python
+Chai.__init__(self, ...)
+```
+
+---
+
+## 3️⃣ Using `super()` (Best Practice ✅)
+
+### 💡 Idea
+
+Use `super()` to automatically call the parent class.
+
+### 👍 Pros
+
+* Clean & readable
+* Works well with multiple inheritance
+* Most commonly used
+
+### 🧑‍💻 Example
+
+```python
+class Chai:
+    def __init__(self, type_, strength):
+        self.type = type_
+        self.strength = strength
+
+
+class GingerChai(Chai):
+    def __init__(self, type_, strength, spice_level):
+        # ✅ Using super()
+        super().__init__(type_, strength)
+        self.spice_level = spice_level
+```
+
+---
+
+## 🧠 Key Concepts Explained
+
+## 🔹 Base Class (Parent Class)
+
+The class being inherited from.
+
+```python
+class Chai:   # Base class
+```
+
+---
+
+## 🔹 Derived Class (Child Class)
+
+The class that inherits from another class.
+
+```python
+class GingerChai(Chai):   # Child class
+```
+
+---
+
+## 🔹 Constructor (`__init__`)
+
+Special method used to initialize object properties.
+
+```python
+def __init__(self, type_, strength):
+```
+
+---
+
+## 🔹 `super()` Function
+
+### ✔ What it does:
+
+Calls methods from the parent class.
+
+```python
+super().__init__(type_, strength)
+```
+
+👉 Meaning:
+
+> “Call the parent class constructor automatically”
+
+---
+
+## ⚖️ Comparison Table
+
+| Method        | Code Duplication | Readability | Best Practice |
+| ------------- | ---------------- | ----------- | ------------- |
+| Duplication   | ❌ High           | ❌ Poor      | ❌ No          |
+| Explicit Call | ⚠️ Medium        | ⚠️ Okay     | ⚠️ Sometimes  |
+| `super()`     | ✅ None           | ✅ Clean     | ✅ Yes         |
+
+---
+
+## 🚀 Final Takeaways
+
+* Avoid repeating code → ❌ Duplication
+* Explicit calls work but are less flexible → ⚠️
+* Use `super()` in real projects → ✅ BEST
+
+---
+
+## 🎯 One-Line Summary
+
+👉 **Use `super()` to access parent class functionality cleanly and efficiently in Python inheritance.**
+
+---
+
+## 67. Method Resolution Order (MRO) (08:03)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
