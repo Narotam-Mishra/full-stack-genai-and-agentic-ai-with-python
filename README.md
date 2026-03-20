@@ -8833,4 +8833,380 @@ Example:
 
 ## 65. Inheritance and Composition in python classes (18:03)
 
+## 🧠 1. Big Picture
+
+This lecture explains two important OOP concepts:
+
+### ✅ Inheritance
+
+* One class **reuses** another class’s code
+* Like: child inherits from parent
+
+### ✅ Composition
+
+* One class **uses another class inside it**
+* Like: “has-a” relationship
+
+👉 In real projects, both are used together.
+
+---
+
+## 🧾 2. Inheritance (Easy Concept)
+
+### 🔹 Idea
+
+If a class already has functionality, you don’t rewrite it.
+
+You just **inherit it**.
+
+---
+
+### 🧩 Example
+
+```python
+class BaseChai:
+    def __init__(self, type_):
+        self.type = type_
+
+    def prepare(self):
+        print(f"Preparing {self.type} chai...")
+```
+
+Now create another class:
+
+```python
+class MasalaChai(BaseChai):
+    def add_spices(self):
+        print("Adding cardamom, ginger, cloves")
+```
+
+---
+
+### ▶️ Usage
+
+```python
+chai = MasalaChai("Masala")
+chai.prepare()       # inherited
+chai.add_spices()    # own method
+```
+
+---
+
+### 🔑 Important Points
+
+* Syntax:
+
+  ```python
+  class ChildClass(ParentClass):
+  ```
+* Child gets:
+
+  * variables
+  * methods
+* No need to rewrite code
+
+---
+
+## 🧠 3. Composition (Important for Real Projects)
+
+### 🔹 Idea
+
+Instead of inheriting, a class **contains another class**
+
+👉 “has-a” relationship
+
+---
+
+### 🧩 Example
+
+```python
+class ChaiShop:
+    def __init__(self):
+        self.chai = BaseChai("Regular")  # object inside class
+
+    def serve(self):
+        print(f"Serving {self.chai.type} chai")
+        self.chai.prepare()
+```
+
+---
+
+### ▶️ Usage
+
+```python
+shop = ChaiShop()
+shop.serve()
+```
+
+---
+
+### 🔑 Important Points
+
+* Uses object of another class
+* More flexible than inheritance
+* Common in production code
+
+---
+
+## ⚔️ 4. Inheritance vs Composition
+
+| Feature      | Inheritance          | Composition       |
+| ------------ | -------------------- | ----------------- |
+| Relationship | “is-a”               | “has-a”           |
+| Example      | MasalaChai is a Chai | Shop has a Chai   |
+| Flexibility  | Less                 | More              |
+| Usage        | Simple reuse         | Real-world design |
+
+---
+
+## 🧠 5. Combining Both
+
+You can use **both together**
+
+```python
+class FancyChaiShop(ChaiShop):
+    def __init__(self):
+        super().__init__()   # use parent constructor
+```
+
+---
+
+## ⚠️ 6. Common Error (Important)
+
+### ❌ Calling method without object
+
+```python
+MasalaChai.add_spices()   # ❌ error
+```
+
+### ✅ Correct way
+
+```python
+chai = MasalaChai("Masala")
+chai.add_spices()
+```
+
+👉 Because methods need `self` (context)
+
+---
+
+## 🧠 7. Key Learnings
+
+* Inheritance = reuse code
+* Composition = use objects inside class
+* Methods need object context (`self`)
+* Constructor (`__init__`) always runs when object is created
+* Production code often uses **composition more**
+
+---
+
+## 🧪 8. Simple Combined Example
+
+```python
+class BaseChai:
+    def __init__(self, type_):
+        self.type = type_
+
+    def prepare(self):
+        print(f"Preparing {self.type} chai")
+
+
+class ChaiShop:
+    def __init__(self):
+        self.chai = BaseChai("Regular")
+
+    def serve(self):
+        print(f"Serving {self.chai.type}")
+        self.chai.prepare()
+
+
+shop = ChaiShop()
+shop.serve()
+```
+
+---
+
+## 🚀 Final Understanding
+
+* **Inheritance → reuse**
+* **Composition → flexibility**
+* Real-world systems = mix of both
+
+---
+
+## What is Composition and why it is used if there is inheritance already in python?
+
+---
+
+## 🧠 What is Composition?
+
+**Composition means putting one object inside another object.**
+
+👉 In simple terms:
+A class **uses another class as a part of it**
+
+---
+
+### 🔹 Example
+
+```python
+class Engine:
+    def start(self):
+        print("Engine started")
+
+
+class Car:
+    def __init__(self):
+        self.engine = Engine()   # composition
+
+    def drive(self):
+        self.engine.start()
+        print("Car is moving")
+```
+
+👉 Here:
+
+* `Car` **has an Engine**
+* Not “Car is Engine”
+
+---
+
+## 🧾 Inheritance vs Composition (Core Idea)
+
+### 🔸 Inheritance → “IS-A” relationship
+
+```python
+class Animal:
+    pass
+
+class Dog(Animal):   # Dog IS-A Animal
+    pass
+```
+
+---
+
+### 🔸 Composition → “HAS-A” relationship
+
+```python
+class Engine:
+    pass
+
+class Car:
+    def __init__(self):
+        self.engine = Engine()   # Car HAS-A Engine
+```
+
+---
+
+## 🤔 Why do we need Composition if Inheritance exists?
+
+Because inheritance is **not always the right design**.
+
+---
+
+## 🚫 Problem with Inheritance
+
+Inheritance creates **tight coupling**
+
+Example:
+
+```python
+class ElectricCar(Car):
+    pass
+```
+
+Now:
+
+* ElectricCar is forced to behave like Car
+* Hard to change parts independently
+* Can become messy in large systems
+
+---
+
+## ✅ Why Composition is Preferred
+
+### 1. More Flexible
+
+You can swap parts easily
+
+```python
+class PetrolEngine:
+    def start(self):
+        print("Petrol engine")
+
+class ElectricEngine:
+    def start(self):
+        print("Electric engine")
+
+
+class Car:
+    def __init__(self, engine):
+        self.engine = engine
+```
+
+👉 Now:
+
+```python
+car1 = Car(PetrolEngine())
+car2 = Car(ElectricEngine())
+```
+
+✔ Same Car class
+✔ Different behavior
+
+---
+
+### 2. Loose Coupling
+
+* Classes don’t depend too tightly on each other
+* Easier to modify without breaking code
+
+---
+
+### 3. Better for Real-World Modeling
+
+Real world is mostly “has-a”, not “is-a”
+
+* Car **has** engine ✅
+* Car **is** engine ❌
+
+---
+
+### 4. Easier Testing & Maintenance
+
+You can test components separately
+
+---
+
+## 🔥 Simple Rule (Very Important)
+
+👉 Use this rule:
+
+* If relationship is **IS-A → use inheritance**
+* If relationship is **HAS-A → use composition**
+
+---
+
+## ⚖️ Quick Comparison
+
+| Feature        | Inheritance | Composition |
+| -------------- | ----------- | ----------- |
+| Relationship   | IS-A        | HAS-A       |
+| Flexibility    | Less        | More        |
+| Coupling       | Tight       | Loose       |
+| Real-world use | Limited     | Very common |
+
+---
+
+## 🧠 Final Understanding
+
+* Inheritance is good for **code reuse**
+* Composition is better for **design and flexibility**
+* That’s why in real production code:
+  👉 Composition is used more
+
+---
+
+## 66. 3 Ways to Acess Base Class (07:19)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
