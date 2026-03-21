@@ -9207,6 +9207,100 @@ You can test components separately
 
 ---
 
+## Inheritance vs Composition — the core idea
+
+**Inheritance** = "is-a" relationship. A `Dog` *is an* `Animal`.
+**Composition** = "has-a" relationship. A `Car` *has an* `Engine`.
+
+The problem with inheritance is that it creates **tight coupling** — when you inherit, you're locked into a hierarchy. Composition gives you **flexibility** by plugging in behaviours like Lego pieces.
+
+---
+
+### The problem with over-using inheritance
+
+Imagine you're building a game. You start with:Even if Python handles the diamond problem with MRO, the bigger issue is: **what if your duck can both fly AND swim AND attack?** Your inheritance tree explodes. Every combination needs a new class.
+
+![alt text](./notes/inheritance_problem_image.png)
+
+---
+
+### Composition solves this cleanly
+
+Instead of inheriting behaviours, you **inject them as objects**:---
+
+![alt text](./notes/composition_image.png)
+
+### The actual Python code
+
+Here's a game character example where a penguin can "learn to fly" at runtime — something impossible with inheritance:
+
+```python
+# --- Behaviors (strategy objects) ---
+class CanFly:
+    def fly(self):
+        return "Soaring through the sky!"
+
+class NoFly:
+    def fly(self):
+        return "Can't fly."
+
+class CanSwim:
+    def swim(self):
+        return "Diving deep!"
+
+class NoSwim:
+    def swim(self):
+        return "Can't swim."
+
+
+# --- Character uses composition ---
+class Character:
+    def __init__(self, name, fly_behavior, swim_behavior):
+        self.name = name
+        self.fly_behavior = fly_behavior   # "has-a" FlyBehavior
+        self.swim_behavior = swim_behavior # "has-a" SwimBehavior
+
+    def fly(self):
+        return self.fly_behavior.fly()
+
+    def swim(self):
+        return self.swim_behavior.swim()
+
+    def set_fly_behavior(self, behavior):
+        # Swap at runtime! Can't do this with inheritance.
+        self.fly_behavior = behavior
+
+
+# --- Creating characters by mixing behaviors ---
+duck    = Character("Duck",    CanFly(),  CanSwim())
+penguin = Character("Penguin", NoFly(),   CanSwim())
+robot   = Character("Robot",   CanFly(),  NoSwim())
+
+print(duck.fly())       # Soaring through the sky!
+print(penguin.fly())    # Can't fly.
+print(penguin.swim())   # Diving deep!
+
+# Penguin gets a jetpack upgrade AT RUNTIME
+penguin.set_fly_behavior(CanFly())
+print(penguin.fly())    # Soaring through the sky!
+```
+
+---
+
+### When to use which
+
+| Situation | Use |
+|---|---|
+| `Dog` is truly an `Animal` (strict is-a) | Inheritance |
+| You need to share/override a base method | Inheritance |
+| A class needs interchangeable behaviours | Composition |
+| You want runtime flexibility | Composition |
+| You're combining multiple capabilities | Composition |
+
+The rule of thumb the industry follows is **"favour composition over inheritance"** — not because inheritance is bad, but because composition keeps your code easier to change. In your `Isabella` work with LangChain agents, for example, you likely see this pattern: an agent *has-a* memory, *has-a* tool set, *has-a* LLM — all composed in, not inherited.
+
+---
+
 ## 66. 3 Ways to Acess Base Class (07:19)
 
 ## 📘 Accessing Base Class in Python (Simple Notes)
@@ -10356,6 +10450,432 @@ Without `@property`, you'd have to write `leaf.set_age(3)` and `leaf.get_age()` 
 - You could name them anything different (e.g., `age` and `age_value`), but `_name` is the universally accepted Python pattern
 
 ---
+
+## Sec 10 - File and exception handling in Python
+
+## 71. What is Error handling (05:29)
+
+## 🧠 What is Exception Handling?
+
+Exception handling means:
+
+👉 **Handling errors in your code so your program doesn’t crash**
+
+---
+
+## ☕ Real-world analogy (from the tutorial)
+
+Think of a chai shop:
+
+Things can go wrong:
+
+* Milk spills
+* Ingredient missing
+* Brewing mistake
+
+👉 You don’t shut down the shop
+👉 You **handle the issue and continue**
+
+Same in programming:
+
+* Errors will happen
+* You handle them **gracefully**
+
+---
+
+## ⚠️ What is an Exception?
+
+An **exception = runtime error**
+
+Example:
+
+```python
+print(10 / 0)   # ❌ Error
+```
+
+👉 This throws:
+
+```
+ZeroDivisionError
+```
+
+---
+
+## 📌 Common Types of Errors (Important)
+
+---
+
+## 1. IndexError
+
+Happens when accessing invalid index
+
+```python
+orders = ["masala", "ginger"]
+
+print(orders[2])  # ❌ IndexError
+```
+
+👉 Index 2 does not exist
+
+---
+
+## 2. KeyError
+
+Happens when key not found in dictionary
+
+```python
+data = {"name": "chai"}
+
+print(data["price"])  # ❌ KeyError
+```
+
+---
+
+## 3. ZeroDivisionError
+
+Division by zero
+
+```python
+print(10 / 0)  # ❌ ZeroDivisionError
+```
+
+---
+
+## 4. TypeError
+
+Wrong data types used together
+
+```python
+print("chai" + 5)  # ❌ TypeError
+```
+
+---
+
+## 5. NameError
+
+Using variable that doesn’t exist
+
+```python
+print(price)  # ❌ NameError
+```
+
+---
+
+## 🎯 Key Idea
+
+👉 Errors are **normal**
+👉 You don’t need to memorize all errors
+👉 Just **read the error message**
+
+---
+
+## ❌ What Happens Without Handling
+
+```python
+orders = ["masala", "ginger"]
+print(orders[2])
+```
+
+👉 Program crashes immediately
+
+---
+
+## ✅ Goal of Exception Handling
+
+* Prevent crashes
+* Handle expected issues
+* Keep program running
+
+---
+
+## 🧩 What You’ll Learn Next (from this topic)
+
+* `try` → code that might fail
+* `except` → handle error
+* `finally` → always runs
+* `else` → runs if no error
+
+---
+
+## 🔁 Mental Model
+
+Think like this:
+
+| Situation       | Without Handling | With Handling     |
+| --------------- | ---------------- | ----------------- |
+| Error occurs    | Program crashes  | Program continues |
+| User experience | Bad              | Smooth            |
+| Code quality    | Weak             | Strong            |
+
+---
+
+## 🚀 Simple Preview Example
+
+```python
+try:
+    orders = ["masala", "ginger"]
+    print(orders[2])
+except IndexError:
+    print("Order not found!")
+```
+
+👉 Output:
+
+```
+Order not found!
+```
+
+---
+
+## 🧾 Final Takeaways
+
+* Errors will always happen
+* You don’t need to fear them
+* Learn to **handle, not avoid**
+* Reading error messages is a key skill
+
+---
+
+## 72. Try except else and finally (08:28)
+
+👉 How to **handle errors without crashing your program**
+👉 Full syntax of:
+
+* `try`
+* `except`
+* `else`
+* `finally`
+
+---
+
+## ⚠️ Problem Without Handling
+
+```python
+chai_menu = {
+    "masala": 30,
+    "ginger": 40
+}
+
+print(chai_menu["elaichi"])  # ❌ KeyError
+print("Hello")               # ❌ Never runs
+```
+
+👉 Program crashes → stops execution
+
+---
+
+## ✅ Solution: Try-Except
+
+---
+
+## 🔹 Basic Syntax
+
+```python
+try:
+    # risky code
+except SomeError:
+    # handle error
+```
+
+---
+
+## 🧪 Example: Handling KeyError
+
+```python
+chai_menu = {
+    "masala": 30,
+    "ginger": 40
+}
+
+try:
+    print(chai_menu["elaichi"])
+except KeyError:
+    print("Key does not exist")
+
+print("Hello Chai Code")
+```
+
+### ✅ Output:
+
+```
+Key does not exist
+Hello Chai Code
+```
+
+👉 Program continues smoothly
+
+---
+
+## 🔥 Full Exception Handling Flow
+
+---
+
+## 1. `try` → risky code
+
+## 2. `except` → runs if error occurs
+
+## 3. `else` → runs if NO error
+
+## 4. `finally` → ALWAYS runs
+
+---
+
+## 🧪 Complete Example
+
+```python
+def serve_chai(flavor):
+    try:
+        print(f"Preparing {flavor} chai...")
+
+        if flavor == "unknown":
+            raise ValueError("We don't know that flavor")
+
+    except ValueError as e:
+        print(e)
+
+    else:
+        print(f"{flavor} chai is served")
+
+    finally:
+        print("Next customer please")
+```
+
+---
+
+## ▶️ Calling Function
+
+```python
+serve_chai("masala")
+serve_chai("unknown")
+```
+
+---
+
+## 📌 Output Explained
+
+### Case 1: `"masala"`
+
+```
+Preparing masala chai...
+masala chai is served
+Next customer please
+```
+
+👉 Flow:
+
+* try ✅
+* no error → else ✅
+* finally ✅
+
+---
+
+### Case 2: `"unknown"`
+
+```
+Preparing unknown chai...
+We don't know that flavor
+Next customer please
+```
+
+👉 Flow:
+
+* try ✅
+* error occurs → except ✅
+* else ❌ (skipped)
+* finally ✅
+
+---
+
+## 🚩 Important Concepts
+
+---
+
+## 1. `raise` → Throw Custom Error
+
+```python
+raise ValueError("Invalid input")
+```
+
+👉 You manually create an error
+
+---
+
+## 2. Catching Error with Variable
+
+```python
+except ValueError as e:
+    print(e)
+```
+
+👉 `e` stores error message
+
+---
+
+## 3. `else` Block
+
+Runs only when:
+
+* no error happened in `try`
+
+---
+
+## 4. `finally` Block
+
+Runs:
+
+* always (error or no error)
+
+👉 Common uses:
+
+* close file
+* close DB connection
+* cleanup
+
+---
+
+## 🔁 Execution Flow (Easy Way)
+
+```
+try → error?
+   YES → except → finally
+   NO  → else → finally
+```
+
+---
+
+## ⚖️ Key Takeaways
+
+* Wrap risky code inside `try`
+* Use `except` to handle specific errors
+* Use `else` for success logic
+* Use `finally` for cleanup (always runs)
+* Use `raise` to create custom errors
+
+---
+
+## 🧩 Mental Model
+
+Think like this:
+
+* `try` → "Let me try this"
+* `except` → "If it fails, handle it"
+* `else` → "If it works, continue"
+* `finally` → "No matter what, clean up"
+
+---
+
+## 🚀 Why This Matters (Real Use Cases)
+
+Since you're into backend (Node/Express), this is similar to:
+
+* try/catch in JS
+* handling API failures
+* DB query errors
+* file handling
+
+---
+
+## 73. Catching multiple exceptions (06:57)
 
 
 
