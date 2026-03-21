@@ -11640,4 +11640,503 @@ except MyCustomError as e:
 
 ## 76. Mini project with exception learning (07:09)
 
+In this lesson, you built a **complete chai billing app** using:
+
+* Custom exceptions
+* Input validation
+* `try-except-finally`
+* Real-world error handling
+
+👉 The goal:
+**Write safer, production-like code that doesn’t break easily**
+
+---
+
+## 🔑 Important Concepts Covered
+
+## 1. Custom Exception
+
+```python
+class InvalidChaiError(Exception):
+    pass
+```
+
+👉 You created your own error type
+Used when chai flavor is invalid
+
+---
+
+## 2. Input Validation
+
+### Check if flavor exists
+
+```python
+if flavor not in menu:
+    raise InvalidChaiError("Chai is not available")
+```
+
+👉 Prevents invalid orders
+
+---
+
+### Check if cups is integer
+
+```python
+if not isinstance(cups, int):
+    raise TypeError("Number of cups must be an integer")
+```
+
+👉 Avoids bugs like `"2"` instead of `2`
+
+---
+
+## 3. Main Logic (Billing)
+
+```python
+total = menu[flavor] * cups
+```
+
+👉 Safe now because:
+
+* flavor is valid
+* cups is integer
+
+---
+
+## 4. try-except-finally Structure
+
+```python
+try:
+    # risky code
+except Exception as e:
+    print(e)
+finally:
+    print("Thank you for visiting Chai Code!")
+```
+
+---
+
+### 🔹 `try`
+
+* Contains main logic
+
+### 🔹 `except`
+
+* Catches any error
+* Prints message
+
+### 🔹 `finally`
+
+* Always runs (success or error)
+* Used for cleanup / final message
+
+---
+
+## 💻 Full Clean Example
+
+```python
+class InvalidChaiError(Exception):
+    pass
+
+
+def bill(flavor, cups):
+    menu = {
+        "masala": 20,
+        "ginger": 40
+    }
+
+    try:
+        if flavor not in menu:
+            raise InvalidChaiError("Chai is not available")
+
+        if not isinstance(cups, int):
+            raise TypeError("Number of cups must be an integer")
+
+        total = menu[flavor] * cups
+
+        print(f"Your bill for {cups} cups of {flavor} chai is ₹{total}")
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        print("Thank you for visiting Chai Code!")
+```
+
+---
+
+## 🧠 Example Runs
+
+### ❌ Invalid flavor
+
+```python
+bill("mint", 2)
+```
+
+Output:
+
+```
+Chai is not available
+Thank you for visiting Chai Code!
+```
+
+---
+
+### ❌ Wrong type
+
+```python
+bill("masala", "3")
+```
+
+Output:
+
+```
+Number of cups must be an integer
+Thank you for visiting Chai Code!
+```
+
+---
+
+### ✅ Valid order
+
+```python
+bill("ginger", 3)
+```
+
+Output:
+
+```
+Your bill for 3 cups of ginger chai is ₹120
+Thank you for visiting Chai Code!
+```
+
+---
+
+## 🔥 Key Takeaways
+
+* Always **validate inputs before using them**
+* Use **custom exceptions for business logic**
+* Use **built-in exceptions for common issues**
+* Wrap risky code inside `try-except`
+* Use `finally` for cleanup or final message
+* Writing safe code > writing short code
+
+---
+
+## 💡 Real-World Insight (Important)
+
+This is very close to **backend development patterns** (you’re already working with Node.js, so connect this):
+
+* Validate request data
+* Throw meaningful errors
+* Catch errors globally
+* Return clean responses
+
+👉 Same concept, different language
+
+---
+
+## 🧠 Simple Mental Model
+
+Think like this:
+
+> “No matter what input user gives, my program should not break.”
+
+---
+
+## Python Error Handling - Bill App
+
+A **Chai (tea) billing app** that handles errors gracefully using Python's exception handling features.
+
+---
+
+## Key Concepts Covered
+
+### 1. Custom Exception Class
+
+You can create your own error types by inheriting from Python's built-in `Exception` class.
+
+```python
+class InvalidChaiError(Exception): pass
+```
+
+This lets you raise meaningful, domain-specific errors instead of generic ones.
+
+---
+
+### 2. Dictionary as a Menu (Key-Value Store)
+
+```python
+menu = {
+    "masala chai": 20,
+    "ginger chai": 40
+}
+```
+
+Dictionaries store data as key-value pairs — perfect for a price lookup table.
+
+---
+
+### 3. Checking if a Key Exists in a Dictionary
+
+```python
+if flavor not in menu:
+    raise InvalidChaiError("Chai is not available")
+```
+
+The `in` / `not in` keyword lets you check membership in a dict, list, or set.
+
+---
+
+### 4. `isinstance()` — Type Checking
+
+Instead of blindly trusting input, verify the type first:
+
+```python
+if not isinstance(cups, int):
+    raise TypeError("Number of cups must be an integer")
+```
+
+`isinstance(value, type)` returns `True` if the value is of the given type.
+
+---
+
+### 5. `try / except / finally` — Full Error Handling Block
+
+```python
+try:
+    # risky code
+except Exception as e:
+    print(e)          # catches ANY exception
+finally:
+    print("Thank you for visiting Chai Code!")  # ALWAYS runs
+```
+
+| Block | Purpose |
+|---|---|
+| `try` | Code that might fail |
+| `except` | Handles the error |
+| `finally` | Always executes, error or not |
+
+---
+
+## The Complete App
+
+```python
+class InvalidChaiError(Exception): pass
+
+def bill(flavor, cups):
+    menu = {
+        "masala chai": 20,
+        "ginger chai": 40
+    }
+    
+    try:
+        if flavor not in menu:
+            raise InvalidChaiError("Chai is not available")
+        
+        if not isinstance(cups, int):
+            raise TypeError("Number of cups must be an integer")
+        
+        total = menu[flavor] * cups
+        print(f"Your bill for {cups} cups of {flavor} is rupees {total}")
+    
+    except Exception as e:
+        print(f"Error: {e}")
+    
+    finally:
+        print("Thank you for visiting Chai Code!")
+
+# Test cases
+bill("mint", 2)       # ❌ flavor doesn't exist
+bill("masala chai", "three")  # ❌ cups is a string, not int
+bill("ginger chai", 3)        # ✅ valid order
+```
+
+**Output:**
+```
+Error: Chai is not available
+Thank you for visiting Chai Code!
+
+Error: Number of cups must be an integer
+Thank you for visiting Chai Code!
+
+Your bill for 3 cups of ginger chai is rupees 120
+Thank you for visiting Chai Code!
+```
+
+---
+
+## Key Takeaways
+
+- **Custom errors** make your code more readable and debuggable
+- **`isinstance()`** is the proper way to validate types in Python
+- **`finally`** is ideal for cleanup actions like closing files, DB connections, or printing farewell messages — it runs no matter what
+- **`except Exception as e`** is a catch-all pattern used widely in production code
+- Writing and running code yourself (not just watching) is what makes concepts truly stick
+
+## 77. File handling with try except (08:46)
+
+Python often works with files like:
+
+* `.txt`
+* `.csv`
+* `.json`
+* `.xlsx`
+
+You can handle files:
+
+* **Directly (built-in `open`)**
+* **Using libraries (like pandas)** → easier for complex formats
+
+---
+
+## 🔑 Important Concepts & Points
+
+## 1. Opening a File (Basic Way)
+
+You use `open()` to work with files.
+
+```python
+file = open("order.txt", "w")  # "w" = write mode
+file.write("Masala chai - 2 cups")
+file.close()
+```
+
+### ✔ Key Points:
+
+* `"w"` → write mode (creates file if not exists)
+* `"r"` → read mode
+* `"a"` → append mode
+* Always **close the file** after use
+
+---
+
+## ⚠️ Problem with Basic Approach
+
+If your program crashes before `file.close()`:
+
+* File may **not save properly**
+* Memory issues may occur
+* File can get **corrupted**
+
+---
+
+## 2. Safe Way → Using `try-finally`
+
+```python
+try:
+    file = open("order.txt", "w")
+    file.write("Masala chai - 2 cups")
+finally:
+    file.close()
+```
+
+### ✔ Why use this?
+
+* `finally` always runs
+* Ensures file is **closed safely**
+
+---
+
+## ⭐ 3. Best & Modern Way → `with` Statement
+
+This is the **recommended approach**.
+
+```python
+with open("order.txt", "w") as file:
+    file.write("Ginger chai - 4 cups")
+```
+
+### ✔ Benefits:
+
+* Automatically handles:
+
+  * Opening
+  * Closing
+* Cleaner and safer
+* No need for `try-finally`
+
+---
+
+## 🧠 Behind the Scenes (Advanced Insight)
+
+When you use `with`, Python internally calls:
+
+* `__enter__()` → when file opens
+* `__exit__()` → when file closes
+
+You don’t see this, but it ensures:
+
+* Safe memory handling
+* No file leaks
+
+---
+
+## 📌 Example: Full Flow
+
+```python
+with open("orders.txt", "w") as file:
+    file.write("Masala chai - 2 cups\n")
+    file.write("Ginger chai - 3 cups")
+```
+
+---
+
+## 4. What Can Go Wrong?
+
+Common issues:
+
+* File not found
+* Permission denied
+* Program crash before closing file
+
+---
+
+## 5. When to Use Libraries?
+
+For advanced file types, use libraries:
+
+| File Type   | Library         |
+| ----------- | --------------- |
+| CSV / Excel | pandas          |
+| Images      | Pillow          |
+| JSON        | json (built-in) |
+
+Example with pandas:
+
+```python
+import pandas as pd
+
+df = pd.read_csv("data.csv")
+print(df)
+```
+
+---
+
+## 🧠 Key Takeaways
+
+* `open()` is basic but risky if not handled properly
+* Always ensure file is closed
+* `try-finally` improves safety
+* ✅ **Best practice → use `with open()`**
+* Libraries are better for complex file formats
+
+---
+
+## ✔ Quick Comparison
+
+| Method       | Safe? | Recommended? |
+| ------------ | ----- | ------------ |
+| open + close | ❌     | No           |
+| try-finally  | ✔     | Okay         |
+| with open    | ✅     | Best         |
+
+---
+
+## Sec 11 - MultiThreading, Multiprocessing, GIL in python
+
+## 79. What is Concurrency and Parallelism (26:46)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
