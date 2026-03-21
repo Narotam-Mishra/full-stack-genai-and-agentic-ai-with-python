@@ -9612,6 +9612,197 @@ Since you're into **backend + system design**, this matters when:
 
 ## 68. Static Methods in python (05:43)
 
+## 🔹 1. What is a Static Method?
+
+**Definition (simple):**
+A static method is a function inside a class that:
+
+* ❌ does NOT use `self`
+* ❌ does NOT depend on object (instance)
+* ✅ works like a utility/helper function
+* ✅ belongs to the class for organization
+
+👉 Think of it as:
+**“A normal function, but kept inside a class for structure.”**
+
+---
+
+## 🔹 2. Why do we need Static Methods?
+
+Sometimes:
+
+* You don’t need object data
+* You just want a helper function
+
+Example use cases:
+
+* Data cleaning
+* Formatting
+* Calculations
+* Validation
+
+👉 Instead of writing standalone functions, you group them inside a class.
+
+---
+
+## 🔹 3. Basic Example (without static method)
+
+```python
+class ChaiUtils:
+    def clean_ingredients(text):
+        items = text.split(",")
+        return [item.strip() for item in items]
+
+
+raw = " water, milk , ginger , honey "
+
+obj = ChaiUtils()
+print(obj.clean_ingredients(raw))   # ❌ awkward usage
+```
+
+⚠️ Problem:
+
+* Why create an object just to clean a string?
+* Method doesn't use `self`
+
+---
+
+## 🔹 4. Static Method (Correct Way)
+
+```python
+class ChaiUtils:
+
+    @staticmethod
+    def clean_ingredients(text):
+        items = text.split(",")
+        return [item.strip() for item in items]
+
+
+raw = " water, milk , ginger , honey "
+
+cleaned = ChaiUtils.clean_ingredients(raw)
+print(cleaned)
+```
+
+👉 Output:
+
+```python
+['water', 'milk', 'ginger', 'honey']
+```
+
+---
+
+## 🔹 5. Key Syntax
+
+### Important part:
+
+```python
+@staticmethod
+def method_name(...):
+```
+
+👉 No `self` parameter
+
+---
+
+## 🔹 6. How it works internally
+
+* Python does NOT pass any object reference
+* Method behaves like a normal function
+* Just grouped inside a class
+
+---
+
+## 🔹 7. Static vs Instance Method
+
+| Feature           | Instance Method | Static Method  |
+| ----------------- | --------------- | -------------- |
+| Uses `self`       | ✅ Yes           | ❌ No           |
+| Needs object      | ✅ Yes           | ❌ No           |
+| Access class data | ✅ Yes           | ❌ No           |
+| Use case          | Object behavior | Utility/helper |
+
+---
+
+## 🔹 8. When to use Static Methods
+
+Use static methods when:
+
+✔ Logic is related to class
+✔ But does NOT depend on object data
+
+Examples:
+
+* String cleaning
+* Math calculations
+* Parsing data
+* Validation helpers
+
+---
+
+## 🔹 9. Real-world analogy
+
+Think of a **tools box 🧰**
+
+* Class = toolbox
+* Static methods = tools inside it
+
+👉 You don’t need to “create” a toolbox every time
+👉 You just pick the tool directly
+
+---
+
+## 🔹 10. Common mistake
+
+❌ Forgetting decorator:
+
+```python
+def clean_ingredients(text):   # wrong
+```
+
+✔ Correct:
+
+```python
+@staticmethod
+def clean_ingredients(text):
+```
+
+---
+
+## 🔹 11. Important Notes
+
+* Static methods can still be called using object (but not recommended)
+
+```python
+obj = ChaiUtils()
+obj.clean_ingredients(raw)  # works, but not ideal
+```
+
+* Preferred way:
+
+```python
+ChaiUtils.clean_ingredients(raw)
+```
+
+---
+
+## 🔹 12. Quick Summary
+
+* Static method = utility function inside class
+* No `self`, no object dependency
+* Use `@staticmethod`
+* Call using class name
+* Useful for reusable logic
+
+---
+
+## 🔹 Final takeaway
+
+👉 If your method **doesn't use instance data**, make it a static method.
+
+---
+
+## 69. Classmethod vs Staticmethod (11:47)
 
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
