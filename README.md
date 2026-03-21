@@ -9399,5 +9399,219 @@ super().__init__(type_, strength)
 
 ## 67. Method Resolution Order (MRO) (08:03)
 
+## 🔹 1. What is Multiple Inheritance?
+
+**Definition:**
+A class can inherit from **more than one parent class**.
+
+### Basic Syntax
+
+```python
+class A:
+    pass
+
+class B:
+    pass
+
+class C(A, B):   # multiple inheritance
+    pass
+```
+
+👉 Here, `C` gets features from **both A and B**.
+
+---
+
+## 🔹 2. Why it can be tricky
+
+When **multiple parent classes have the same method/attribute**, Python needs to decide:
+
+👉 “Which one should I use?”
+
+That’s where **MRO (Method Resolution Order)** comes in.
+
+---
+
+## 🔹 3. What is MRO (Method Resolution Order)?
+
+**MRO = the order in which Python searches for methods/attributes.**
+
+When you call something like:
+
+```python
+obj.method()
+```
+
+Python looks for `method` in a **specific order** across classes.
+
+---
+
+## 🔹 4. Example (same as transcript)
+
+```python
+class A:
+    label = "Base Class"
+
+class B(A):
+    label = "Masala Blend"
+
+class C(A):
+    label = "Herbal Blend"
+
+class D(B, C):
+    pass
+
+cup = D()
+print(cup.label)
+```
+
+---
+
+## 🔹 5. What will be output?
+
+👉 Output:
+
+```
+Masala Blend
+```
+
+---
+
+## 🔹 6. Why this output?
+
+Because Python follows this order:
+
+```
+D → B → C → A → object
+```
+
+👉 It checks:
+
+1. D → no label
+2. B → found label ✅ (stop here)
+
+---
+
+## 🔹 7. Order matters a LOT
+
+If you change:
+
+```python
+class D(C, B):
+    pass
+```
+
+👉 New order:
+
+```
+D → C → B → A
+```
+
+👉 Output:
+
+```
+Herbal Blend
+```
+
+✔️ So **the first parent class wins**
+
+---
+
+## 🔹 8. How to check MRO
+
+You can print it using:
+
+```python
+print(D.__mro__)
+```
+
+👉 Output:
+
+```
+(<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
+```
+
+---
+
+## 🔹 9. Important Rules to Remember
+
+### ✅ Rule 1: Left to Right priority
+
+```python
+class D(B, C):
+```
+
+👉 B is checked before C
+
+---
+
+### ✅ Rule 2: Child first, then parents
+
+Always:
+
+```
+Child → Parent → Grandparent
+```
+
+---
+
+### ✅ Rule 3: Stops at first match
+
+Python **does NOT check all classes**, it stops when it finds the method.
+
+---
+
+## 🔹 10. Why MRO exists
+
+Without MRO:
+
+* Python would get confused
+* Conflicts between multiple parents
+* Unpredictable behavior
+
+👉 MRO makes everything **deterministic and predictable**
+
+---
+
+## 🔹 11. Simple mental model
+
+When calling something:
+
+👉 “Start from the class, then go left → right through parents”
+
+---
+
+## 🔹 12. Real-world relevance (important for you)
+
+Since you're into **backend + system design**, this matters when:
+
+* Working with frameworks like Django / FastAPI
+* Using mixins
+* Extending libraries
+* Debugging weird inheritance bugs
+
+---
+
+## 🔹 13. Quick Summary
+
+* Multiple inheritance = inherit from multiple classes
+* Conflict happens when same method exists
+* Python solves it using **MRO**
+* MRO = search order
+* Left-most parent has priority
+* Use `__mro__` to debug
+
+---
+
+## 🔹 Final takeaway
+
+👉 If two parent classes have the same method:
+
+**Whichever comes first in inheritance will be used.**
+
+---
+
+## 68. Static Methods in python (05:43)
+
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
