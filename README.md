@@ -9804,5 +9804,257 @@ ChaiUtils.clean_ingredients(raw)
 
 ## 69. Classmethod vs Staticmethod (11:47)
 
+👉 **Class Methods vs Static Methods + Multiple Constructors idea**
+
+---
+
+## 🔹 1. Problem: Only ONE constructor in Python
+
+In Python:
+
+```python
+def __init__(self, ...):
+```
+
+👉 You can only have **one constructor**
+
+❌ You can’t do:
+
+```python
+def __init__(self, a):
+def __init__(self, a, b):
+```
+
+---
+
+## 🔹 2. Solution: Class Methods (Alternative Constructors)
+
+👉 Class methods let you **create objects in different ways**
+
+---
+
+## 🔹 3. What is a Class Method?
+
+**Definition (simple):**
+A method that works with the **class (not object)** and can be used to **create objects**
+
+### Syntax:
+
+```python
+@classmethod
+def method_name(cls, ...):
+```
+
+👉 `cls` = reference to the class
+
+---
+
+## 🔹 4. Basic Example (Main Concept)
+
+```python
+class ChaiOrder:
+
+    def __init__(self, tea_type, sweetness, size):
+        self.tea_type = tea_type
+        self.sweetness = sweetness
+        self.size = size
+```
+
+👉 Normal object creation:
+
+```python
+order = ChaiOrder("masala", "medium", "large")
+```
+
+---
+
+## 🔹 5. Alternative Constructor (Dictionary input)
+
+```python
+@classmethod
+def from_dict(cls, data):
+    return cls(
+        data["tea_type"],
+        data["sweetness"],
+        data["size"]
+    )
+```
+
+👉 Usage:
+
+```python
+order = ChaiOrder.from_dict({
+    "tea_type": "masala",
+    "sweetness": "medium",
+    "size": "large"
+})
+```
+
+---
+
+## 🔹 6. Alternative Constructor (String input)
+
+```python
+@classmethod
+def from_string(cls, data):
+    tea_type, sweetness, size = data.split("-")
+    return cls(tea_type, sweetness, size)
+```
+
+👉 Usage:
+
+```python
+order = ChaiOrder.from_string("ginger-low-small")
+```
+
+---
+
+## 🔹 7. Important Concept
+
+👉 This line is KEY:
+
+```python
+return cls(...)
+```
+
+✔ It calls the constructor internally
+✔ Creates a new object
+
+---
+
+## 🔹 8. Result Check
+
+```python
+print(order.__dict__)
+```
+
+👉 Output:
+
+```python
+{
+  'tea_type': 'ginger',
+  'sweetness': 'low',
+  'size': 'small'
+}
+```
+
+---
+
+## 🔹 9. Static Method vs Class Method
+
+| Feature           | Static Method    | Class Method          |
+| ----------------- | ---------------- | --------------------- |
+| Decorator         | `@staticmethod`  | `@classmethod`        |
+| First argument    | ❌ None           | ✅ `cls`               |
+| Access class data | ❌ No             | ✅ Yes                 |
+| Access instance   | ❌ No             | ❌ No                  |
+| Purpose           | Utility function | Create/modify objects |
+
+---
+
+## 🔹 10. Static Method Example (from transcript)
+
+```python
+class ChaiUtils:
+
+    @staticmethod
+    def is_valid_size(size):
+        return size in ["small", "medium", "large"]
+```
+
+👉 Usage:
+
+```python
+print(ChaiUtils.is_valid_size("medium"))  # True
+```
+
+---
+
+## 🔹 11. Key Differences (Simple Understanding)
+
+### Static Method:
+
+👉 “Helper function inside class”
+
+### Class Method:
+
+👉 “Alternative way to create objects”
+
+---
+
+## 🔹 12. Real-world Use Cases
+
+### Class Method:
+
+* Create object from:
+
+  * JSON
+  * API response
+  * Database row
+  * CSV
+
+### Static Method:
+
+* Validation
+* Formatting
+* Utility logic
+
+---
+
+## 🔹 13. Why Class Methods are powerful
+
+👉 They simulate **multiple constructors**
+
+You can now do:
+
+```python
+ChaiOrder(...)
+ChaiOrder.from_dict(...)
+ChaiOrder.from_string(...)
+```
+
+✔ Clean
+✔ Flexible
+✔ Production-ready pattern
+
+---
+
+## 🔹 14. Common Mistakes
+
+❌ Forgetting `cls`
+
+```python
+def from_dict(data):  # wrong
+```
+
+✔ Correct:
+
+```python
+def from_dict(cls, data):
+```
+
+---
+
+## 🔹 15. Quick Summary
+
+* Python allows only ONE `__init__`
+* Use **class methods** for multiple ways to create objects
+* Use `cls(...)` to call constructor
+* Static methods = utilities
+* Class methods = object creation logic
+
+---
+
+## 🔹 Final takeaway
+
+👉
+
+* Use **@staticmethod** → when logic doesn’t need class/object
+* Use **@classmethod** → when creating objects in different ways
+
+---
+
+## 70. Property deocrator - Getter and Setter (08:05)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
