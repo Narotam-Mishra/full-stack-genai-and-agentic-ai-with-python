@@ -10056,5 +10056,307 @@ def from_dict(cls, data):
 
 ## 70. Property deocrator - Getter and Setter (08:05)
 
+## 🧠 What are Property Decorators (in simple words)?
+
+Property decorators let you **control how a variable is read and updated** inside a class.
+
+Instead of allowing direct access like:
+
+```python
+obj.age = -10   # ❌ invalid but allowed normally
+```
+
+You can **validate, modify, or restrict values** using property decorators.
+
+---
+
+## 🚩 Problem Without Property Decorators
+
+```python
+class TeaLeaf:
+    def __init__(self, age):
+        self.age = age
+
+leaf = TeaLeaf(2)
+leaf.age = -5   # ❌ No restriction
+print(leaf.age) # -5 (wrong logically)
+```
+
+👉 Anyone can set invalid values → no control.
+
+---
+
+## ✅ Solution: Use Property Decorators
+
+---
+
+## 🔑 Important Concepts
+
+## 1. Private Variable Convention (`_age`)
+
+```python
+self._age = age
+```
+
+* `_age` means: “don’t access directly”
+* It’s a **convention**, not strict enforcement
+
+---
+
+## 2. Getter → `@property`
+
+Controls **how value is read**
+
+```python
+@property
+def age(self):
+    return self._age + 2   # custom logic
+```
+
+👉 Now:
+
+```python
+print(obj.age)
+```
+
+calls this method internally.
+
+---
+
+## 3. Setter → `@age.setter`
+
+Controls **how value is updated**
+
+```python
+@age.setter
+def age(self, value):
+    if 1 <= value <= 5:
+        self._age = value
+    else:
+        raise ValueError("Age must be between 1 and 5")
+```
+
+---
+
+## 🧪 Full Working Example
+
+```python
+class TeaLeaf:
+    def __init__(self, age):
+        self._age = age   # private variable
+
+    # Getter
+    @property
+    def age(self):
+        return self._age + 2   # modify when reading
+
+    # Setter
+    @age.setter
+    def age(self, value):
+        if 1 <= value <= 5:
+            self._age = value
+        else:
+            raise ValueError("Age must be between 1 and 5")
+```
+
+---
+
+## ▶️ Usage
+
+```python
+leaf = TeaLeaf(2)
+
+print(leaf.age)   # 4 (2 + 2 from getter)
+
+leaf.age = 4      # valid
+print(leaf.age)   # 6
+
+leaf.age = 10     # ❌ Error
+```
+
+---
+
+## 📌 Key Observations
+
+* You **never call methods directly**
+
+  ```python
+  leaf.age      # not leaf.age()
+  ```
+
+* Python **automatically calls getter/setter**
+
+---
+
+## 🎯 Why Property Decorators are Used
+
+### 1. Validation
+
+Prevent wrong values
+
+```python
+if value < 0:
+    raise error
+```
+
+---
+
+### 2. Data Control
+
+Modify output
+
+```python
+return self._age + 2
+```
+
+---
+
+### 3. Encapsulation
+
+Hide internal implementation
+
+---
+
+### 4. Safe Updates
+
+Control how data changes
+
+---
+
+## ⚖️ Without vs With Property
+
+| Without       | With Property        |
+| ------------- | -------------------- |
+| Direct access | Controlled access    |
+| No validation | Validation possible  |
+| Unsafe        | Safe                 |
+| No logic      | Custom logic allowed |
+
+---
+
+## 🔁 Mental Model
+
+Think like this:
+
+* `_age` → actual storage
+* `age` → controlled interface
+
+👉 User sees:
+
+```python
+leaf.age
+```
+
+👉 Internally:
+
+```python
+getter / setter runs
+```
+
+---
+
+## 🚀 Final Takeaways
+
+* Use `_variable` for internal storage
+* Use `@property` to **read safely**
+* Use `@setter` to **update safely**
+* Helps in **clean, production-level code**
+
+---
+
+## Important note for `property decorator`
+
+## Python `@property` Decorator — Explained
+
+### Is the underscore mandatory?
+
+**No, it's not mandatory** — but it's a very strong convention. Here's why it's used:
+
+The core problem is **name conflict**. If you name both the property and the internal variable the same thing, you get infinite recursion:
+
+```python
+# ❌ BAD — causes RecursionError
+class TeaLeaf:
+    @property
+    def age(self):
+        return self.age   # calls itself forever!
+    
+    @age.setter
+    def age(self, value):
+        self.age = value  # calls itself forever!
+```
+
+So you need **two different names** — one for the property (public), one for the actual stored value (internal). The underscore prefix (`_age`) is the conventional way to signal *"this is internal, don't touch directly."*
+
+---
+
+### What your code actually does — step by step
+
+```python
+class TeaLeaf:
+    def __init__(self, age):
+        self._age = age          # stores value in _age (internal variable)
+
+    @property
+    def age(self):               # getter — accessed as leaf.age
+        return self._age
+
+    @age.setter
+    def age(self, age):          # setter — triggered on leaf.age = value
+        if 1 <= age <= 5:
+            self._age = age      # valid → store it
+        else:
+            raise ValueError("tea Leaf age must be between 1 to 5 years")
+```
+
+| Step | Code | What happens |
+|---|---|---|
+| 1 | `leaf = TeaLeaf(3)` | `__init__` runs, stores `3` in `_age` |
+| 2 | `leaf.age` | Calls the **getter**, returns `self._age` → `3` |
+| 3 | `leaf.age = 9` | Calls the **setter**, `9` fails validation → `ValueError` |
+
+---
+
+### The 3 parts of `@property`
+
+```python
+@property
+def age(self):         # 1️⃣ GETTER  — leaf.age
+    return self._age
+
+@age.setter
+def age(self, value):  # 2️⃣ SETTER  — leaf.age = x
+    self._age = value
+
+@age.deleter
+def age(self):         # 3️⃣ DELETER — del leaf.age (optional)
+    del self._age
+```
+
+---
+
+### Why use `@property` at all?
+
+It lets you **add logic** (validation, formatting, computation) while keeping clean attribute-style access:
+
+```python
+leaf.age = 3    # looks like simple assignment, but runs your validation logic
+print(leaf.age) # looks like attribute access, but runs your getter
+```
+
+Without `@property`, you'd have to write `leaf.set_age(3)` and `leaf.get_age()` — which works but is less Pythonic.
+
+---
+
+### Summary
+
+- `_age` (underscore) = internal storage variable — **convention, not enforced**
+- `age` (no underscore) = the public property the outside world uses
+- The underscore just **avoids the name clash** that would cause infinite recursion
+- You could name them anything different (e.g., `age` and `age_value`), but `_name` is the universally accepted Python pattern
+
+---
+
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
