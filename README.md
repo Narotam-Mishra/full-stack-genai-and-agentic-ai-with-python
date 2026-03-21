@@ -10877,6 +10877,767 @@ Since you're into backend (Node/Express), this is similar to:
 
 ## 73. Catching multiple exceptions (06:57)
 
+Sometimes, your code can fail in **different ways at the same time**.
 
+Instead of writing one generic error handler, you can:
+
+* Catch **different errors separately**
+* Show **specific messages for each problem**
+
+This makes your program smarter and easier to debug.
+
+---
+
+## 🔑 Important Concepts & Pointers
+
+## 1. A function can fail in multiple ways
+
+Example:
+
+* Wrong item → `KeyError`
+* Wrong data type → `TypeError`
+
+👉 So we need multiple `except` blocks.
+
+---
+
+## 2. Structure of multiple exception handling
+
+```python
+try:
+    # risky code
+except ErrorType1:
+    # handle first error
+except ErrorType2:
+    # handle second error
+```
+
+👉 Python checks each `except` one by one.
+
+---
+
+## 3. Real-world example: Order processing
+
+You expect:
+
+* `item` → must exist (like "masala")
+* `quantity` → must be a number
+
+---
+
+## 💻 Full Example with Explanation
+
+```python
+def process_order(item, quantity):
+    try:
+        # Menu (dictionary)
+        price = {"masala": 20}[item]   # may cause KeyError
+
+        # Multiply price and quantity
+        cost = price * quantity        # may cause TypeError
+
+        print(f"Total cost is {cost}")
+
+    except KeyError:
+        print("Sorry, that chai is not on menu")
+
+    except TypeError:
+        print("Quantity must be a number")
+```
+
+---
+
+## 🧠 How It Works (Step-by-step)
+
+### Case 1: Wrong item
+
+```python
+process_order("ginger", 2)
+```
+
+* `"ginger"` not in dictionary
+* ❌ `KeyError` happens
+* Output:
+
+```
+Sorry, that chai is not on menu
+```
+
+---
+
+### Case 2: Wrong quantity type
+
+```python
+process_order("masala", "2")
+```
+
+* `"masala"` exists → price = 20
+* `"2"` is string → multiplication issue
+* ❌ `TypeError` (or weird behavior)
+* Output:
+
+```
+Quantity must be a number
+```
+
+---
+
+## ⚠️ Important Real-World Insight
+
+### Python can behave unexpectedly
+
+```python
+20 * "2"
+```
+
+Output:
+
+```
+"22222222222222222222"
+```
+
+👉 This is **operator overloading**
+
+* Python repeats string instead of throwing error
+
+---
+
+## ✅ Better (Safe) Version
+
+Always convert input properly:
+
+```python
+def process_order(item, quantity):
+    try:
+        price = {"masala": 20}[item]
+
+        quantity = int(quantity)  # force number
+        cost = price * quantity
+
+        print(f"Total cost is {cost}")
+
+    except KeyError:
+        print("Sorry, that chai is not on menu")
+
+    except ValueError:
+        print("Quantity must be a valid number")
+
+    except TypeError:
+        print("Invalid data type")
+```
+
+---
+
+## 🔥 Key Takeaways
+
+* You can handle **multiple errors using multiple `except` blocks**
+* Each block handles a **specific type of error**
+* Order matters → Python checks from top to bottom
+* Always validate input (especially numbers)
+* Real-world code needs **extra checks beyond tutorials**
+
+---
+
+## 💡 Simple Mental Model
+
+Think like this:
+
+> "What are all the ways this code can break?"
+
+Then handle each one separately.
+
+---
+
+## Python Multiple Exceptions (contd...)
+
+```python
+def process_order(item, quantity):
+    try:
+        menu = {"masala": 20}        # Only masala chai is available
+        price = menu[item]           # Can raise KeyError
+        cost = price * int(quantity) # Can raise TypeError
+        print(f"Total cost is: {cost}")
+
+    except KeyError:
+        print("Sorry, that chai is not on the menu.")
+
+    except TypeError:
+        print("Quantity must be a number.")
+
+# Test calls
+process_order("ginger", 2)   # KeyError — ginger not in menu
+process_order("masala", "2") # Works (after int() conversion)
+process_order("masala", "two") # TypeError — can't convert "two" to int
+```
+
+---
+
+## Important Concepts Explained
+
+### 1. `try-except` (Python's version of try-catch)
+You wrap risky code in `try`. If something goes wrong, Python jumps to the matching `except` block.
+
+```python
+try:
+    x = int("hello")  # This will fail
+except ValueError:
+    print("That's not a number!")
+```
+
+> **Note:** In Java/JS it's `try-catch`. In Python it's always `try-except`.
+
+---
+
+### 2. `KeyError`
+Raised when you try to access a **dictionary key that doesn't exist**.
+
+```python
+menu = {"masala": 20}
+
+try:
+    price = menu["ginger"]  # "ginger" key doesn't exist
+except KeyError:
+    print("Item not found in menu!")
+```
+
+---
+
+### 3. `TypeError`
+Raised when you perform an **operation on incompatible types**.
+
+```python
+try:
+    result = 20 * "two"  # Can't multiply int with a word string meaningfully
+except TypeError:
+    print("Quantity must be a number!")
+```
+
+---
+
+### 4. Multiple `except` Blocks
+You can chain multiple `except` blocks — Python matches the **first one that fits**.
+
+```python
+try:
+    # risky code
+    pass
+except KeyError:
+    print("Wrong key!")
+except TypeError:
+    print("Wrong type!")
+except Exception as e:
+    print(f"Something else went wrong: {e}")  # catch-all
+```
+
+---
+
+### 5. Operator Overloading (Bonus Concept)
+In Python, `*` behaves differently based on types. This caused the "bug" in the tutorial:
+
+```python
+print(20 * 2)    # 40        — normal multiplication
+print(20 * "2")  # "2222..." — string repeated 20 times! 😲
+```
+
+This is **operator overloading** — the `*` operator is overloaded to mean "repeat" for strings. That's why the tutorial got `"2222..."` instead of an error when passing `"2"` as quantity. The fix is to explicitly convert to `int`.
+
+---
+
+## Key Takeaways
+
+| Concept | What to Remember |
+|---|---|
+| `try-except` | Wraps risky code; catches errors gracefully |
+| `KeyError` | Missing dictionary key |
+| `TypeError` | Wrong data type in an operation |
+| Multiple `except` | Each handles a specific error type |
+| Operator overloading | `*` with a string = repetition, not math |
+| Real-world fix | Always validate/convert input types before using them |
+
+---
+
+## The Real-World Lesson
+
+Even "smart" code can behave unexpectedly — like `20 * "2"` giving `"2222..."` instead of an error. In production code you'd always **validate and convert inputs** (`int()`, `isinstance()` checks) before trusting them in calculations. That's what separates tutorial code from production code.
+
+---
+
+## 74. Raise your own erros (03:18)
+
+Yes, you can **manually throw errors in Python** using the `raise` keyword.
+
+👉 This is useful when:
+
+* You detect invalid input
+* You want to stop execution intentionally
+* You want to enforce rules in your program
+
+---
+
+## 🔑 Important Concepts & Pointers
+
+## 1. What does `raise` do?
+
+* `raise` is used to **trigger an error manually**
+* It stops the program (unless handled using `try-except`)
+
+---
+
+## 2. You can use built-in exceptions
+
+Common ones:
+
+* `ValueError` → wrong value
+* `KeyError` → missing key
+* `TypeError` → wrong type
+
+👉 Choose the one that best matches your situation
+
+---
+
+## 3. Why raise exceptions?
+
+Instead of letting code fail randomly, you:
+
+* **control when and why it fails**
+* give **clear error messages**
+
+---
+
+## 💻 Basic Example from the Transcript
+
+```python
+def brew_chai(flavor):
+    allowed_flavors = ["masala", "ginger", "elaichi"]
+
+    if flavor not in allowed_flavors:
+        raise ValueError("Unsupported chai flavor")
+
+    print(f"Brewing {flavor} chai...")
+```
+
+---
+
+## 🧠 How It Works
+
+### Case 1: Valid input
+
+```python
+brew_chai("masala")
+```
+
+Output:
+
+```
+Brewing masala chai...
+```
+
+---
+
+### Case 2: Invalid input
+
+```python
+brew_chai("chocolate")
+```
+
+Output:
+
+```
+ValueError: Unsupported chai flavor
+```
+
+👉 Program stops immediately
+
+---
+
+## ⚠️ Important Behavior
+
+* When you use `raise`, Python:
+
+  * stops execution
+  * shows error message
+* Unless you handle it with `try-except`
+
+---
+
+## 💡 Using with try-except (Better Practice)
+
+```python
+try:
+    brew_chai("chocolate")
+except ValueError as e:
+    print(e)
+```
+
+Output:
+
+```
+Unsupported chai flavor
+```
+
+👉 Now program **doesn’t crash**
+
+---
+
+## 🔥 Key Takeaways
+
+* `raise` lets you **create errors intentionally**
+* Use it to enforce rules (validation)
+* Always provide a **clear message**
+* Combine with `try-except` for safe handling
+
+---
+
+## 🧠 Simple Mental Model
+
+Think like this:
+
+> “If input is wrong, I won’t let the program continue.”
+
+---
+
+## 🚀 Small Real-World Use Case
+
+You’ll use this a lot in:
+
+* APIs (invalid request data)
+* Backend validation (your Node.js experience will connect well here)
+* Form validation
+* Business rules (like price must be > 0)
+
+---
+
+## 75. Creating custom exceptions (03:57)
+
+Earlier, you used built-in errors like:
+
+* `ValueError`
+* `KeyError`
+
+But sometimes they are **not specific enough**.
+
+👉 So Python lets you:
+
+* Create **your own custom exception classes**
+* Use them just like built-in errors
+
+---
+
+## 🔑 Important Concepts & Pointers
+
+## 1. Why create custom exceptions?
+
+Use them when:
+
+* Built-in errors don’t clearly describe the problem
+* You want **more meaningful and readable errors**
+* You are building real-world apps (APIs, backend systems)
+
+---
+
+## 2. How to create a custom exception?
+
+👉 Just create a class and inherit from `Exception`
+
+```python
+class OutOfIngredientsError(Exception):
+    pass
+```
+
+That’s it. You now have your own error type.
+
+---
+
+## 3. How to use it?
+
+Use `raise` like before:
+
+```python
+raise OutOfIngredientsError("Missing milk or sugar")
+```
+
+---
+
+## 💻 Full Example (from transcript, cleaned up)
+
+```python
+class OutOfIngredientsError(Exception):
+    pass
+
+
+def make_chai(milk, sugar):
+    if milk == 0 or sugar == 0:
+        raise OutOfIngredientsError("Missing milk or sugar")
+
+    print("Chai is ready...")
+```
+
+---
+
+## 🧠 How It Works
+
+### Case 1: Valid input
+
+```python
+make_chai(1, 1)
+```
+
+Output:
+
+```
+Chai is ready...
+```
+
+---
+
+### Case 2: Invalid input
+
+```python
+make_chai(0, 1)
+```
+
+Output:
+
+```
+OutOfIngredientsError: Missing milk or sugar
+```
+
+👉 This is **your own custom error**, not built-in
+
+---
+
+## 💡 Handling Custom Exception
+
+You can also catch it:
+
+```python
+try:
+    make_chai(0, 1)
+except OutOfIngredientsError as e:
+    print(e)
+```
+
+Output:
+
+```
+Missing milk or sugar
+```
+
+---
+
+## 🔥 Key Takeaways
+
+* Custom exceptions are just **classes that inherit from `Exception`**
+* They make your errors:
+
+  * clearer
+  * more meaningful
+  * easier to debug
+* Used heavily in:
+
+  * frameworks (Django, FastAPI)
+  * backend systems
+  * APIs
+
+---
+
+## ⚠️ Important Insight (Real-world thinking)
+
+Sometimes **crashing is good**
+
+Example:
+
+* If database connection fails → better to crash than show wrong data
+
+👉 So:
+
+* Use exceptions to **fail fast and clearly**
+
+---
+
+## 🧠 Simple Mental Model
+
+Think like this:
+
+> “Built-in errors are generic. I want errors that explain my business logic.”
+
+---
+
+## 🚀 Small Upgrade (Better Version)
+
+You can add more detail:
+
+```python
+class OutOfIngredientsError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+```
+
+👉 Useful when you want more control later
+
+---
+
+## Custom Exception Classes (Contd...)
+
+Going one step further from raising built-in exceptions — now you learn how to **create your own fully custom exception classes** using Python's class inheritance system.
+
+---
+
+## The Core Code (Cleaned Up)
+
+```python
+# Step 1: Define your custom exception class
+class OutOfIngredientsError(Exception):
+    pass  # That's all you need for a basic custom exception!
+
+# Step 2: Use it in a function
+def make_chai(milk, sugar):
+    if milk == 0 or sugar == 0:
+        raise OutOfIngredientsError("Missing milk or sugar!")
+    print("Chai is ready...")
+
+# Step 3: Call the function
+make_chai(0, 1)   # Raises OutOfIngredientsError
+make_chai(1, 1)   # Prints: Chai is ready...
+```
+
+**Output:**
+```
+OutOfIngredientsError: Missing milk or sugar!
+```
+
+---
+
+## Important Concepts Explained
+
+### 1. Creating a Custom Exception Class
+All you need is a class that **inherits from `Exception`**. The `pass` means you're not adding any extra behavior — just giving it a new name.
+
+```python
+class OutOfIngredientsError(Exception):
+    pass
+```
+
+That's genuinely all it takes. Python does the rest automatically.
+
+---
+
+### 2. Inheritance Makes This Work
+The `Exception` base class provides all the core error behavior (stack trace, message display, color highlighting in terminal). Your custom class **borrows all of that** just by inheriting it.
+
+```python
+# Parent class (built-in)
+Exception
+    └── OutOfIngredientsError  ← your custom child class
+```
+
+```python
+# Another example using inheritance
+class PaymentFailedError(Exception):
+    pass
+
+class InsufficientBalanceError(Exception):
+    pass
+
+raise PaymentFailedError("Card declined!")
+```
+
+---
+
+### 3. You Can Add Extra Behavior (Optional)
+For now `pass` is fine, but in real projects you can customize further:
+
+```python
+class OutOfIngredientsError(Exception):
+    def __init__(self, ingredient, quantity_needed):
+        self.ingredient = ingredient
+        self.quantity_needed = quantity_needed
+        super().__init__(f"Need {quantity_needed} units of {ingredient}!")
+
+# Usage
+raise OutOfIngredientsError("milk", 2)
+# OutOfIngredientsError: Need 2 units of milk!
+```
+
+---
+
+### 4. When is Intentional Crashing a Good Idea?
+The tutorial makes a great real-world point — **not all crashes are bad**. Sometimes crashing loudly is safer than running silently with broken data.
+
+```python
+# Example: App can't connect to database
+def start_app():
+    db_connected = False  # simulate failed connection
+
+    if not db_connected:
+        raise ConnectionError("Database unavailable. Cannot start app.")
+    
+    load_homepage()  # no point reaching here without DB
+```
+
+| Situation | Crash or Handle? |
+|---|---|
+| Database connection fails on startup | ✅ Crash — nothing works without it |
+| User types wrong password | ❌ Don't crash — show an error message |
+| Required config file is missing | ✅ Crash — app can't function |
+| Optional feature unavailable | ❌ Don't crash — degrade gracefully |
+
+---
+
+## How Real Frameworks Use This
+
+Libraries like **FastAPI**, **Django**, and **SQLAlchemy** all define their own custom exceptions exactly this way:
+
+```python
+# FastAPI does something like this internally
+class HTTPException(Exception):
+    def __init__(self, status_code, detail):
+        self.status_code = status_code
+        self.detail = detail
+
+# Django does something like this
+class ObjectDoesNotExist(Exception):
+    pass
+```
+
+Now you understand exactly how they work under the hood.
+
+---
+
+## Key Takeaways
+
+| Concept | What to Remember |
+|---|---|
+| Custom exception = a class | Just inherit from `Exception` |
+| `pass` is enough | Minimal custom exception needs no body |
+| Inheritance powers it | Borrows all error behavior from `Exception` |
+| Name it clearly | `OutOfIngredientsError` beats generic `ValueError` |
+| Crashing can be correct | Sometimes stopping is safer than continuing with broken state |
+| Used everywhere | FastAPI, Django etc. all build on this exact pattern |
+
+---
+
+## The 3-Step Pattern to Remember
+
+```python
+# 1. Define
+class MyCustomError(Exception):
+    pass
+
+# 2. Raise
+def some_function(value):
+    if value is invalid:
+        raise MyCustomError("Clear description of what went wrong")
+
+# 3. Catch (optional)
+try:
+    some_function(bad_value)
+except MyCustomError as e:
+    print(f"Caught it: {e}")
+```
+
+---
+
+## 76. Mini project with exception learning (07:09)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
