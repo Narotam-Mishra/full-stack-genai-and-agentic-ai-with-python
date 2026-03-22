@@ -12138,5 +12138,344 @@ print(df)
 
 ## 79. What is Concurrency and Parallelism (26:46)
 
+## ⚡ Concurrency vs Parallelism
+
+Both deal with **handling multiple tasks**, but they work differently.
+
+---
+
+## 🧠 1. What is Concurrency?
+
+👉 **Definition:**
+Handling multiple tasks by **switching between them quickly**
+
+👉 Not truly simultaneous, but feels like it
+
+### 💡 Real-life Example:
+
+* Making tea ☕ + chatting 💬
+  You switch between tasks quickly
+
+---
+
+### 📊 Key Idea:
+
+* Single CPU core
+* Tasks take turns
+* Fast context switching
+
+---
+
+### ✅ Python Tools for Concurrency:
+
+* `threading`
+* `asyncio`
+
+---
+
+### 💻 Example (Threading)
+
+```python
+import threading
+import time
+
+def take_orders():
+    for i in range(1, 4):
+        print(f"Taking order {i}")
+        time.sleep(2)
+
+def brew_chai():
+    for i in range(1, 4):
+        print(f"Brewing chai {i}")
+        time.sleep(3)
+
+# Create threads
+t1 = threading.Thread(target=take_orders)
+t2 = threading.Thread(target=brew_chai)
+
+# Start threads
+t1.start()
+t2.start()
+
+# Wait for both to finish
+t1.join()
+t2.join()
+
+print("All orders completed")
+```
+
+---
+
+### 🔑 Important Points:
+
+* Threads share same memory
+* Only **one core is used**
+* Good for:
+
+  * I/O tasks (API calls, DB, file reading)
+
+---
+
+## 🚀 2. What is Parallelism?
+
+👉 **Definition:**
+Running multiple tasks **at the exact same time**
+
+---
+
+### 💡 Real-life Example:
+
+* 2 people making tea at the same time ☕
+
+---
+
+### 📊 Key Idea:
+
+* Multiple CPU cores
+* True parallel execution
+
+---
+
+### ✅ Python Tools for Parallelism:
+
+* `multiprocessing`
+* `concurrent.futures`
+
+---
+
+### 💻 Example (Multiprocessing)
+
+```python
+from multiprocessing import Process
+import time
+
+def brew_chai(name):
+    print(f"Start brewing {name}")
+    time.sleep(3)
+    print(f"Finished brewing {name}")
+
+if __name__ == "__main__":
+    processes = []
+
+    for i in range(3):
+        p = Process(target=brew_chai, args=(f"Chai {i+1}",))
+        processes.append(p)
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    print("All chai served")
+```
+
+---
+
+### 🔑 Important Points:
+
+* Uses multiple CPU cores
+* Each process has separate memory
+* Faster for:
+
+  * CPU-heavy tasks (calculations, image/video processing)
+
+---
+
+## ⚖️ Concurrency vs Parallelism (Comparison)
+
+| Feature   | Concurrency        | Parallelism        |
+| --------- | ------------------ | ------------------ |
+| Execution | Switching tasks    | Truly simultaneous |
+| CPU Cores | 1                  | Multiple           |
+| Speed     | Depends            | Faster (CPU tasks) |
+| Use Case  | I/O tasks          | CPU-heavy tasks    |
+| Tools     | threading, asyncio | multiprocessing    |
+
+---
+
+## ⚠️ Important Insight (Very Important)
+
+👉 Parallelism is NOT always better
+
+### Why?
+
+* Needs coordination between processes
+* One slow process can delay everything
+* More overhead (memory, communication)
+
+---
+
+### Example Problem:
+
+If 3 processes finish fast but 1 is slow →
+👉 Final result waits for ALL
+
+---
+
+## 🧠 When to Use What?
+
+### Use Concurrency when:
+
+* API calls
+* File handling
+* Database queries
+* Waiting tasks
+
+👉 (Your backend experience in Node.js async is similar here!)
+
+---
+
+### Use Parallelism when:
+
+* Heavy computations
+* Image/video processing
+* Data processing
+
+---
+
+## 🔥 Bonus: Async Programming
+
+* Uses `asyncio`
+* Even better for handling many I/O tasks
+* Used in frameworks like FastAPI
+
+---
+
+## 🧠 Key Takeaways
+
+* Concurrency = multitasking with switching
+* Parallelism = multitasking with multiple cores
+* Threads ≠ Processes
+* Choose based on problem, not hype
+
+---
+
+## ✅ Final Simple Analogy
+
+* **Concurrency:** One chef handling 3 orders by switching
+* **Parallelism:** 3 chefs handling 3 orders simultaneously
+
+---
+
+## Python Concurrency & Parallelism (Contd..)
+
+## What's the Difference?
+
+**Concurrency** = Doing multiple tasks by *switching between them* very fast on a single core. Like a waiter taking orders AND making tea — they switch between tasks quickly.
+
+**Parallelism** = Doing multiple tasks *truly at the same time* using multiple CPU cores. Like two waiters each making their own tea simultaneously.
+
+---
+
+## Key Concepts
+
+**Concurrency (Threading)**
+- Uses one CPU core, switches between tasks rapidly
+- Best for: I/O-bound tasks (file reads, DB calls, network requests)
+- Module: `threading`
+
+**Parallelism (Multiprocessing)**
+- Uses multiple CPU cores simultaneously
+- Best for: CPU-bound tasks (video processing, heavy computation)
+- Module: `multiprocessing`
+- Caveat: You must wait for ALL processes to finish before combining results — if one is slow, everyone waits
+
+**AsyncIO**
+- Another concurrency approach (covered in a separate chapter)
+- Heavily used by frameworks like FastAPI
+
+---
+
+## Concurrency Example — Threading
+
+```python
+import threading
+import time
+
+def take_orders():
+    for i in range(1, 4):
+        print(f"Taking order for customer {i}")
+        time.sleep(2)  # Simulates slow I/O
+
+def brew_chai():
+    for i in range(1, 4):
+        print(f"Brewing chai for customer {i}")
+        time.sleep(3)  # Takes longer
+
+# Create threads (they don't start yet)
+order_thread = threading.Thread(target=take_orders)
+brew_thread = threading.Thread(target=brew_chai)
+
+# Start both threads
+order_thread.start()
+brew_thread.start()
+
+# Wait for both to finish before proceeding
+order_thread.join()
+brew_thread.join()
+
+print("All orders taken and chai brewed!")
+```
+
+**What happens:** Both functions run concurrently on *one core*. The CPU switches between them during the sleep gaps. Output from both functions is interleaved.
+
+---
+
+## Parallelism Example — Multiprocessing
+
+```python
+from multiprocessing import Process
+import time
+
+def brew_chai(name):
+    print(f"Start brewing: {name}")
+    time.sleep(3)
+    print(f"Done brewing: {name}")
+
+if __name__ == "__main__":
+    chai_makers = [
+        Process(target=brew_chai, args=(f"Chai {i+1}",))
+        for i in range(3)
+    ]
+
+    # Start all processes (each runs on its own CPU core)
+    for p in chai_makers:
+        p.start()
+
+    # Wait for all to finish
+    for p in chai_makers:
+        p.join()
+
+    print("All chai served!")
+```
+
+**What happens:** All 3 processes start *at the same time* on separate cores. All finish around the same time (~3 seconds total instead of 9).
+
+---
+
+## Quick Comparison
+
+| Feature | Threading (Concurrency) | Multiprocessing (Parallelism) |
+|---|---|---|
+| CPU cores used | 1 | Multiple |
+| Task switching | Yes (rapid) | No |
+| Best for | I/O-bound tasks | CPU-bound tasks |
+| Result available | As each task finishes | Only after ALL finish |
+| Complexity | Lower | Higher |
+
+---
+
+## Important Pointers
+
+- **Neither is always better** — choose based on the task type
+- Threading is great when tasks spend time *waiting* (network, disk, DB)
+- Multiprocessing shines when tasks need *heavy computation*
+- The `join()` method is critical — it tells the main program to *wait* before continuing
+- Python's `threading` and `multiprocessing` modules are built-in, no installation needed
+- Frameworks like **FastAPI** use async operations internally for high performance
+- The `if __name__ == "__main__":` guard is *required* for multiprocessing to avoid recursive spawning
+
+---
+
+## 80. What is Global Interpreter Lock - GIL (16:39)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
