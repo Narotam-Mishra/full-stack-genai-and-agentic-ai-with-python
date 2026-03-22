@@ -12478,4 +12478,388 @@ if __name__ == "__main__":
 
 ## 80. What is Global Interpreter Lock - GIL (16:39)
 
+## 🧠 What is GIL (Global Interpreter Lock)?
+
+### In simple words:
+
+* GIL is a **lock in Python** that allows **only one thread at a time** to execute Python code.
+* Even if you create multiple threads, **they don’t run truly in parallel** (for CPU-heavy work).
+
+---
+
+## ⚠️ Why does GIL exist?
+
+Because Python memory is **not thread-safe**.
+
+👉 Problem:
+
+* Two threads try to change the same data at the same time → ❌ **Race condition**
+
+👉 Solution:
+
+* GIL ensures:
+
+  * Only **one thread accesses memory at a time**
+  * Others must **wait**
+
+---
+
+## ☕ Real-life analogy
+
+Think of a **chai counter**:
+
+* Many baristas (threads)
+* Only **one can use the counter at a time**
+
+➡️ Others wait → no chaos → safe execution
+
+---
+
+## 🔥 Key Concept: Race Condition
+
+### What is it?
+
+When multiple threads try to modify the same data at the same time.
+
+### Example:
+
+```python
+count = 0
+
+# Thread 1
+count = count + 1  # wants 1
+
+# Thread 2
+count = count - 1  # wants -1
+```
+
+👉 Final result becomes unpredictable 😵
+
+---
+
+## 🔒 How GIL prevents this
+
+* Gives **lock (mutex)** to one thread
+* That thread finishes its work
+* Then releases lock
+* Next thread runs
+
+---
+
+## 🧪 Example: GIL with Threads (CPU-bound task)
+
+```python
+import threading
+import time
+
+def task():
+    count = 0
+    for _ in range(10**7):  # heavy CPU work
+        count += 1
+
+# create threads
+t1 = threading.Thread(target=task)
+t2 = threading.Thread(target=task)
+
+start = time.time()
+
+t1.start()
+t2.start()
+
+t1.join()
+t2.join()
+
+end = time.time()
+
+print("Time taken:", end - start)
+```
+
+### 💡 Observation:
+
+* Even with 2 threads → **slow**
+* Because GIL allows **only 1 thread at a time**
+
+---
+
+## 🚀 How to bypass GIL?
+
+👉 Use **multiprocessing**
+
+Because:
+
+* Each process has its **own memory**
+* No shared memory → no GIL restriction
+
+---
+
+## ⚡ Example: Multiprocessing (Parallelism)
+
+```python
+from multiprocessing import Process
+import time
+
+def task():
+    count = 0
+    for _ in range(10**7):
+        count += 1
+
+if __name__ == "__main__":
+    p1 = Process(target=task)
+    p2 = Process(target=task)
+
+    start = time.time()
+
+    p1.start()
+    p2.start()
+
+    p1.join()
+    p2.join()
+
+    end = time.time()
+
+    print("Time taken:", end - start)
+```
+
+### 💡 Observation:
+
+* Runs **faster**
+* Uses **multiple CPU cores**
+* True parallel execution
+
+---
+
+## ⚠️ Important: `if __name__ == "__main__"`
+
+👉 Required for multiprocessing
+
+### Why?
+
+* Prevents infinite process creation
+* Defines the **entry point of program**
+
+---
+
+## 🧩 Threading vs Multiprocessing (Quick Table)
+
+| Feature           | Threading | Multiprocessing |
+| ----------------- | --------- | --------------- |
+| GIL               | Affects   | Not affected    |
+| Speed (CPU tasks) | Slow      | Fast            |
+| Memory            | Shared    | Separate        |
+| Use case          | I/O tasks | CPU-heavy tasks |
+
+---
+
+## 🎯 When to use what?
+
+### ✅ Use Threading:
+
+* File reading/writing
+* API calls
+* Database queries
+* Waiting tasks (I/O)
+
+### ✅ Use Multiprocessing:
+
+* Image processing
+* Video processing
+* Large computations
+* Heavy loops
+
+---
+
+## 🚫 Important Insight
+
+> More threads ≠ more speed (in Python)
+
+Because:
+
+* GIL blocks parallel execution for CPU tasks
+
+---
+
+## 💡 Final Takeaways
+
+* GIL = **safety mechanism**
+* Prevents **race conditions**
+* Slows down **multi-threaded CPU tasks**
+* Use **multiprocessing** for real parallelism
+* Always use:
+
+  ```python
+  if __name__ == "__main__":
+  ```
+
+  in multiprocessing
+
+---
+
+## 🧠 One-line Summary
+
+👉 **GIL makes Python threading safe but limits true parallel performance for CPU-heavy tasks.**
+
+---
+
+## Python GIL (Global Interpreter Lock) (Contd..)
+## What is GIL?
+
+The **Global Interpreter Lock** is a mutex (lock) in CPython that ensures **only one thread can execute Python bytecode at a time**, even on multi-core systems. It exists because Python's memory management is **not thread-safe**.
+
+---
+
+## Why Does GIL Exist?
+
+Python objects in memory can be corrupted if two threads modify them simultaneously — this is called a **race condition**.
+
+**Example of a race condition:**
+```python
+# Thread 1 and Thread 2 both want to modify the same value
+value = 4
+# Thread 1 wants to set it to 5
+# Thread 2 wants to set it to 3
+# Without a lock → unpredictable result!
+```
+
+GIL acts like a **mutex** — only one thread holds the lock and touches memory at a time.
+
+> ☕ **Real-world analogy:** A chai counter with multiple baristas — only **one order** can be processed at the counter at a time.
+
+---
+
+## Key Concepts
+
+### 1. Mutex (Mutually Exclusive Lock)
+A locking mechanism where once Thread A acquires the lock, Thread B **cannot** access that memory until Thread A releases it.
+
+```python
+import threading
+
+lock = threading.Lock()
+counter = 0
+
+def increment():
+    global counter
+    with lock:          # acquire mutex
+        counter += 1    # safe modification
+                        # lock auto-released after block
+
+t1 = threading.Thread(target=increment)
+t2 = threading.Thread(target=increment)
+t1.start(); t2.start()
+t1.join(); t2.join()
+print(counter)  # Always prints 2, never corrupted
+```
+
+---
+
+### 2. GIL in Action — Threading (Concurrency)
+
+Multiple threads exist but run **one at a time** due to GIL. For CPU-bound tasks, threading gives **no real speedup**.
+
+```python
+import threading
+import time
+
+def brew_chai():
+    print(f"{threading.current_thread().name} started brewing...")
+    count = 0
+    for _ in range(10_000_000):   # heavy CPU work
+        count += 1
+    print(f"{threading.current_thread().name} finished!")
+
+start = time.time()
+
+t1 = threading.Thread(target=brew_chai, name="Barista-1")
+t2 = threading.Thread(target=brew_chai, name="Barista-2")
+
+t1.start(); t2.start()
+t1.join(); t2.join()
+
+print(f"Total time (threading): {time.time() - start:.2f}s")
+# Result: ~5 seconds (GIL forces sequential execution)
+```
+
+---
+
+### 3. Bypassing GIL — Multiprocessing (Parallelism)
+
+`multiprocessing` spawns **separate processes**, each with its own memory and GIL. This achieves **true parallelism**.
+
+```python
+from multiprocessing import Process
+import time
+
+def crunch_numbers():
+    print("Started count process...")
+    count = 0
+    for _ in range(10_000_000):
+        count += 1
+    print("Ended count process.")
+
+if __name__ == "__main__":   # ⚠️ REQUIRED for multiprocessing!
+    start = time.time()
+
+    p1 = Process(target=crunch_numbers)
+    p2 = Process(target=crunch_numbers)
+
+    p1.start(); p2.start()
+    p1.join(); p2.join()
+
+    print(f"Total time (multiprocessing): {time.time() - start:.2f}s")
+    # Result: ~2.8 seconds (true parallel execution)
+```
+
+**Result comparison:**
+| Approach | Time | Why |
+|---|---|---|
+| Threading | ~5s | GIL forces one thread at a time |
+| Multiprocessing | ~2.8s | Separate processes, no shared GIL |
+
+---
+
+### 4. Why `if __name__ == "__main__"` is Mandatory for Multiprocessing
+
+Threads know their entry point automatically. But new **processes** need to be told where the program starts — otherwise Python throws:
+
+```
+RuntimeError: An attempt has been made to start a new process
+before the current process has finished its bootstrapping phase.
+```
+
+Always wrap multiprocessing code like this:
+```python
+if __name__ == "__main__":
+    p = Process(target=my_function)
+    p.start()
+    p.join()
+```
+
+---
+
+## Important Pointers
+
+- GIL only exists in **CPython** (the standard Python implementation)
+- GIL affects **CPU-bound** tasks heavily; for **I/O-bound** tasks (file reads, API calls), threading still works well
+- `threading` = **Concurrency** (interleaving, not truly parallel)
+- `multiprocessing` = **Parallelism** (truly simultaneous)
+- Bypassing GIL via multiprocessing comes at a cost: higher memory usage, process spawning overhead, and no shared memory between processes
+- Always use `thread.join()` / `process.join()` to wait for completion
+
+---
+
+## When to Use What
+
+```
+CPU-bound task (image processing, ML, loops)?
+  → Use multiprocessing
+
+I/O-bound task (network calls, file reads, DB queries)?
+  → Use threading (GIL is released during I/O waits)
+```
+
+---
+
+## 80. Threads and lock in depth (27:12)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
