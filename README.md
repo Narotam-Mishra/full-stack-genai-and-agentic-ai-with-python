@@ -12861,5 +12861,473 @@ I/O-bound task (network calls, file reads, DB queries)?
 
 ## 80. Threads and lock in depth (27:12)
 
+This topic is about **Python threading in practice**:
+
+* How threads work
+* When to use them
+* When NOT to use them
+* How to pass data to threads
+* What is a lock and why it matters
+
+---
+
+## 🔹 2. Process vs Thread (Quick intuition)
+
+* **Process** = independent program (has its own memory)
+* **Thread** = lightweight unit inside a process (shares memory)
+
+👉 Key point:
+
+* Threads share memory → faster but risky
+* Processes don’t share memory → safer but heavier
+
+---
+
+## 🔹 3. Basic Thread Example
+
+### Without threads (sequential)
+
+```python
+import time
+
+def boil_milk():
+    print("Boiling milk...")
+    time.sleep(2)
+    print("Milk boiled")
+
+def toast_bun():
+    print("Toasting bun...")
+    time.sleep(3)
+    print("Bun ready")
+
+start = time.time()
+
+boil_milk()
+toast_bun()
+
+print("Time:", time.time() - start)
+```
+
+👉 Total time ≈ **5 seconds**
+
+---
+
+### With threads (parallel-like behavior)
+
+```python
+import threading
+import time
+
+def boil_milk():
+    print("Boiling milk...")
+    time.sleep(2)
+    print("Milk boiled")
+
+def toast_bun():
+    print("Toasting bun...")
+    time.sleep(3)
+    print("Bun ready")
+
+start = time.time()
+
+t1 = threading.Thread(target=boil_milk)
+t2 = threading.Thread(target=toast_bun)
+
+t1.start()
+t2.start()
+
+t1.join()
+t2.join()
+
+print("Time:", time.time() - start)
+```
+
+👉 Total time ≈ **3 seconds**
+
+✅ Because tasks run concurrently
+
+---
+
+## 🔹 4. Important Thread Methods
+
+* `Thread(target=func)` → create thread
+* `start()` → start execution
+* `join()` → wait until thread finishes
+
+👉 Always use `join()` if you need final result
+
+---
+
+## 🔹 5. Passing Arguments to Threads
+
+```python
+import threading
+import time
+
+def make_chai(type, delay):
+    print(f"{type} chai brewing...")
+    time.sleep(delay)
+    print(f"{type} chai ready")
+
+t1 = threading.Thread(target=make_chai, args=("Masala", 2))
+t2 = threading.Thread(target=make_chai, args=("Ginger", 3))
+
+t1.start()
+t2.start()
+
+t1.join()
+t2.join()
+```
+
+👉 Important:
+
+* `args` must be a **tuple**
+* Even single value → `(value,)`
+
+---
+
+## 🔹 6. When Threads Work Well (VERY IMPORTANT)
+
+### ✅ Best for: IO-bound tasks
+
+* API calls
+* File read/write
+* Database queries
+
+### Example (downloading data)
+
+```python
+import threading
+import requests
+
+def download(url):
+    print("Downloading:", url)
+    r = requests.get(url)
+    print("Done:", len(r.content))
+
+urls = [
+    "https://httpbin.org/image/jpeg",
+    "https://httpbin.org/image/png"
+]
+
+threads = []
+
+for url in urls:
+    t = threading.Thread(target=download, args=(url,))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+```
+
+👉 Why faster?
+
+* While one thread waits for network, others work
+
+---
+
+## 🔹 7. When Threads Do NOT Work Well
+
+### ❌ CPU-bound tasks
+
+* Heavy loops
+* Image processing
+* Large computations
+
+👉 Reason: **GIL (Global Interpreter Lock)**
+
+Only ONE thread executes Python code at a time.
+
+---
+
+## 🔹 8. Race Condition (Core Problem)
+
+When multiple threads modify same variable:
+
+```python
+counter += 1
+```
+
+👉 Problem:
+
+* Two threads may read same value
+* Result becomes incorrect
+
+---
+
+## 🔹 9. Lock (Solution to Race Condition)
+
+A **lock ensures only one thread accesses shared data at a time**
+
+### Example:
+
+```python
+import threading
+
+counter = 0
+lock = threading.Lock()
+
+def increment():
+    global counter
+    for _ in range(100000):
+        with lock:
+            counter += 1
+
+threads = []
+
+for _ in range(5):
+    t = threading.Thread(target=increment)
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+
+print("Final counter:", counter)
+```
+
+---
+
+## 🔹 10. Without Lock (Danger)
+
+```python
+counter += 1
+```
+
+👉 Might give:
+
+* Wrong result
+* Inconsistent output
+
+👉 Hard to reproduce, but real problem in production systems
+
+---
+
+## 🔹 11. Key Takeaways (Very Important)
+
+### ✔ Threads
+
+* Share memory
+* Lightweight
+* Good for IO tasks
+
+### ✔ GIL
+
+* Only one thread runs Python code at a time
+* Limits CPU-bound performance
+
+### ✔ Use threads when:
+
+* API calls
+* DB calls
+* File operations
+
+### ✔ Avoid threads when:
+
+* Heavy computation
+  → Use multiprocessing instead
+
+### ✔ Lock
+
+* Prevents race condition
+* Makes shared data safe
+
+---
+
+## 🔹 12. Simple Mental Model
+
+* Threads = multiple workers sharing one kitchen
+* Lock = only one worker allowed at stove at a time
+* IO task = workers waiting for ingredients (so others can work)
+* CPU task = everyone fighting for same stove (slow)
+
+---
+
+## Python Threading Concepts (contd..)
+
+## This topic Tutorial Covers
+
+A practical deep-dive into Python threads: how to create them, pass arguments, use them effectively (IO tasks), and protect shared data using locks.
+
+---
+
+## 1. What is a Thread?
+
+A **thread** is a smaller unit of execution within a process. A single program (process) can run multiple threads simultaneously, sharing the same memory.
+
+```python
+import threading
+
+def say_hello():
+    print("Hello from a thread!")
+
+t = threading.Thread(target=say_hello)
+t.start()
+t.join()  # wait for thread to finish
+```
+
+---
+
+## 2. Creating Multiple Threads
+
+Threads let different tasks run "at the same time" (concurrently). Classic example: boiling milk and toasting bread in parallel instead of one after the other.
+
+```python
+import threading, time
+
+def boil_milk():
+    print("Boiling milk...")
+    time.sleep(2)
+    print("Milk boiled!")
+
+def toast_bun():
+    print("Toasting bun...")
+    time.sleep(3)
+    print("Bun toasted!")
+
+t1 = threading.Thread(target=boil_milk)
+t2 = threading.Thread(target=toast_bun)
+
+t1.start()
+t2.start()
+
+t1.join()  # wait for t1 to complete
+t2.join()  # wait for t2 to complete
+
+print("Breakfast ready!")
+```
+
+Without threads, this takes 5 seconds (2+3). With threads, it takes ~3 seconds.
+
+---
+
+## 3. Passing Arguments to Threads
+
+Use the `args` parameter, which takes a **tuple**.
+
+```python
+import threading, time
+
+def make_chai(type_, wait_time):
+    print(f"{type_} chai brewing...")
+    time.sleep(wait_time)
+    print(f"{type_} chai ready!")
+
+t1 = threading.Thread(target=make_chai, args=("Masala", 2))
+t2 = threading.Thread(target=make_chai, args=("Ginger", 3))
+
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+```
+
+---
+
+## 4. Where Threads Shine — IO-Bound Tasks
+
+Threads are great for **IO-bound** operations (tasks where the CPU waits for something external), like:
+
+- Web requests / API calls
+- Disk read/write
+- Database queries
+
+**Why?** While one thread waits for a response, other threads can proceed. No CPU computation is blocked.
+
+```python
+import threading, requests, time
+
+def download(url):
+    print(f"Downloading from {url}")
+    response = requests.get(url)
+    print(f"Done: {len(response.content)} bytes")
+
+urls = [
+    "https://httpbin.org/image/jpeg",
+    "https://httpbin.org/image/png",
+    "https://httpbin.org/image/svg",
+]
+
+threads = []
+for url in urls:
+    t = threading.Thread(target=download, args=(url,))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+```
+
+Each thread fetches a different URL simultaneously — faster than sequential downloads.
+
+---
+
+## 5. Where Threads Do NOT Shine — CPU-Bound Tasks
+
+For heavy computation (image processing, math operations), threads **don't help** in Python because of the **GIL (Global Interpreter Lock)**, which only allows one thread to execute Python code at a time.
+
+| Task Type | Use Threads? | Better Alternative |
+|---|---|---|
+| Web requests | ✅ Yes | — |
+| File read/write | ✅ Yes | — |
+| Image processing | ❌ No | `multiprocessing` |
+| Heavy math | ❌ No | `multiprocessing` |
+
+---
+
+## 6. Thread Lock — Protecting Shared Data
+
+When multiple threads read and write to the **same variable**, you can get a **race condition** — unpredictable/wrong results because threads interfere with each other.
+
+**Solution: Use a Lock**. A lock ensures only one thread touches shared data at a time.
+
+```python
+import threading
+
+counter = 0
+lock = threading.Lock()  # create a lock
+
+def increment():
+    global counter
+    for _ in range(100_000):
+        with lock:          # only one thread enters here at a time
+            counter += 1
+
+threads = [threading.Thread(target=increment) for _ in range(10)]
+
+for t in threads:
+    t.start()
+
+for t in threads:
+    t.join()
+
+print(f"Final counter: {counter}")  # Always 1,000,000
+```
+
+Without the lock, the counter could end up with a wrong value like 847,213 instead of 1,000,000.
+
+---
+
+## Key Takeaways
+
+**`t.start()`** — Starts the thread's execution.
+
+**`t.join()`** — Makes the main program wait until that thread finishes before moving on.
+
+**`args=(val,)`** — Always a tuple when passing arguments to a thread. The trailing comma matters for single values.
+
+**IO-bound = threads win.** CPU-bound = use `multiprocessing` instead.
+
+**Race condition** — When two threads modify the same data at the same time, causing unpredictable results.
+
+**Lock (`threading.Lock()`)** — Prevents race conditions by letting only one thread modify shared data at a time. Use `with lock:` to apply it safely.
+
+**GIL** — Python's internal mechanism that prevents true parallel thread execution, which is why threads don't speed up CPU-heavy work.
+
+---
+
+## 81. Multi Process with Queue and Value (19:20)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
