@@ -13329,5 +13329,421 @@ Without the lock, the counter could end up with a wrong value like 847,213 inste
 
 ## 81. Multi Process with Queue and Value (19:20)
 
+This topic focuses on:
+
+* Why **multiprocessing** is needed
+* Why threads fail for CPU-heavy work
+* How to use **Process**
+* How processes communicate using:
+
+  * **Queue**
+  * **Value (shared memory)**
+
+---
+
+## 🔹 2. Core Idea: Threads vs Processes (Revisited)
+
+### Threads
+
+* Share memory
+* Blocked by **GIL**
+* ❌ Not good for CPU-heavy work
+
+### Processes
+
+* Separate memory
+* No GIL issue
+* ✅ Best for CPU-heavy tasks
+
+👉 Trade-off:
+
+* No shared memory → need communication tools
+
+---
+
+## 🔹 3. Problem: Threads Fail for CPU-bound Work
+
+### Example (Thread - inefficient)
+
+```python
+import threading
+import time
+
+def cpu_heavy():
+    total = 0
+    for i in range(10**7):
+        total += i
+
+start = time.time()
+
+threads = [threading.Thread(target=cpu_heavy) for _ in range(2)]
+
+for t in threads:
+    t.start()
+
+for t in threads:
+    t.join()
+
+print("Time:", time.time() - start)
+```
+
+👉 Problem:
+
+* Runs almost same as single thread
+* Because of **GIL**
+
+---
+
+## 🔹 4. Solution: Multiprocessing
+
+### Same code using processes
+
+```python
+from multiprocessing import Process
+import time
+
+def cpu_heavy():
+    total = 0
+    for i in range(10**7):
+        total += i
+
+if __name__ == "__main__":
+    start = time.time()
+
+    processes = [Process(target=cpu_heavy) for _ in range(2)]
+
+    for p in processes:
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    print("Time:", time.time() - start)
+```
+
+👉 Result:
+
+* Faster execution
+* True parallelism (uses multiple CPU cores)
+
+---
+
+## 🔹 5. IMPORTANT: Why `if __name__ == "__main__"`?
+
+👉 Required in multiprocessing
+
+Without it → error like:
+
+> “process started before bootstrap finished”
+
+### Why?
+
+* Each process runs the file again
+* This block prevents infinite spawning
+
+---
+
+## 🔹 6. Big Limitation of Processes
+
+👉 Processes **DO NOT share memory**
+
+So this won’t work:
+
+```python
+counter += 1   # Not shared across processes
+```
+
+---
+
+## 🔹 7. Solution 1: Queue (Most Important)
+
+Used to **pass data between processes**
+
+---
+
+### Example: Using Queue
+
+```python
+from multiprocessing import Process, Queue
+
+def make_chai(q):
+    q.put("Masala chai ready")
+
+if __name__ == "__main__":
+    q = Queue()
+
+    p = Process(target=make_chai, args=(q,))
+    p.start()
+    p.join()
+
+    print(q.get())
+```
+
+---
+
+### Key Points:
+
+* `put()` → add data
+* `get()` → retrieve data
+* Works like normal queue (FIFO)
+
+👉 Very common in:
+
+* Backend jobs
+* Task queues
+* Worker systems
+
+---
+
+## 🔹 8. Solution 2: Shared Value
+
+Used to share **simple variables**
+
+---
+
+### Example: Shared Counter
+
+```python
+from multiprocessing import Process, Value
+
+def increment(counter):
+    for _ in range(100000):
+        with counter.get_lock():
+            counter.value += 1
+
+if __name__ == "__main__":
+    counter = Value('i', 0)
+
+    processes = [Process(target=increment, args=(counter,)) for _ in range(4)]
+
+    for p in processes:
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    print("Final counter:", counter.value)
+```
+
+---
+
+### Key Points:
+
+* `Value('i', 0)` → integer shared variable
+* `.value` → actual value
+* `.get_lock()` → ensures safety
+
+👉 Automatically handles locking
+
+---
+
+## 🔹 9. Queue vs Value (When to use what)
+
+| Use Case              | Use   |
+| --------------------- | ----- |
+| Passing messages/data | Queue |
+| Shared counter/state  | Value |
+| Complex data          | Queue |
+| Simple number         | Value |
+
+---
+
+## 🔹 10. Real World Use Cases
+
+### Multiprocessing is used in:
+
+* Image processing
+* Video processing
+* AI/ML training
+* Data pipelines
+
+👉 Example:
+
+* Process 1 → load image
+* Process 2 → apply filter
+* Process 3 → save result
+
+All in parallel
+
+---
+
+## 🔹 11. Mental Model
+
+* Threads = people sharing same notebook
+* Processes = people with separate notebooks
+
+👉 Queue = passing notes between them
+👉 Value = shared scoreboard
+
+---
+
+## 🔹 12. Key Takeaways (Very Important)
+
+* Threads ❌ for CPU-heavy tasks
+* Processes ✅ for CPU-heavy tasks
+* Processes don’t share memory
+* Use:
+
+  * Queue → for communication
+  * Value → for shared variables
+* Always use:
+
+```python
+if __name__ == "__main__":
+```
+
+---
+
+## 🔹 13. Quick Summary
+
+* GIL blocks threads → no speed gain for CPU work
+* Multiprocessing bypasses GIL → real parallelism
+* Communication is the main challenge
+* Python provides:
+
+  * Queue (safe data sharing)
+  * Value (shared memory + lock)
+
+---
+
+## Python Multiprocessing Concepts (contd...)
+
+This topic covers **multiprocessing in Python** — running multiple processes in parallel to speed up heavy computation. It contrasts threads vs processes, and introduces **Queue** and **Value** for inter-process communication.
+
+---
+
+## Core Concept: Threads vs Processes
+
+| Feature | Threads | Processes |
+|---|---|---|
+| Memory | Shared | Separate (isolated) |
+| Best for | I/O-bound tasks | CPU-bound tasks |
+| Communication | Easy (shared memory) | Needs Queue/Pipes/Value |
+| GIL limitation | Yes (Python bottleneck) | No (bypasses GIL) |
+
+---
+
+## Key Concept 1 — Why Threads Fail at CPU-Heavy Work
+
+Python's **GIL (Global Interpreter Lock)** prevents true parallel execution of threads. So for number crunching, threads don't help much.
+
+```python
+import threading
+import time
+
+def cpu_heavy():
+    total = 0
+    for i in range(10**7):
+        total += i
+
+start = time.time()
+threads = [threading.Thread(target=cpu_heavy) for _ in range(2)]
+[t.start() for t in threads]
+[t.join() for t in threads]
+print(f"Time taken: {time.time() - start:.2f}s")
+# Threads don't speed this up — GIL blocks true parallelism
+```
+
+---
+
+## Key Concept 2 — Multiprocessing (The Fix)
+
+Each `Process` runs in its **own memory space**, bypassing the GIL. This gives true parallel execution on multi-core CPUs.
+
+```python
+from multiprocessing import Process
+import time
+
+def cpu_heavy():
+    total = 0
+    for i in range(10**7):
+        total += i
+
+if __name__ == "__main__":  # ⚠️ Always required on Windows/macOS
+    start = time.time()
+    processes = [Process(target=cpu_heavy) for _ in range(2)]
+    [p.start() for p in processes]
+    [p.join() for p in processes]
+    print(f"Time taken: {time.time() - start:.2f}s")
+    # Significantly faster than threads for CPU tasks!
+```
+
+> ⚠️ **Why `if __name__ == "__main__"`?** Python needs this guard to avoid infinitely spawning child processes on startup.
+
+---
+
+## Key Concept 3 — Queue (Sharing Data Between Processes)
+
+Since processes have **separate memory**, they can't share variables directly. A `Queue` acts like a shared mailbox — one process puts data in, another picks it up.
+
+```python
+from multiprocessing import Process, Queue
+
+def make_tea(q):
+    q.put("Masala chai is ready!")  # Put result into queue
+
+if __name__ == "__main__":
+    q = Queue()
+    p = Process(target=make_tea, args=(q,))
+    p.start()
+    p.join()
+    print(q.get())  # Retrieve from queue → "Masala chai is ready!"
+```
+
+**Queue supports:** `put()`, `get()`, `empty()`, `full()`, `qsize()` — a full-featured data structure built for parallel use.
+
+---
+
+## Key Concept 4 — Value (Shared Counter Across Processes)
+
+`Value` lets multiple processes **safely share a single variable** with an automatic lock — no manual lock management needed.
+
+```python
+from multiprocessing import Process, Value
+
+def increment(counter):
+    for _ in range(100_000):
+        with counter.get_lock():       # Auto lock — thread/process safe
+            counter.value += 1
+
+if __name__ == "__main__":
+    counter = Value('i', 0)            # 'i' = integer, starts at 0
+    processes = [Process(target=increment, args=(counter,)) for _ in range(4)]
+    [p.start() for p in processes]
+    [p.join() for p in processes]
+    print(f"Final counter: {counter.value}")  # → 400,000
+```
+
+> 4 processes × 100,000 increments = **400,000** — all safely shared!
+
+---
+
+## Important Pointers at a Glance
+
+- **Use processes for CPU-bound tasks** (image processing, AI training, number crunching). Use threads for I/O-bound tasks (file reads, API calls).
+- **Always wrap process code** in `if __name__ == "__main__":` to prevent recursive spawning.
+- **Processes can't share memory directly** — use `Queue` (for passing data) or `Value`/`Array` (for shared state).
+- `Queue` is ideal when one process produces results and another consumes them (producer-consumer pattern).
+- `Value` with `.get_lock()` is ideal for shared counters or single shared variables.
+- Python's `multiprocessing` module also provides: `Pipe`, `Array`, `Barrier`, `Condition`, `Lock`, `Semaphore` — a full toolkit.
+- **Real-world use cases:** batch image filtering, ML training workers, data pipeline stages, video encoding, scientific simulations.
+
+---
+
+## Quick Mental Model
+
+```
+Threads  →  Same house, shared kitchen     (GIL causes traffic jams)
+Processes → Separate houses, own kitchens  (need a courier = Queue/Value)
+```
+
+- Note - Value is a type-safe, lock-capable shared memory slot that lets multiple processes safely read and update a single variable — something a normal Python variable simply cannot do across process boundaries.
+
+---
+
+
+## Sec 12 - Asyncio in python
+
+## 84. Asyncio, Event Loop, coroutines and await in python (32:05)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
