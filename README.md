@@ -13746,4 +13746,419 @@ Processes → Separate houses, own kitchens  (need a courier = Queue/Value)
 
 ## 84. Asyncio, Event Loop, coroutines and await in python (32:05)
 
+## 🧠 1. What is Async Programming (in simple words)
+
+Async programming lets your program **handle multiple tasks without blocking**.
+
+👉 Instead of waiting (like threads/processes), it says:
+
+> “While I’m waiting for something, let me do other work.”
+
+### Example:
+
+* Fetching data from API (takes time)
+* Reading files
+* DB queries
+
+Instead of waiting idle → async switches to another task.
+
+---
+
+## ⚡ 2. Why Async is Powerful
+
+* No need for multiple threads/processes
+* Less memory usage
+* Very fast for I/O tasks
+* Used in modern frameworks like FastAPI
+
+👉 Best for:
+
+* APIs
+* Web scraping
+* Network calls
+* File operations
+
+---
+
+## 🔑 3. Key Concepts You Must Know
+
+---
+
+## ✅ 3.1 `async def` → Coroutine
+
+An async function is called a **coroutine**.
+
+👉 It’s just a function that can **pause and resume**
+
+```python
+async def say_hello():
+    print("Hello")
+```
+
+---
+
+## ✅ 3.2 `await` → Pause execution
+
+👉 `await` means:
+
+> “Wait here, but don’t block the whole program”
+
+```python
+import asyncio
+
+async def task():
+    print("Start")
+    await asyncio.sleep(2)   # non-blocking wait
+    print("End")
+```
+
+---
+
+## ✅ 3.3 Event Loop (engine behind async)
+
+👉 Event loop:
+
+* Runs all async tasks
+* Switches between them
+* Resumes paused tasks
+
+You don’t control it directly.
+
+---
+
+## ✅ 3.4 Running async code
+
+```python
+import asyncio
+
+async def main():
+    print("Running...")
+
+asyncio.run(main())
+```
+
+---
+
+## 🔄 4. Blocking vs Non-Blocking (Very Important)
+
+| Type         | Example                  | Behavior         |
+| ------------ | ------------------------ | ---------------- |
+| Blocking     | `time.sleep(2)`          | Stops everything |
+| Non-blocking | `await asyncio.sleep(2)` | Lets others run  |
+
+### Example:
+
+❌ Blocking
+
+```python
+import time
+
+def task():
+    time.sleep(2)
+```
+
+✅ Non-blocking
+
+```python
+import asyncio
+
+async def task():
+    await asyncio.sleep(2)
+```
+
+---
+
+## 🚀 5. Running Multiple Tasks (Concurrency)
+
+Use `asyncio.gather()`
+
+```python
+import asyncio
+
+async def brew(name):
+    print(f"Brewing {name}")
+    await asyncio.sleep(2)
+    print(f"{name} ready")
+
+async def main():
+    await asyncio.gather(
+        brew("Masala"),
+        brew("Green"),
+        brew("Ginger")
+    )
+
+asyncio.run(main())
+```
+
+### Output behavior:
+
+* All start together
+* All finish together (~2 sec total)
+
+👉 Not 6 seconds → only 2 seconds
+
+---
+
+## 🌐 6. Real Example: Fetching URLs
+
+Async shines in **network calls**
+
+```python
+import asyncio
+import aiohttp
+
+async def fetch(session, url):
+    async with session.get(url) as response:
+        print(f"{url} -> {response.status}")
+
+async def main():
+    urls = ["https://httpbin.org/delay/2"] * 3
+
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch(session, url) for url in urls]
+        await asyncio.gather(*tasks)
+
+asyncio.run(main())
+```
+
+👉 All requests run together
+👉 Total time ≈ 2 sec (not 6 sec)
+
+---
+
+## ⭐ 7. What is `*tasks` (important)
+
+```python
+await asyncio.gather(*tasks)
+```
+
+👉 `*` means **unpacking list**
+
+Example:
+
+```python
+tasks = [t1, t2, t3]
+
+# same as:
+asyncio.gather(t1, t2, t3)
+```
+
+---
+
+## 🧩 8. When to Use Async
+
+## ✅ Use Async for:
+
+* API calls
+* DB queries
+* File reading/writing
+* Web scraping
+
+## ❌ Avoid Async for:
+
+* Heavy CPU work (use multiprocessing instead)
+
+---
+
+## ⚖️ 9. Async vs Thread vs Process
+
+| Feature     | Threading | Multiprocessing | Async      |
+| ----------- | --------- | --------------- | ---------- |
+| Best for    | I/O       | CPU             | I/O        |
+| Parallelism | ❌ (GIL)   | ✅               | ❌          |
+| Memory      | Shared    | Separate        | Shared     |
+| Speed       | Medium    | High            | High (I/O) |
+
+---
+
+## 🧠 10. Key Takeaways (Important Points)
+
+* Async = **non-blocking concurrency**
+* `async def` → defines coroutine
+* `await` → pauses without blocking
+* `asyncio.run()` → starts program
+* `asyncio.gather()` → run multiple tasks
+* Event loop handles everything internally
+* Much faster for I/O tasks than threads
+
+---
+
+## 💡 Simple Mental Model
+
+Think of async like this:
+
+👉 A waiter (event loop) handling multiple tables:
+
+* Takes order (task starts)
+* While food is cooking (await)
+* Serves another table
+* Comes back when ready
+
+---
+
+## ✔️ Final Summary
+
+* Async doesn’t make things magically faster
+* It removes **waiting time waste**
+* Perfect for modern backend systems
+* Cleaner than threads in many cases
+
+- [AIOHTTP](https://docs.aiohttp.org/en/stable/)
+
+---
+
+## Async Python (Asyncio) Key Concepts (contd...)
+
+## What is Async Python?
+
+Async programming lets your Python code handle multiple tasks **without waiting** for each one to finish before starting the next. It's especially useful for **I/O-bound tasks** — like reading files, querying databases, or making HTTP requests — where your program would otherwise just sit idle waiting.
+
+> No need for threads or processes. One thread, many tasks running concurrently.
+
+---
+
+## Why Does It Matter?
+
+| Regular (Blocking) Code | Async (Non-Blocking) Code |
+|---|---|
+| Send request → wait → send next | Send all requests → wait together |
+| 3 requests × 2s = **6 seconds** | 3 requests × 2s = **~2 seconds** |
+
+This is exactly why **FastAPI** is so fast compared to older frameworks.
+
+---
+
+## The 4 Core Concepts
+
+### 1. `async def` — Declaring a Coroutine
+
+A **coroutine** is just a special function that **can be paused** mid-execution, letting other tasks run in the meantime.
+
+```python
+import asyncio
+
+async def brew_chai():
+    print("Brewing chai...")
+    await asyncio.sleep(2)   # pauses here, non-blocking
+    print("Chai is ready!")
+
+asyncio.run(brew_chai())
+```
+
+---
+
+### 2. `await` — Pausing Without Blocking
+
+`await` says: *"Pause this coroutine until this operation finishes, but let other coroutines run in the meantime."*
+
+```python
+# Blocking ❌ — freezes the whole program
+import time
+time.sleep(2)
+
+# Non-blocking ✅ — pauses only this coroutine
+await asyncio.sleep(2)
+```
+
+---
+
+### 3. `asyncio` — The Built-in Library
+
+Python's built-in module that provides all the async tooling — `run()`, `sleep()`, `gather()`, and more.
+
+```python
+import asyncio
+
+async def say_hello():
+    await asyncio.sleep(1)
+    print("Hello!")
+
+asyncio.run(say_hello())   # entry point to run any coroutine
+```
+
+---
+
+### 4. Event Loop — The Engine
+
+The event loop is the scheduler that keeps track of all coroutines. You rarely touch it directly, but it's always running behind the scenes.
+
+- Constantly checks: *"Is any paused task ready to resume?"*
+- Picks it up and continues execution
+- Same concept as JavaScript's event loop
+
+---
+
+## Running Multiple Coroutines Together
+
+The real power shows up when you run multiple coroutines **concurrently** using `asyncio.gather()`.
+
+```python
+import asyncio
+
+async def brew(name, delay):
+    print(f"Brewing {name}...")
+    await asyncio.sleep(delay)
+    print(f"{name} is ready!")
+
+async def main():
+    await asyncio.gather(
+        brew("Masala Chai", 2),
+        brew("Green Tea", 2),
+        brew("Ginger Chai", 2),
+    )
+
+asyncio.run(main())
+# All 3 finish in ~2 seconds, not 6!
+```
+
+---
+
+## Making Async HTTP Requests (`aiohttp`)
+
+For real-world async web requests, use `aiohttp` (install via `pip install aiohttp`):
+
+```python
+import asyncio
+import aiohttp
+
+async def fetch(session, url):
+    async with session.get(url) as response:
+        print(f"Fetched {url} — Status: {response.status}")
+
+async def main():
+    urls = ["https://httpbin.org/delay/2"] * 3  # 3 requests
+
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch(session, url) for url in urls]
+        await asyncio.gather(*tasks)   # * unpacks the list
+
+asyncio.run(main())
+# All 3 responses arrive in ~2 seconds total
+```
+
+The `*tasks` (asterisk) is Python's **unpacking operator** — equivalent to spreading the list into individual arguments, like the spread operator in JavaScript.
+
+---
+
+## Quick Reference
+
+| Concept | What it does |
+|---|---|
+| `async def` | Declares a coroutine (pauseable function) |
+| `await` | Pauses execution non-blockingly until result is ready |
+| `asyncio.sleep()` | Non-blocking sleep (use instead of `time.sleep`) |
+| `asyncio.gather()` | Runs multiple coroutines concurrently |
+| `asyncio.run()` | Entry point — starts the event loop |
+| Event Loop | Scheduler that manages and resumes coroutines |
+
+---
+
+## Key Takeaway
+
+> `await` doesn't mean "skip the wait." It means **"wait smartly"** — pause this task and go serve other requests, then come back when the result is ready.
+
+That's the entire philosophy of Asyncio in one line.
+
+## 85. Mixing threads with asyncio in python (08:43)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
