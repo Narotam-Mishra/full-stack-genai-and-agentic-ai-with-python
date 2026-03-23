@@ -14161,4 +14161,345 @@ That's the entire philosophy of Asyncio in one line.
 
 ## 85. Mixing threads with asyncio in python (08:43)
 
+## AsyncIO + Multithreading in Python (Concepts)
+
+AsyncIO and multithreading are **not enemies** — they can work together. AsyncIO doesn't replace threads or multiprocessing; it's just another tool. The key bridge between them is `loop.run_in_executor()`.
+
+---
+
+## Core Concepts Explained
+
+### 1. The Problem: Blocking Functions
+
+A regular (non-async) function that uses `time.sleep()` **blocks** the main thread — nothing else can run during that time.
+
+```python
+import time
+
+def check_stock(item):
+    print(f"Checking {item} in store...")
+    time.sleep(3)  # BLOCKS everything — bad in async apps
+    return f"{item} stock: 42"
+```
+
+---
+
+### 2. `concurrent.futures.ThreadPoolExecutor`
+
+A built-in Python tool that manages a **pool of threads**. Think of it like a team of workers waiting to take on tasks.
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+with ThreadPoolExecutor() as pool:
+    # pool can now run functions in separate threads
+    pass
+```
+
+---
+
+### 3. `asyncio.get_running_loop()`
+
+Gets the currently active AsyncIO event loop. It's **thread-aware**, meaning it's designed to work alongside threads — not instead of them.
+
+```python
+import asyncio
+
+async def main():
+    loop = asyncio.get_running_loop()
+    # loop is now available for thread-based operations
+```
+
+---
+
+### 4. ⭐ The Hero: `loop.run_in_executor()`
+
+This is the magic method. It lets AsyncIO **run a blocking (non-async) function in a separate thread**, so the main thread is never blocked.
+
+```python
+import asyncio
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+# Regular blocking function (no async)
+def check_stock(item):
+    print(f"Checking {item} in store...")
+    time.sleep(3)  # blocking — but won't hurt us now
+    return f"{item} stock: 42"
+
+# Async function that uses the blocking one safely
+async def main():
+    loop = asyncio.get_running_loop()
+
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, check_stock, "Masala Chai")
+        print(result)
+
+asyncio.run(main())
+```
+
+**Output (after ~3 seconds):**
+```
+Checking Masala Chai in store...
+Masala Chai stock: 42
+```
+
+---
+
+## What Happens Behind the Scenes?
+
+```
+Main Thread (AsyncIO event loop)
+        │
+        │  encounters run_in_executor()
+        │
+        ├──► Spins up a NEW thread via ThreadPoolExecutor
+        │         │
+        │         │  check_stock() runs here (blocking is fine!)
+        │         │
+        │◄─────── result returned via await
+        │
+        │  continues normally
+```
+
+The main thread is **never blocked**. The heavy/slow work happens in a side thread.
+
+---
+
+## Key Takeaways
+
+| Concept | What it does |
+|---|---|
+| `time.sleep()` in normal functions | Blocks the main thread entirely |
+| `asyncio.sleep()` | Non-blocking — yields control back to event loop |
+| `ThreadPoolExecutor` | Manages a pool of worker threads |
+| `get_running_loop()` | Gets the active event loop (thread-aware) |
+| `run_in_executor()` | Runs a blocking function in a thread, awaitable from async code |
+
+---
+
+## Why This Matters in Real Life
+
+- **FastAPI** uses this pattern under the hood — that's why it's fast even when calling blocking database or I/O operations.
+- When you inherit a codebase that mixes sync and async code, `run_in_executor()` is the clean way to bridge them.
+- You don't have to rewrite all your blocking functions to `async` — just offload them to a thread pool.
+
+The mental model is simple: **AsyncIO handles the coordination, threads handle the blocking work.**
+
+---
+
+Here’s a **clean, simple breakdown** of this last part of your tutorial (Asyncio + Threads together), with **key ideas + easy examples** so you can actually use this in real code.
+
+---
+
+👉 **Asyncio + Multithreading can work together**
+
+* Asyncio = great for **non-blocking I/O tasks**
+* Threads = useful for **blocking tasks (like time.sleep, DB calls, CPU work)**
+
+💡 Instead of choosing one, you can **combine both smartly**
+
+---
+
+## 🔑 Why Combine Them?
+
+Sometimes:
+
+* You already have **blocking code** (like legacy functions)
+* But your app is **async (FastAPI, APIs, etc.)**
+
+👉 Solution:
+Use Asyncio to **run blocking code in a separate thread**
+
+---
+
+## ⚙️ Key Concepts You Must Know
+
+## 1. `run_in_executor()`
+
+👉 This is the **main hero**
+
+* It allows async code to run **normal (blocking) functions**
+* Runs them in a **separate thread**
+
+### Think like this:
+
+> "Hey Asyncio, run this slow/blocking function in another thread so I don’t block my app."
+
+---
+
+## 2. ThreadPoolExecutor
+
+👉 Manages a **pool of threads**
+
+* Instead of creating threads manually
+* It handles them efficiently
+
+---
+
+## 3. Event Loop (again important)
+
+👉 Asyncio uses an event loop
+
+* Schedules tasks
+* Runs async functions
+* Delegates blocking work to threads
+
+---
+
+## 🧪 Basic Flow
+
+1. You write a **normal blocking function**
+2. Inside async function:
+
+   * Get event loop
+   * Use `run_in_executor`
+3. Asyncio runs that function in another thread
+
+---
+
+## 💻 Example (Simple Version)
+
+## Step 1: Blocking Function
+
+```python
+import time
+
+def check_stock(item):
+    print(f"Checking {item} in store...")
+    time.sleep(3)  # ❌ blocking
+    return f"{item} stock: 42"
+```
+
+---
+
+## Step 2: Async Function using Thread
+
+```python
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+async def main():
+    loop = asyncio.get_running_loop()
+
+    with ThreadPoolExecutor() as pool:
+        result = await loop.run_in_executor(
+            pool,
+            check_stock,
+            "Masala Chai"
+        )
+
+    print(result)
+
+asyncio.run(main())
+```
+
+---
+
+## 🧠 What’s Happening Behind the Scenes?
+
+* `check_stock()` is blocking (uses `time.sleep`)
+* Asyncio says:
+
+  * "Don’t block me"
+  * "Run this in another thread"
+
+✔ Main app stays fast
+✔ Thread handles slow work
+
+---
+
+## ⚡ Output Flow
+
+```
+Checking Masala Chai in store...
+(wait 3 seconds)
+Masala Chai stock: 42
+```
+
+👉 But main thread was **NOT blocked**
+
+---
+
+## 🔥 Why This Is Powerful (Real Use Cases)
+
+You’ll use this when:
+
+### ✅ 1. Database calls (blocking drivers)
+
+### ✅ 2. File reading/writing
+
+### ✅ 3. Legacy synchronous code
+
+### ✅ 4. External APIs (non-async libraries)
+
+---
+
+## ⚖️ Async vs Threads vs Processes (Quick Clarity)
+
+| Type      | Best For     | Example          |
+| --------- | ------------ | ---------------- |
+| Asyncio   | I/O tasks    | API calls        |
+| Threads   | Blocking I/O | file/db          |
+| Processes | CPU heavy    | image processing |
+
+---
+
+## 🚫 Common Mistake
+
+❌ Thinking Async replaces threads
+
+👉 Reality:
+
+* Async = different tool
+* Threads = still useful
+* You combine them when needed
+
+---
+
+## 🧩 Mental Model (Easy Way to Remember)
+
+Think of a restaurant:
+
+* Asyncio = waiter taking multiple orders
+* Thread = helper doing slow kitchen work
+* `run_in_executor` = waiter saying:
+
+  > "Hey helper, you handle this slow task"
+
+---
+
+## 📝 Key Takeaways
+
+* Asyncio does **non-blocking concurrency**
+* Threads handle **blocking work**
+* `run_in_executor()` connects both worlds
+* Very useful in:
+
+  * FastAPI
+  * Backend systems
+  * Real-world scalable apps
+
+---
+
+## 🚀 When YOU Should Use This (based on your background)
+
+Since you’re working with:
+
+* **Node.js + backend + system design**
+
+👉 This concept is similar to:
+
+* Node.js event loop + worker threads
+
+💡 In Python (FastAPI):
+
+* Async handles requests
+* Threads handle blocking tasks
+
+---
+
+## 86. Asyncio and Multiprocess in python (11:28)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
