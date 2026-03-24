@@ -14501,5 +14501,680 @@ Since you’re working with:
 
 ## 86. Asyncio and Multiprocess in python (11:28)
 
+## What This Tutorial Covers
+
+Two related topics:
+1. Running **CPU-heavy tasks** in a separate **process** using `asyncio` + `ProcessPoolExecutor`
+2. Running a **background logger** in a separate **thread** alongside asyncio
+
+---
+
+## Part 1: Multiprocessing with AsyncIO
+
+### The Idea
+Some tasks (like encrypting data) are CPU-intensive. If you run them on the main thread, they block everything. The fix: **offload them to a separate process**.
+
+### Key Concepts
+
+**`ProcessPoolExecutor`** — runs functions in separate OS processes (good for CPU-bound work)
+**`loop.run_in_executor()`** — bridges asyncio with blocking/heavy code
+
+### Code Example
+
+```python
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
+
+# Simulated CPU-heavy task (NOT a coroutine — plain function)
+def encrypt(data):
+    return f"🔒 Encrypted: {data}"
+
+async def main():
+    loop = asyncio.get_running_loop()
+
+    with ProcessPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, encrypt, "credit_card_1234")
+        print(result)
+
+if __name__ == "__main__":          # ⚠️ REQUIRED for multiprocessing!
+    asyncio.run(main())
+
+# Output: 🔒 Encrypted: credit_card_1234
+```
+
+### ⚠️ Important: The `if __name__ == "__main__"` Guard
+This is **mandatory** when using multiprocessing in Python. Without it, each spawned process tries to re-run the whole script, causing chaos.
+
+---
+
+## Part 2: Background Thread + AsyncIO Together
+
+### The Idea
+Run a **background logger** (on a thread) that prints every second, while asyncio independently handles async tasks — neither blocks the other.
+
+### Code Example
+
+```python
+import asyncio
+import threading
+import time
+
+# Runs in a background thread — logs every second
+def background_worker():
+    while True:
+        time.sleep(1)
+        print("🕐 Logging system health...")
+
+# Async task — fetches an order (simulated)
+async def fetch_orders():
+    await asyncio.sleep(3)          # Non-blocking wait
+    print("📦 Order fetched!")
+
+# Setup
+thread = threading.Thread(target=background_worker, daemon=True)
+thread.start()                      # Background logger starts
+
+asyncio.run(fetch_orders())         # Asyncio runs independently
+```
+
+**Output:**
+```
+🕐 Logging system health...
+🕐 Logging system health...
+🕐 Logging system health...
+📦 Order fetched!
+```
+
+### `daemon=True`
+Marks the thread as a **background/helper thread**. It automatically dies when the main program exits — you don't need to manually stop it.
+
+---
+
+## Key Concepts at a Glance
+
+| Concept | Use When | Tool |
+|---|---|---|
+| `ProcessPoolExecutor` | CPU-heavy work (encryption, ML) | `concurrent.futures` |
+| `ThreadPoolExecutor` | I/O-bound blocking work | `concurrent.futures` |
+| `run_in_executor()` | Bridge asyncio ↔ blocking code | `asyncio` |
+| `daemon=True` thread | Background tasks (logging, monitoring) | `threading` |
+| `asyncio.sleep()` | Non-blocking wait inside coroutines | `asyncio` |
+| `time.sleep()` | Blocking wait (use only outside asyncio) | `time` |
+
+---
+
+## Real-World Analogy
+Think of a **chai delivery app**:
+- **AsyncIO** talks to Google Maps / payment APIs (I/O-bound)
+- **Multiprocessing** runs an ML model predicting tea demand (CPU-bound)
+- **Thread** keeps logging system health every second in the background
+
+All three run simultaneously without blocking each other — that's the goal.
+
+---
+
+## Asyncio and Multiprocess Concepts (contd..)
+
+👉 We can combine:
+
+* **Asyncio** (non-blocking I/O)
+* **Multithreading** (lightweight background work)
+* **Multiprocessing** (CPU-heavy tasks)
+
+💡 Think of it like:
+
+> “Use the right tool for the right job, and combine them when needed.”
+
+---
+
+## 🔑 Why Use Multiprocessing with Asyncio?
+
+Asyncio is great for:
+
+* API calls
+* DB queries
+* File I/O
+
+❌ But not good for:
+
+* CPU-heavy tasks (encryption, ML, image processing)
+
+👉 So we use **multiprocessing** to:
+
+* Run heavy work in **separate processes**
+* Avoid blocking the event loop
+
+---
+
+## ⚙️ Core Concept
+
+## `ProcessPoolExecutor`
+
+👉 Similar to ThreadPoolExecutor, but:
+
+* Uses **processes instead of threads**
+* Runs tasks in **parallel (true CPU parallelism)**
+
+---
+
+## 🧪 Example 1: Asyncio + Multiprocessing
+
+## Step 1: CPU-heavy function
+
+```python
+def encrypt(data):
+    # simulate heavy CPU work
+    return f"Encrypted data: {data}"
+```
+
+---
+
+## Step 2: Async function using process pool
+
+```python
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
+
+async def main():
+    loop = asyncio.get_running_loop()
+
+    with ProcessPoolExecutor() as pool:
+        result = await loop.run_in_executor(
+            pool,
+            encrypt,
+            "credit_card_1234"
+        )
+
+    print(result)
+
+asyncio.run(main())
+```
+
+---
+
+## 🧠 What’s Happening?
+
+* `encrypt()` runs in a **separate process**
+* Asyncio stays **free and responsive**
+* CPU work is **offloaded**
+
+---
+
+## ⚠️ Important Note (VERY IMPORTANT)
+
+👉 Always use:
+
+```python
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+✔ Required for multiprocessing
+✔ Prevents weird errors
+
+---
+
+## 🔥 Key Insight
+
+👉 `run_in_executor()` works for:
+
+* Threads ✅
+* Processes ✅
+
+Just change executor type:
+
+* Thread → `ThreadPoolExecutor`
+* Process → `ProcessPoolExecutor`
+
+---
+
+## 🧪 Example 2: Background Thread + Asyncio
+
+This is a **real-world pattern**.
+
+---
+
+## Step 1: Background worker (thread)
+
+```python
+import time
+
+def background_worker():
+    while True:
+        time.sleep(1)
+        print("Logging system health...")
+```
+
+---
+
+## Step 2: Async task
+
+```python
+import asyncio
+
+async def fetch_orders():
+    await asyncio.sleep(3)
+    print("Order fetched")
+```
+
+---
+
+## Step 3: Run both together
+
+```python
+import threading
+
+# start background thread
+thread = threading.Thread(target=background_worker, daemon=True)
+thread.start()
+
+# run async task
+asyncio.run(fetch_orders())
+```
+
+---
+
+## 🧠 What’s Happening?
+
+* Thread → keeps logging every second
+* Async → handles main task
+* Both run **independently**
+
+---
+
+## ⚡ Key Concepts Explained
+
+## 1. Blocking vs Non-blocking
+
+| Type         | Example                 | Behavior         |
+| ------------ | ----------------------- | ---------------- |
+| Blocking     | `time.sleep()`          | Stops everything |
+| Non-blocking | `await asyncio.sleep()` | Lets others run  |
+
+---
+
+## 2. Asyncio Role
+
+* Handles multiple tasks **without threads**
+* Uses event loop
+
+---
+
+## 3. Threads Role
+
+* Run background tasks
+* Useful for:
+
+  * Logging
+  * Monitoring
+  * Small blocking work
+
+---
+
+## 4. Processes Role
+
+* Handle **heavy CPU work**
+* True parallel execution
+
+---
+
+## 🧩 Real-World Use Case
+
+Imagine a backend system:
+
+* Asyncio → handles API requests
+* Threads → logs system health
+* Processes → runs ML model / encryption
+
+---
+
+## 🧠 Easy Mental Model
+
+Think of a company:
+
+* Asyncio = manager handling multiple clients
+* Threads = assistants doing small tasks
+* Processes = heavy machines doing hard work
+
+---
+
+## 📝 Key Takeaways
+
+✔ Asyncio does not replace threads or processes
+✔ You can combine all three
+✔ Use:
+
+* Asyncio → I/O tasks
+* Threads → background/light tasks
+* Processes → CPU-heavy tasks
+
+✔ `run_in_executor()` is the bridge
+
+
+## 🎯 Final Tip
+
+👉 In real backend apps (like FastAPI):
+
+* Use **async by default**
+* Add threads/processes **only when needed**
+
+---
+
+## 87. Understanding Daemon Vs Non Daemon Threads (05:45)
+
+## Daemon vs Non-Daemon Threads
+
+## What This Tutorial Covers
+
+The difference between **daemon** and **non-daemon** threads — what happens to background threads when the main program finishes.
+
+---
+
+## The Core Question
+
+> *When the main thread finishes, what happens to other threads still running?*
+
+The answer depends on whether the thread is **daemon** or **non-daemon**.
+
+---
+
+## Daemon Threads
+
+- **Automatically killed** when the main program exits
+- Used for background tasks that aren't critical to finish (logging, monitoring, health checks)
+- Set with `daemon=True`
+
+### Code Example
+
+```python
+import threading
+import time
+
+def monitor_temperature():
+    while True:
+        print("🌡️ Monitoring tea temperature...")
+        time.sleep(2)
+
+t = threading.Thread(target=monitor_temperature, daemon=True)
+t.start()
+
+print("✅ Main program done!")
+# Output:
+# 🌡️ Monitoring tea temperature...
+# ✅ Main program done!
+# (thread dies here automatically — no more monitoring)
+```
+
+The background thread gets **shut down** the moment the main program ends.
+
+---
+
+## Non-Daemon Threads
+
+- **Keep running** even after the main program finishes
+- Python waits for them to complete before truly exiting
+- Default behavior (no `daemon=True` needed)
+
+### Code Example
+
+```python
+import threading
+import time
+
+def monitor_temperature():
+    while True:
+        print("🌡️ Monitoring tea temperature...")
+        time.sleep(2)
+
+t = threading.Thread(target=monitor_temperature)  # daemon=True removed
+t.start()
+
+print("✅ Main program done!")
+# Output:
+# 🌡️ Monitoring tea temperature...
+# ✅ Main program done!
+# 🌡️ Monitoring tea temperature...   ← still running!
+# 🌡️ Monitoring tea temperature...   ← never stops (infinite loop)
+```
+
+The thread keeps going **forever** here because of `while True` — the program never truly exits.
+
+---
+
+## Side-by-Side Comparison
+
+| Feature | Daemon Thread | Non-Daemon Thread |
+|---|---|---|
+| Set with | `daemon=True` | Default (no flag needed) |
+| When main exits | Thread **dies automatically** | Thread **keeps running** |
+| Best for | Logging, monitoring, health checks | Tasks that **must** complete |
+| Risk | Task may not finish | Program may hang if thread loops forever |
+
+---
+
+## Simple Mental Model
+
+Think of it like a **restaurant**:
+- **Daemon thread** = background music. When the restaurant closes, music stops automatically.
+- **Non-daemon thread** = a chef still finishing an order. The restaurant can't fully close until the chef is done.
+
+---
+
+## Key Takeaway
+
+```python
+# Daemon — dies with main program
+t = threading.Thread(target=my_func, daemon=True)
+
+# Non-Daemon — main program waits for it
+t = threading.Thread(target=my_func)
+```
+
+Use **daemon** for background helper tasks. Use **non-daemon** when the task *must* finish before your program ends.
+
+---
+
+## Daemon vs Non-Daemon Threads (Concepts)
+
+## ⚡ Core Idea
+
+👉 Not all threads behave the same when your program ends.
+
+* Some threads **stop automatically** → daemon threads
+* Some threads **keep running** → non-daemon threads
+
+---
+
+## 🔹 1. What is a Daemon Thread?
+
+### Definition
+
+A **daemon thread** is a background thread that:
+
+* Runs alongside your program
+* Automatically stops when the **main program finishes**
+
+👉 You don’t need to manually stop it.
+
+---
+
+### 💡 When to use
+
+Use daemon threads for:
+
+* Logging
+* Monitoring
+* Background cleanup
+* Any **non-critical task**
+
+---
+
+### ✅ Example
+
+```python
+import threading
+import time
+
+def monitor():
+    while True:
+        print("Monitoring system...")
+        time.sleep(2)
+
+# Create daemon thread
+t = threading.Thread(target=monitor, daemon=True)
+
+t.start()
+
+print("Main program finished")
+```
+
+---
+
+### 🧾 Output (important behavior)
+
+```
+Monitoring system...
+Main program finished
+```
+
+👉 Program exits immediately after main finishes
+👉 Background thread is killed automatically
+
+---
+
+## 🔹 2. What is a Non-Daemon Thread?
+
+### Definition
+
+A **non-daemon thread**:
+
+* Keeps running even after main thread ends
+* Program **waits for it to finish**
+
+👉 Python will NOT exit until this thread completes
+
+---
+
+### 💡 When to use
+
+Use non-daemon threads for:
+
+* Important work
+* File writing
+* Database operations
+* Tasks that **must complete**
+
+---
+
+### ✅ Example
+
+```python
+import threading
+import time
+
+def monitor():
+    while True:
+        print("Monitoring system...")
+        time.sleep(2)
+
+# Non-daemon thread (default)
+t = threading.Thread(target=monitor)
+
+t.start()
+
+print("Main program finished")
+```
+
+---
+
+### 🧾 Output behavior
+
+```
+Main program finished
+Monitoring system...
+Monitoring system...
+Monitoring system...
+...
+```
+
+👉 Program DOES NOT exit
+👉 Thread keeps running forever
+
+---
+
+## 🔹 3. Key Difference (Very Important)
+
+| Feature              | Daemon Thread    | Non-Daemon Thread |
+| -------------------- | ---------------- | ----------------- |
+| Stops automatically? | ✅ Yes            | ❌ No              |
+| Blocks program exit? | ❌ No             | ✅ Yes             |
+| Used for             | Background tasks | Critical tasks    |
+| Safe to ignore?      | Yes              | No                |
+
+---
+
+## 🔹 4. Why This Matters
+
+Without understanding this:
+
+* Your program may exit too early ❌
+* Or hang forever ❌
+
+👉 This is a very common real-world bug.
+
+---
+
+## 🔹 5. Real-Life Analogy
+
+Think of it like this:
+
+* **Main program** = Office closing time
+* **Daemon thread** = Cleaning staff → leaves when office closes
+* **Non-daemon thread** = Employee → must finish work before leaving
+
+---
+
+## 🔹 6. Important Notes
+
+* Threads are **non-daemon by default**
+* You must explicitly set:
+
+```python
+daemon=True
+```
+
+* Daemon threads are **killed abruptly**
+
+  * No cleanup
+  * No guarantee of completion
+
+---
+
+## 🔹 7. When working with Asyncio + Threads
+
+From your previous videos:
+
+* Asyncio → handles non-blocking tasks
+* Threads → handle background or blocking work
+
+👉 Daemon threads are often used for:
+
+* logging
+* health checks
+* monitoring alongside async apps
+
+---
+
+## ✅ Final Takeaway
+
+* Use **daemon threads** for background helpers
+* Use **non-daemon threads** for important work
+* Always think:
+  👉 “Should this task finish before my program exits?”
+
+---
+
+## 88. Debugging and Profiling - Race condition and Deadlock in python (14:19)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
