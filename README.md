@@ -15176,5 +15176,603 @@ From your previous videos:
 
 ## 88. Debugging and Profiling - Race condition and Deadlock in python (14:19)
 
+## Key concepts covered
+
+1. **Profiling** — measuring where your code spends time
+2. **Race Conditions** — unpredictable data modification by multiple threads
+3. **Deadlocks** — threads waiting on each other forever
+4. **Tools** — third-party profiling tools
+
+---
+
+## 1. Profiling
+
+**What it is:** Profiling tells you *how much time* each function/method takes to run. This helps you find bottlenecks and optimize slow parts.
+
+**How to run it (built-in cProfile):**
+
+```bash
+python -m cProfile -s time your_script.py
+```
+
+- `-m cProfile` → use Python's built-in profiler
+- `-s time` → sort results by time spent
+- Output shows: number of calls, total time, time per call for every function
+
+**Limitation:** The output is hard to read without experience.
+
+---
+
+## 2. Race Condition
+
+**What it is:** When two or more threads try to read/write the same variable *at the same time*, the result becomes unpredictable.
+
+**Simple Example:**
+
+```python
+import threading
+
+chai_stock = 0  # shared variable
+
+def restock():
+    global chai_stock
+    for _ in range(100000):
+        chai_stock += 1  # NOT thread-safe!
+
+threads = [threading.Thread(target=restock) for _ in range(2)]
+
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+
+print("Chai stock:", chai_stock)  # Expected: 200000, but may vary!
+```
+
+**Why it's dangerous:** You expect `200,000` but might get less (or more) because both threads can read the *same old value* and overwrite each other's update.
+
+**Fix — use a Lock:**
+
+```python
+lock = threading.Lock()
+
+def restock_safe():
+    global chai_stock
+    for _ in range(100000):
+        with lock:          # only one thread enters at a time
+            chai_stock += 1
+```
+
+**Real-world impact:** In banking or stock market apps, even one such glitch = incorrect balances or trades.
+
+---
+
+## 3. Deadlock
+
+**What it is:** Two threads each hold one lock and are *waiting for the other's lock* — neither can proceed. The program freezes forever.
+
+**Classic Example:**
+
+```python
+import threading
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def task_one():
+    with lock_a:
+        print("Task 1 acquired Lock A")
+        with lock_b:               # waiting for Lock B
+            print("Task 1 acquired Lock B")
+
+def task_two():
+    with lock_b:
+        print("Task 2 acquired Lock B")
+        with lock_a:               # waiting for Lock A
+            print("Task 2 acquired Lock A")
+
+t1 = threading.Thread(target=task_one)
+t2 = threading.Thread(target=task_two)
+
+t1.start()
+t2.start()
+# Program hangs here — classic deadlock!
+```
+
+**What happens:**
+- Task 1 holds Lock A, waits for Lock B
+- Task 2 holds Lock B, waits for Lock A
+- Neither releases → infinite wait
+
+**How to avoid deadlocks:**
+- Always acquire locks in the **same order** across all threads
+- Use **timeouts** on lock acquisition
+- Discuss lock strategy with teammates before coding
+
+---
+
+## 4. Third-Party Profiling Tools
+
+| Tool | What it does |
+|------|-------------|
+| **py-spy** | Sampling profiler — shows flamegraphs of where time is spent, no code changes needed |
+| **vprof** | Visual profiler — gives rich charts and visualizations of CPU, memory, etc. |
+
+Both are free and open source. Much more readable than raw `cProfile` output.
+
+---
+
+## Key Takeaways
+
+- **No silver bullet** exists for multithreading bugs — understanding your code is essential
+- **Profiling** helps find slow functions; use `cProfile` or `py-spy`/`vprof` for better visuals
+- **Race conditions** happen when shared data has no locking — use `threading.Lock()`
+- **Deadlocks** happen when lock acquisition order is inconsistent — plan lock order carefully
+- **Logging** in a thread-safe way helps diagnose issues in production
+- These topics require significant experience — not beginner territory
+
+---
+
+## Solving the Deadlock Issue
+
+The root cause is that **Task 1 acquires Lock A → Lock B**, but **Task 2 acquires Lock B → Lock A** — opposite order. The fix is simple:
+
+> **Always acquire locks in the same order across all threads.**
+
+---
+
+## The Broken Code (Deadlock)
+
+```python
+import threading
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def task_one():
+    with lock_a:                        # grabs A first
+        print("Task 1 acquired Lock A")
+        with lock_b:                    # then waits for B
+            print("Task 1 acquired Lock B")
+
+def task_two():
+    with lock_b:                        # grabs B first ← PROBLEM
+        print("Task 2 acquired Lock B")
+        with lock_a:                    # then waits for A → DEADLOCK
+            print("Task 2 acquired Lock A")
+```
+
+---
+
+## Fix 1 — Consistent Lock Order (Simplest Fix)
+
+Just make both tasks acquire locks in the **same order** (A → B):
+
+```python
+import threading
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def task_one():
+    with lock_a:
+        print("Task 1 acquired Lock A")
+        with lock_b:
+            print("Task 1 acquired Lock B")
+
+def task_two():
+    with lock_a:                        # ✅ same order as task_one
+        print("Task 2 acquired Lock A")
+        with lock_b:                    # ✅ same order as task_one
+            print("Task 2 acquired Lock B")
+
+t1 = threading.Thread(target=task_one)
+t2 = threading.Thread(target=task_two)
+
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+```
+
+**Output (no freeze):**
+```
+Task 1 acquired Lock A
+Task 1 acquired Lock B
+Task 2 acquired Lock A
+Task 2 acquired Lock B
+```
+
+---
+
+## Fix 2 — Use `acquire(timeout=...)` (Safe Fallback)
+
+If consistent ordering isn't possible, add a **timeout** so threads don't wait forever:
+
+```python
+import threading
+import time
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def task_one():
+    while True:
+        if lock_a.acquire(timeout=1):       # wait max 1 second
+            print("Task 1 acquired Lock A")
+            if lock_b.acquire(timeout=1):   # wait max 1 second
+                print("Task 1 acquired Lock B")
+                lock_b.release()
+                lock_a.release()
+                break
+            else:
+                print("Task 1 couldn't get Lock B, retrying...")
+                lock_a.release()            # release A and retry
+                time.sleep(0.1)
+
+def task_two():
+    while True:
+        if lock_b.acquire(timeout=1):
+            print("Task 2 acquired Lock B")
+            if lock_a.acquire(timeout=1):
+                print("Task 2 acquired Lock A")
+                lock_a.release()
+                lock_b.release()
+                break
+            else:
+                print("Task 2 couldn't get Lock A, retrying...")
+                lock_b.release()
+                time.sleep(0.1)
+
+t1 = threading.Thread(target=task_one)
+t2 = threading.Thread(target=task_two)
+
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+```
+
+---
+
+## Fix 3 — Use a Single Lock (When Possible)
+
+If both tasks are protecting the **same shared resource**, just use one lock:
+
+```python
+import threading
+
+lock = threading.Lock()     # one lock for everything
+
+def task_one():
+    with lock:
+        print("Task 1 doing its work safely")
+
+def task_two():
+    with lock:
+        print("Task 2 doing its work safely")
+```
+
+---
+
+## Which Fix to Use?
+
+| Situation | Best Fix |
+|-----------|----------|
+| You control all the code | **Fix 1** — consistent lock order |
+| Lock order is unpredictable or complex | **Fix 2** — timeout + retry |
+| Both tasks touch the same data | **Fix 3** — single lock |
+
+**Fix 1 is always the preferred approach** — it's clean, simple, and has zero performance overhead. The golden rule is: **if you need multiple locks, always grab them in the same order everywhere in your codebase.**
+
+---
+
+## Python Multithreading: Profiling & Debugging (Key Concepts)
+
+* What **profiling** is
+* How to **measure performance**
+* What is a **race condition**
+* What is a **deadlock**
+* Why multithreading code is hard to debug
+* Tools that help (but don’t magically fix things)
+
+---
+
+## 🔹 1. What is Profiling?
+
+### Definition
+
+**Profiling = measuring where your program spends time**
+
+👉 Helps answer:
+
+* Which function is slow?
+* Where is CPU time going?
+
+---
+
+### ✅ Basic Example
+
+```python
+import time
+
+def slow_function():
+    time.sleep(2)
+
+def fast_function():
+    print("Fast")
+
+slow_function()
+fast_function()
+```
+
+---
+
+### 🛠️ Run profiler
+
+```bash
+python -m cProfile -s time your_script.py
+```
+
+---
+
+### 📊 What you get
+
+* Number of function calls
+* Time per function
+* Total execution time
+
+👉 Output is messy, but useful for experts
+
+---
+
+### 💡 Key Point
+
+* Use profiling for:
+
+  * Performance optimization
+  * Finding bottlenecks
+
+---
+
+## 🔹 2. Race Condition (Critical Concept)
+
+### Definition
+
+A **race condition** happens when:
+
+👉 Multiple threads modify the same data at the same time
+👉 Result becomes unpredictable
+
+---
+
+### ❌ Problem Example
+
+```python
+import threading
+
+counter = 0
+
+def increment():
+    global counter
+    for _ in range(100000):
+        counter += 1
+
+threads = [threading.Thread(target=increment) for _ in range(2)]
+
+for t in threads:
+    t.start()
+
+for t in threads:
+    t.join()
+
+print(counter)
+```
+
+---
+
+### 🤯 Expected vs Reality
+
+* Expected → `200000`
+* Actual → ❌ unpredictable (sometimes less)
+
+---
+
+### 💥 Why this happens
+
+This line is NOT safe:
+
+```python
+counter += 1
+```
+
+It actually does:
+
+1. Read value
+2. Add 1
+3. Write back
+
+👉 Two threads can interfere between steps
+
+---
+
+### ✅ Fix (using Lock)
+
+```python
+import threading
+
+counter = 0
+lock = threading.Lock()
+
+def increment():
+    global counter
+    for _ in range(100000):
+        with lock:
+            counter += 1
+```
+
+---
+
+### 💡 Key Point
+
+* Race conditions = **silent bugs**
+* Hard to reproduce
+* Dangerous in:
+
+  * Banking apps
+  * Stock systems
+  * Payments
+
+---
+
+## 🔹 3. Deadlock (Very Dangerous)
+
+### Definition
+
+A **deadlock** happens when:
+
+👉 Two threads wait for each other forever
+
+---
+
+### ❌ Problem Example
+
+```python
+import threading
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def task1():
+    with lock_a:
+        print("Task1 got lock A")
+        with lock_b:
+            print("Task1 got lock B")
+
+def task2():
+    with lock_b:
+        print("Task2 got lock B")
+        with lock_a:
+            print("Task2 got lock A")
+
+t1 = threading.Thread(target=task1)
+t2 = threading.Thread(target=task2)
+
+t1.start()
+t2.start()
+```
+
+---
+
+### 💥 What happens
+
+* Task1 holds lock A → waits for B
+* Task2 holds lock B → waits for A
+
+👉 Both stuck forever 😵
+
+---
+
+### 🧠 Visual Idea
+
+```
+Thread 1 → holds A → waiting for B
+Thread 2 → holds B → waiting for A
+```
+
+👉 Nobody moves → program freezes
+
+---
+
+### ✅ How to avoid
+
+* Always acquire locks in same order
+* Keep locks minimal
+* Avoid nested locks when possible
+
+---
+
+## 🔹 4. Why Debugging Threads is Hard
+
+* Bugs don’t always appear
+* Code may work 100 times… fail once
+* Timing issues are unpredictable
+
+👉 That’s why this is **advanced topic**
+
+---
+
+## 🔹 5. Tools for Profiling & Debugging
+
+### 1. Built-in
+
+* `cProfile` → basic profiling
+
+---
+
+### 2. Better tools
+
+#### 🔧 Py-Spy
+
+* Real-time profiling
+* Visual output (graphs)
+
+#### 🔧 VProf
+
+* Nice visual charts
+* Easier to understand than cProfile
+
+---
+
+### 💡 Important
+
+👉 Tools help you *observe*
+👉 They don’t *fix logic errors*
+
+---
+
+## 🔹 6. Practical Advice
+
+When writing concurrent code:
+
+* Avoid shared variables if possible
+* Use locks carefully
+* Keep logic simple
+* Add logging
+
+---
+
+## 🔹 7. Real-World Thinking
+
+Before writing threads, ask:
+
+👉 “Can I avoid shared state?”
+
+If YES → do that
+If NO → use locks carefully
+
+---
+
+## ✅ Final Takeaways
+
+* Profiling helps you **optimize performance**
+* Race conditions cause **wrong results**
+* Deadlocks cause **program freeze**
+* Debugging concurrency is **hard and advanced**
+* Tools help, but **understanding matters more**
+
+---
+
+- Profiling Command - `python -m cProfile -s time your_python_filename.py`
+
+- [py-spy - Sampling profiler for Python programs](https://github.com/benfred/py-spy)
+
+- [vprof - Visual profiler for Python](https://github.com/nvdv/vprof)
+
+---
+
+## Sec 13 - All you need to know about pydantic
+
+## 39. Why pydantic is important (08:59)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
