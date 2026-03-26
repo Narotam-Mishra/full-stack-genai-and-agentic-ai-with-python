@@ -16150,6 +16150,372 @@ pip install pydantic
 
 ## 90. The Foundation of pydantic (07:36)
 
+### Pydantic Basics – Summary & Key Concepts
+
+## What is Pydantic?
+
+Pydantic is a Python library used for **data validation**. It ensures that the data you work with has the correct types and structure. If something's wrong, it raises a clear error instead of silently passing bad data through.
+
+---
+
+## Setting Up
+
+```python
+from pydantic import BaseModel
+```
+
+Every Pydantic model starts by importing `BaseModel`.
+
+---
+
+## Defining a Model
+
+You create a class that **inherits from BaseModel** and declare fields with type annotations:
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: int
+    name: str
+    is_active: bool
+```
+
+This tells Pydantic: "a User must have an integer id, a string name, and a boolean is_active."
+
+---
+
+## Creating an Instance
+
+You **unpack a dictionary** using `**` when passing data to the model:
+
+```python
+input_data = {
+    "id": 1,
+    "name": "Alice",
+    "is_active": True
+}
+
+user = User(**input_data)  # ✅ Correct
+print(user)
+# id=1 name='Alice' is_active=True
+```
+
+**Never** pass the dictionary directly as a single argument — that won't work:
+
+```python
+user = User(input_data)  # ❌ Wrong — treats the whole dict as one argument
+```
+
+---
+
+## Automatic Validation
+
+Pydantic validates every field at the moment you create the object.
+
+```python
+bad_data = {
+    "id": 1,
+    "name": "Alice",
+    "is_active": 25       # ❌ 25 is not a valid boolean
+}
+
+user = User(**bad_data)
+# ValidationError: is_active — Input should be a valid boolean
+```
+
+---
+
+## Smart Type Coercion
+
+Pydantic **tries to convert** compatible types before raising an error:
+
+```python
+# "101" as a string for an int field — Pydantic converts it silently ✅
+User(id="101", name="Alice", is_active=True)   # Works fine, id becomes 101
+
+# "101A" cannot be converted to int — Pydantic raises an error ❌
+User(id="101A", name="Alice", is_active=True)  # ValidationError
+```
+
+So the rule is: **Pydantic converts if it can, errors if it can't.**
+
+---
+
+## Key Takeaways
+
+| Concept | What it means |
+|---|---|
+| `BaseModel` | Every Pydantic model must inherit from this |
+| Type annotations | Define what data type each field expects (`int`, `str`, `bool`, etc.) |
+| `**dict` unpacking | Always unpack your dictionary when creating a model instance |
+| Auto validation | Pydantic checks all fields automatically on object creation |
+| Type coercion | Pydantic tries to convert compatible values (e.g. `"5"` → `5`) |
+| Validation error | Raised when conversion is impossible (e.g. `"5A"` → `int`) |
+
+---
+
+The core purpose of Pydantic is **data integrity at the point of creation** — catching bad data early rather than letting it cause silent bugs deeper in your code.
+
+---
+
+## 🧠 Pydantic (Contd..)
+
+* **Pydantic** is a Python library that helps you:
+
+  * Make sure your data is **correct (validated)**
+  * Avoid **wrong types (like int instead of string)**
+
+* You define a **data model (class)** using `BaseModel`
+
+* Then you pass data into it
+
+* Pydantic automatically:
+
+  * Checks types
+  * Fixes them if possible
+  * Throws errors if invalid
+
+👉 In short:
+**Pydantic = Safe + Clean + Reliable Data**
+
+---
+
+## 🔑 Important Concepts (With Examples)
+
+---
+
+## 1. BaseModel (Core of Pydantic)
+
+Everything starts with `BaseModel`.
+
+### ✅ Example
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: int
+    name: str
+    is_active: bool
+```
+
+### 🧠 What’s happening:
+
+* You are **defining structure of data**
+* Not writing logic, just defining:
+
+  * id → integer
+  * name → string
+  * is_active → boolean
+
+---
+
+## 2. Creating Object (Model Instantiation)
+
+You pass data into the model.
+
+### ✅ Correct Way (Using unpacking `**`)
+
+```python
+data = {
+    "id": 101,
+    "name": "Chai Code",
+    "is_active": True
+}
+
+user = User(**data)
+print(user)
+```
+
+### ❗ Why `**` is needed:
+
+* It **unpacks dictionary**
+* Converts it into:
+
+```python
+User(id=101, name="Chai Code", is_active=True)
+```
+
+---
+
+## ❌ Wrong Way (Common Mistake)
+
+```python
+user = User(data)   # ❌ WRONG
+```
+
+👉 This treats entire dict as one value → causes error
+
+---
+
+## 3. Automatic Validation
+
+Pydantic checks your data automatically.
+
+### ❌ Example (Wrong Type)
+
+```python
+data = {
+    "id": 101,
+    "name": "Chai Code",
+    "is_active": 25   # ❌ invalid
+}
+
+user = User(**data)
+```
+
+### 💥 Output:
+
+```
+ValidationError: is_active should be boolean
+```
+
+---
+
+## 4. Type Conversion (Smart Feature)
+
+Pydantic tries to **fix types automatically**.
+
+### ✅ Example
+
+```python
+data = {
+    "id": "101",   # string instead of int
+    "name": "Chai Code",
+    "is_active": True
+}
+
+user = User(**data)
+print(user)
+```
+
+### 🧠 Result:
+
+* `"101"` → converted to `101` (int)
+
+---
+
+### ❌ But if conversion fails:
+
+```python
+data = {
+    "id": "101A",   # invalid
+    "name": "Chai Code",
+    "is_active": True
+}
+```
+
+👉 ❌ Error will be raised
+
+---
+
+## 5. Type Annotations (Very Important)
+
+This is the heart of Pydantic.
+
+```python
+id: int
+name: str
+is_active: bool
+```
+
+### 🧠 Meaning:
+
+* Defines **expected data type**
+* Pydantic uses this to:
+
+  * Validate
+  * Convert
+  * Raise errors
+
+---
+
+## 6. Data Integrity
+
+Pydantic ensures:
+
+* Your data is **correct at creation time**
+* No bad data enters your system
+
+👉 This is **very important in real apps** like:
+
+* APIs
+* Databases
+* Payments
+* ML pipelines
+
+---
+
+## 📌 Key Takeaways
+
+* Always import:
+
+```python
+from pydantic import BaseModel
+```
+
+* Always inherit:
+
+```python
+class MyModel(BaseModel):
+```
+
+* Always use type annotations:
+
+```python
+name: str
+```
+
+* Always unpack dictionary:
+
+```python
+Model(**data)
+```
+
+* Pydantic will:
+
+  * ✅ Validate
+  * ✅ Convert (if possible)
+  * ❌ Raise error (if invalid)
+
+---
+
+## 🚀 Mini Real-Life Example
+
+```python
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: float
+    in_stock: bool
+
+data = {
+    "name": "Tea",
+    "price": "99.5",   # string → converted
+    "in_stock": True
+}
+
+product = Product(**data)
+print(product)
+```
+
+---
+
+## ⚡ Final Understanding
+
+* Without Pydantic:
+
+  * Bugs go unnoticed 😬
+* With Pydantic:
+
+  * Errors are caught early ✅
+  * Code becomes safer 💪
+
+---
+
+## 91. Pydantic Default conversions (06:09)
 
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
