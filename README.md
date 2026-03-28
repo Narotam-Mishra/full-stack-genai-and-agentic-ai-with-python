@@ -17067,5 +17067,145 @@ Object is created ✅ or Error is raised ❌
 
 ## 95. Computed property in pydantic (07:16)
 
+## Pydantic Computed Fields – Concepts & Notes
+
+## What is a Computed Field?
+
+A **computed field** is a field whose value is **automatically calculated** from other fields — you don't pass it in manually. Instead of writing this logic in your controller or API layer, you put it directly inside the Pydantic model.
+
+---
+
+## Two Decorators You Need
+
+Both decorators must be used together:
+
+| Decorator | Purpose |
+|---|---|
+| `@computed_field` | Tells Pydantic this field is calculated, not input |
+| `@property` | Makes it accessible like a regular attribute (no parentheses needed) |
+
+```python
+from pydantic import BaseModel, computed_field
+```
+
+> `@property` is built into Python — no import needed.
+
+---
+
+## Basic Example — Product Total Price
+
+```python
+from pydantic import BaseModel, computed_field
+
+class Product(BaseModel):
+    price: float
+    quantity: int
+
+    @computed_field
+    @property
+    def total_price(self) -> float:       # return type hint is important
+        return self.price * self.quantity
+
+# Usage
+p = Product(price=99.99, quantity=3)
+
+print(p.total_price)   # 299.97  — accessed like an attribute, NOT a method
+print(p.model_dump())  # total_price shows up here too!
+```
+
+**Output of `model_dump()`:**
+```python
+{'price': 99.99, 'quantity': 3, 'total_price': 299.97}
+```
+
+> ✅ Computed fields are **included in serialization** (`model_dump()`) automatically.
+
+---
+
+## Real-world Example — Hotel Booking System
+
+```python
+from pydantic import BaseModel, Field, computed_field
+
+class Booking(BaseModel):
+    user_id: int
+    room_id: int
+    nights: int = Field(..., ge=1, description="Minimum 1 night required")
+    rate_per_night: float
+
+    @computed_field
+    @property
+    def total_amount(self) -> float:
+        return self.nights * self.rate_per_night
+
+# Usage
+booking = Booking(user_id=123, room_id=456, nights=3, rate_per_night=100.0)
+
+print(booking.total_amount)    # 300.0
+print(booking.model_dump())
+```
+
+**Output:**
+```python
+{
+  'user_id': 123,
+  'room_id': 456,
+  'nights': 3,
+  'rate_per_night': 100.0,
+  'total_amount': 300.0        # ← computed field included automatically
+}
+```
+
+---
+
+## Common Mistake — Calling it Like a Method
+
+```python
+# ❌ Wrong — it's a property, not a method
+print(booking.total_amount())
+
+# ✅ Correct — access it like an attribute
+print(booking.total_amount)
+```
+
+---
+
+## When to Use Computed Fields
+
+Computed fields are great any time you'd otherwise calculate something **after** creating the object:
+
+```python
+from pydantic import BaseModel, computed_field
+
+class Order(BaseModel):
+    price: float
+    quantity: int
+    discount_percent: float = 0.0
+
+    @computed_field
+    @property
+    def discounted_total(self) -> float:
+        subtotal = self.price * self.quantity
+        discount = subtotal * (self.discount_percent / 100)
+        return subtotal - discount
+
+order = Order(price=500.0, quantity=2, discount_percent=10)
+print(order.discounted_total)   # 900.0
+```
+
+---
+
+## Key Takeaways
+
+- Import `computed_field` from `pydantic`; `@property` needs no import.
+- Always use **both decorators** together — `@computed_field` on top, `@property` below it.
+- The method takes `self` and must have a **return type hint** (`-> float`, `-> str`, etc.).
+- Access computed fields **without parentheses** — they behave like attributes.
+- Computed fields are **included in `model_dump()`** — no extra work needed.
+- Move calculation logic **into the model** rather than repeating it in controllers or API layers — this keeps your code clean and DRY.
+
+---
+
+## 96. Advance Validation in pydantic (07:16)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
