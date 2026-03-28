@@ -16517,5 +16517,406 @@ print(product)
 
 ## 91. Pydantic Default conversions (06:09)
 
+## Pydantic Models – Simple Concepts & Notes
+
+This tutorial is a **hands-on continuation of Pydantic basics**, focused on building a `Product` model to reinforce the fundamentals.
+
+---
+
+### What's Being Built?
+
+A `Product` model representing an e-commerce product with fields like ID, name, price, and stock status.
+
+```python
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    id: int
+    name: str
+    price: float
+    in_stock: bool = True  # default value — optional to pass
+```
+
+---
+
+### Key Concepts Explained
+
+**1. Inheriting from `BaseModel`**
+
+Every Pydantic model must inherit from `BaseModel`. This is what gives it validation superpowers.
+
+```python
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+```
+
+**2. Type Annotations are Non-Negotiable**
+
+Every field *must* have a type. Pydantic uses these to validate incoming data.
+
+```python
+id: int        # must be a whole number
+name: str      # must be text
+price: float   # allows decimals like 999.99
+in_stock: bool # True or False
+```
+
+**3. Default Values make fields Optional**
+
+If a field has a default, you don't have to pass it — Pydantic will use the default.
+
+```python
+class Product(BaseModel):
+    in_stock: bool = True  # optional — defaults to True if not provided
+```
+
+**4. Valid vs Invalid Usage**
+
+```python
+# ✅ Valid — all required fields provided
+product1 = Product(id=1, name="Laptop", price=999.99, in_stock=True)
+
+# ✅ Also valid — 'in_stock' uses default value
+product2 = Product(id=2, name="Mouse", price=24.33)
+
+# ❌ Invalid — 'id' and 'price' are missing (no defaults)
+product3 = Product(name="Keyboard")
+# Raises ValidationError: field required
+```
+
+**5. Pydantic Auto-Converts Compatible Types**
+
+Pydantic is lenient when it can safely convert types. But don't rely on this — always pass the correct type to begin with.
+
+```python
+# Pydantic will try to coerce these:
+Product(id="1", name="Laptop", price=999, in_stock="true")
+# "1"    → 1      (str → int)
+# 999    → 999.0  (int → float)
+# "true" → True   (str → bool)
+```
+
+It won't always succeed though — if conversion fails, you'll still get a `ValidationError`.
+
+**6. IDE Autocomplete**
+
+Because Pydantic models are typed classes, your editor (VS Code, PyCharm, etc.) gives you **field suggestions as you type** — a huge productivity win.
+
+---
+
+### Best Practices Recap
+
+| Practice | Why it matters |
+|---|---|
+| Always use type annotations | Pydantic can't validate without them |
+| Use appropriate types (`int`, `float`, `str`, `bool`) | Ensures data integrity |
+| Set sensible defaults where applicable | Makes models flexible and user-friendly |
+| Don't rely on auto-conversion | Pass the right type yourself for predictability |
+
+---
+
+The core takeaway: **define your data shape once, and Pydantic enforces it everywhere** — catching bad data early with clear error messages.
+
+## 92. Missing pydantic and typing in python (05:34)
+
+## Pydantic Advanced Field Types – Concepts & Notes
+
+Pydantic alone doesn't give you *every* data type you need. Sometimes you have to combine it with Python's built-in **`typing`** module. Together, they let you define rich, validated fields like lists, dictionaries, and optional values.
+
+---
+
+## The Two Sources of Types
+
+| Source | What it provides | Example |
+|---|---|---|
+| `pydantic` | `BaseModel`, `str`, `int`, `float` | Basic field types |
+| `typing` | `List`, `Dict`, `Optional` | Container & flexible types |
+
+You mix and match both freely.
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. `List[str]` — A list containing only strings
+
+```python
+from pydantic import BaseModel
+from typing import List
+
+class Cart(BaseModel):
+    user_id: int
+    items: List[str]  # only strings allowed inside
+
+cart = Cart(user_id=1, items=["apple", "banana", "milk"])
+print(cart)
+# user_id=1 items=['apple', 'banana', 'milk']
+
+# This would FAIL validation:
+# Cart(user_id=1, items=[1, 2, 3])  ❌
+```
+
+---
+
+### 2. `Dict[str, int]` — A dictionary with string keys and integer values
+
+```python
+from pydantic import BaseModel
+from typing import Dict
+
+class Cart(BaseModel):
+    user_id: int
+    quantities: Dict[str, int]  # e.g. {"apple": 3, "milk": 1}
+
+cart = Cart(user_id=1, quantities={"apple": 3, "milk": 1})
+print(cart)
+# user_id=1 quantities={'apple': 3, 'milk': 1}
+
+# This would FAIL:
+# Cart(user_id=1, quantities={"apple": "three"})  ❌
+```
+
+---
+
+### 3. `Optional[str]` — A field that can be a string OR `None`
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+
+class BlogPost(BaseModel):
+    title: str
+    content: str
+    image_url: Optional[str] = None  # not every blog has an image
+
+# Works fine without image:
+post1 = BlogPost(title="Hello World", content="My first post")
+print(post1.image_url)  # None
+
+# Works fine with image:
+post2 = BlogPost(title="With Image", content="...", image_url="https://img.com/a.jpg")
+print(post2.image_url)  # https://img.com/a.jpg
+```
+
+---
+
+## All Three Together — Full Example
+
+```python
+from pydantic import BaseModel
+from typing import List, Dict, Optional
+
+class Cart(BaseModel):
+    user_id: int
+    items: List[str]           # list of item names
+    quantities: Dict[str, int] # item → count
+    coupon: Optional[str] = None  # may or may not have a coupon
+
+cart = Cart(
+    user_id=42,
+    items=["shoes", "shirt"],
+    quantities={"shoes": 1, "shirt": 2},
+    coupon="SAVE10"
+)
+print(cart)
+```
+
+---
+
+## Key Takeaways
+
+- Always import `BaseModel` from `pydantic` — no exceptions.
+- Use `List[X]` when a field holds **multiple values of the same type**.
+- Use `Dict[K, V]` when a field is a **key-value mapping** with specific types.
+- Use `Optional[X] = None` when a field is **not mandatory** — its value can be `None`.
+- `typing` and `pydantic` work **together**, not separately. Mix them freely.
+
+---
+
+## 93. Adding validations with Field (14:03)
+
+## Pydantic `Field` – Concepts & Notes
+
+## What is `Field`?
+
+`Field` is a powerful tool from Pydantic that lets you add **extra rules and validation** to your model fields — beyond just specifying a data type. Think of it as giving your fields superpowers.
+
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+```
+
+---
+
+## The `...` (Triple Dot) — Required Field
+
+Whenever you see `...` as the first argument inside `Field(...)`, it means **this field is compulsory**. You cannot skip it.
+
+```python
+class Employee(BaseModel):
+    name: str = Field(..., min_length=3)  # name is REQUIRED
+```
+
+---
+
+## Key `Field` Parameters with Examples
+
+### 1. `min_length` / `max_length` — For strings
+
+```python
+class Employee(BaseModel):
+    name: str = Field(
+        ...,
+        min_length=3,    # must be at least 3 characters
+        max_length=50,   # cannot exceed 50 characters
+        description="Employee name",
+        example="John Doe"
+    )
+
+# ✅ Works
+Employee(name="John")
+
+# ❌ Fails — too short
+Employee(name="Jo")
+```
+
+---
+
+### 2. `ge`, `gt`, `le`, `lt` — For numbers
+
+| Parameter | Meaning |
+|---|---|
+| `ge` | Greater than or **equal** to |
+| `gt` | Greater than (strictly) |
+| `le` | Less than or **equal** to |
+| `lt` | Less than (strictly) |
+
+```python
+class Employee(BaseModel):
+    salary: float = Field(
+        ...,
+        ge=10000,     # salary >= 10,000
+        le=100000,    # salary <= 1,00,000
+        description="Annual salary in USD"
+    )
+
+# ✅ Works
+Employee(salary=50000)
+
+# ❌ Fails — below minimum
+Employee(salary=5000)
+```
+
+---
+
+### 3. `Optional` with a default value
+
+```python
+class Employee(BaseModel):
+    department: Optional[str] = "General"  # if not provided, defaults to "General"
+```
+
+---
+
+### 4. `pattern` (Regex) — For format validation
+
+Used when you need strict format rules, like emails or phone numbers.
+
+```python
+import re
+from pydantic import BaseModel, Field
+
+class User(BaseModel):
+    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    phone: str = Field(..., pattern=r'^\+?[0-9]{10,13}$')
+```
+
+> ⚠️ Regex can get complex quickly. Use tools like [regexr.com](https://regexr.com) to build and test patterns.
+
+---
+
+## Full Realistic Example
+
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class Employee(BaseModel):
+    id: int
+
+    name: str = Field(
+        ...,
+        min_length=3,
+        max_length=50,
+        description="Employee name",
+        example="Benjamin"
+    )
+
+    department: Optional[str] = "General"
+
+    salary: float = Field(
+        ...,
+        ge=10000,
+        le=100000,
+        description="Annual salary in USD"
+    )
+
+    age: int = Field(
+        ...,
+        ge=0,
+        le=150,
+        description="Age in years"
+    )
+
+    discount: float = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Discount percentage"
+    )
+
+# ✅ Valid
+emp = Employee(id=1, name="Benjamin", salary=75000, age=28, discount=10)
+print(emp)
+
+# ❌ Invalid — salary too low
+# Employee(id=2, name="Jo", salary=500, age=28, discount=10)
+```
+
+---
+
+## Quick Reference — All Common `Field` Parameters
+
+| Parameter | Use case | Example |
+|---|---|---|
+| `...` | Mark field as required | `Field(...)` |
+| `default` | Set a default value | `Field("General")` |
+| `min_length` | Min string length | `min_length=3` |
+| `max_length` | Max string length | `max_length=50` |
+| `ge` | Number ≥ value | `ge=0` |
+| `gt` | Number > value | `gt=0` |
+| `le` | Number ≤ value | `le=100` |
+| `lt` | Number < value | `lt=100` |
+| `description` | Documents the field | `description="Age in years"` |
+| `example` | Example value for docs/API | `example="John"` |
+| `pattern` | Regex format validation | `pattern=r'^\d{10}$'` |
+
+---
+
+## Key Takeaways
+
+- `Field` is imported from `pydantic` alongside `BaseModel`.
+- `...` always means the field is **mandatory**.
+- Use `ge`/`le`/`gt`/`lt` for **numeric range validation**.
+- Use `min_length`/`max_length` for **string length control**.
+- `Optional[str] = "default"` handles **fields that may not always be provided**.
+- Regex with `pattern` is powerful but use it carefully — test on regexr.com first.
+- Always read the **Pydantic docs** for deeper exploration — these tutorials are just your starting point!
+
+---
+
+## 94. Field and model validators in python (08:05)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
