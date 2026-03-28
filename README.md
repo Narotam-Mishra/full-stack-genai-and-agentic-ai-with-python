@@ -16919,4 +16919,8 @@ print(emp)
 
 ## 94. Field and model validators in python (08:05)
 
+
+## 95. Computed property in pydantic (07:16)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
