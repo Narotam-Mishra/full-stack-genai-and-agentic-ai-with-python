@@ -16919,6 +16919,151 @@ print(emp)
 
 ## 94. Field and model validators in python (08:05)
 
+## Pydantic Field & Model Validators – Concepts & Notes
+
+## Two Types of Validators
+
+| Type | What it validates | Accesses |
+|---|---|---|
+| `field_validator` | A **single** specific field | Only that one field's value |
+| `model_validator` | The **entire model** | All fields at once |
+
+---
+
+## Part 1 — `field_validator`
+
+Used when you want **custom logic** on a single field that goes beyond what `Field(...)` parameters can handle.
+
+### How it works
+
+```python
+from pydantic import BaseModel, field_validator
+
+class User(BaseModel):
+    username: str
+
+    @field_validator("username")   # decorator — targets the 'username' field
+    @classmethod
+    def username_length(cls, v):   # cls = the class, v = the value being validated
+        if len(v) < 4:
+            raise ValueError("Username must be at least 4 characters")
+        return v                   # ⚠️ ALWAYS return v — forgetting this is the #1 mistake
+
+# ✅ Works
+user = User(username="Benjamin")
+print(user)  # username='Benjamin'
+
+# ❌ Fails
+user = User(username="Ben")  # ValueError: Username must be at least 4 characters
+```
+
+### Key points
+- `@field_validator("field_name")` is a **decorator** — place it just before the method.
+- `cls` = the whole class (it's a class method).
+- `v` = the actual value the user passed in.
+- **Always `return v`** at the end — without it, the value never gets saved.
+
+---
+
+## Part 2 — `model_validator`
+
+Used when your validation logic **needs to compare or check multiple fields together** — like confirming a password.
+
+### How it works
+
+```python
+from pydantic import BaseModel, model_validator
+
+class SignupData(BaseModel):
+    password: str
+    confirm_password: str
+
+    @model_validator(mode="after")   # runs AFTER all individual field checks
+    @classmethod
+    def passwords_match(cls, values):
+        if values.password != values.confirm_password:
+            raise ValueError("Passwords do not match")
+        return values                # ⚠️ ALWAYS return values
+
+# ✅ Works
+signup = SignupData(password="hello123", confirm_password="hello123")
+
+# ❌ Fails
+signup = SignupData(password="hello123", confirm_password="hello999")
+# ValueError: Passwords do not match
+```
+
+### Key points
+- `mode="after"` means it runs **after** all field-level validations pass.
+- `values` gives you access to **all fields at once** using dot notation (`values.password`).
+- **Always `return values`** — not doing so causes hard-to-debug errors.
+
+---
+
+## Full Combined Example
+
+```python
+from pydantic import BaseModel, field_validator, model_validator
+
+class SignupForm(BaseModel):
+    username: str
+    password: str
+    confirm_password: str
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v):
+        if len(v) < 4:
+            raise ValueError("Username must be at least 4 characters")
+        if not v.isalnum():
+            raise ValueError("Username must contain only letters and numbers")
+        return v
+
+    @model_validator(mode="after")
+    @classmethod
+    def check_passwords_match(cls, values):
+        if values.password != values.confirm_password:
+            raise ValueError("Passwords do not match")
+        return values
+
+# ✅ Valid signup
+user = SignupForm(username="benjamin", password="secure99", confirm_password="secure99")
+
+# ❌ Bad username
+# SignupForm(username="Ben", password="pass", confirm_password="pass")
+
+# ❌ Password mismatch
+# SignupForm(username="benjamin", password="abc", confirm_password="xyz")
+```
+
+---
+
+## Execution Order
+
+```
+User submits data
+       ↓
+Field-level type check (is it a string, int, etc.?)
+       ↓
+@field_validator runs (custom per-field logic)
+       ↓
+@model_validator(mode="after") runs (cross-field logic)
+       ↓
+Object is created ✅ or Error is raised ❌
+```
+
+---
+
+## Key Takeaways
+
+- Use `field_validator` for **single-field custom rules** (length, format, range, etc.).
+- Use `model_validator` for **cross-field rules** (password match, date ranges, etc.).
+- Both use `@classmethod` and receive `cls` as the first parameter.
+- `field_validator` gets `v` (one value); `model_validator` gets `values` (all fields).
+- **Forgetting to `return v` / `return values` is the most common mistake** — always do it.
+- `mode="after"` in `model_validator` ensures individual fields are validated first before the cross-check runs.
+
+---
 
 ## 95. Computed property in pydantic (07:16)
 
