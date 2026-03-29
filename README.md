@@ -17206,6 +17206,142 @@ print(order.discounted_total)   # 900.0
 
 ---
 
-## 96. Advance Validation in pydantic (07:16)
+## 96. Advance Validation in pydantic (09:54)
+
+## Pydantic Advanced Validators – Concepts & Notes
+
+This tutorial covers advanced validation patterns in Pydantic using `field_validator` and `model_validator`. Here's a breakdown of every key concept with clean code examples.
+
+---
+
+## Setup
+
+```python
+from pydantic import BaseModel, field_validator, model_validator
+from datetime import datetime
+```
+
+---
+
+## 1. Multiple Field Validation
+
+You can apply **one validator to multiple fields** by passing multiple field names to `@field_validator`.
+
+```python
+class Person(BaseModel):
+    first_name: str
+    last_name: str
+
+    @field_validator("first_name", "last_name")
+    @classmethod
+    def names_must_be_capitalized(cls, v):
+        if not v.istitle():
+            raise ValueError("Names must be capitalized")
+        return v
+```
+
+**What it does:** The same validator runs on `first_name` first, then `last_name`.
+
+**⚠️ Caution:** The instructor notes this isn't always ideal — separating validators per field gives more control. But it's a pattern you'll see often.
+
+---
+
+## 2. Data Transformation Pattern
+
+Validators don't just *validate* — they can also **clean and transform** data before it's stored.
+
+```python
+class User(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v):
+        return v.lower().strip()
+```
+
+**What it does:** Converts email to lowercase and removes extra spaces, regardless of how the user types it.
+
+> `"  Hello@Gmail.COM  "` → `"hello@gmail.com"`
+
+This is called a **data normalization pattern** — very common in real apps.
+
+---
+
+## 3. Before vs After Mode
+
+By default, validators run **after** Pydantic's own type parsing. You can also run them **before** using `mode="before"`.
+
+### `mode="before"` — Run before type conversion
+
+Useful when the raw input needs cleaning *before* Pydantic tries to parse it.
+
+```python
+class Product(BaseModel):
+    price: float
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def parse_price(cls, v):
+        if isinstance(v, str):
+            return float(v.replace("$", "").replace(",", ""))
+        return v
+```
+
+**What it does:** If someone passes `"$4.44"` as a string, this strips the `$` and converts it to `4.44` (float) — *before* Pydantic does its own validation.
+
+| Mode | When it runs |
+|------|-------------|
+| `after` (default) | After Pydantic parses and converts the type |
+| `before` | Before Pydantic does anything — raw input |
+
+---
+
+## 4. Model Validator (Cross-field Validation)
+
+`@model_validator` lets you validate **relationships between multiple fields** — something a single field validator can't do.
+
+```python
+class DateRange(BaseModel):
+    start_date: datetime
+    end_date: datetime
+
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        if self.start_date >= self.end_date:
+            raise ValueError("end_date must be after start_date")
+        return self
+```
+
+**What it does:** Checks that `start_date` is actually earlier than `end_date`. Neither field alone can enforce this — you need both at once.
+
+> **Key difference:** `field_validator` → one field at a time. `model_validator` → all fields together.
+
+---
+
+## Quick Reference Summary
+
+| Concept | Decorator | Use Case |
+|---|---|---|
+| Multiple field validation | `@field_validator("a", "b")` | Same rule on multiple fields |
+| Data transformation | `@field_validator` | Normalize/clean input |
+| Before mode | `mode="before"` | Parse raw strings before type coercion |
+| After mode | `mode="after"` (default) | Validate after type is confirmed |
+| Cross-field validation | `@model_validator(mode="after")` | Rules that involve 2+ fields |
+
+---
+
+## Key Takeaways
+
+- Always spell field names **exactly** as defined — typos are a common bug source.
+- `field_validator` is for **single or multiple fields independently**.
+- `model_validator` is for **business rules that span multiple fields**.
+- `mode="before"` is powerful for handling messy real-world input formats.
+- Transformation (like `.lower().strip()`) inside validators is perfectly valid and very common.
+
+---
+
+## 97. Nested models in pydantic (07:55)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
