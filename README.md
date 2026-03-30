@@ -17444,4 +17444,143 @@ This is the core idea — clean, validated, hierarchical data structures with mi
 
 ## 98. Self referencing models in pydantic (06:49)
 
+## Pydantic Recursive / Self-Referencing Models — Concepts & Notes
+
+## What is a Recursive Model?
+
+A recursive (or self-referencing) model is a Pydantic model that **references itself** as a field type. The classic real-world example is a **nested comment system** — a comment can have replies, and each reply is itself a comment (which can also have replies, and so on).
+
+---
+
+## Key Concepts & Important Pointers
+
+### 1. Forward References (use string quotes)
+
+When a model references itself, Python hasn't finished defining the class yet at the time it reads the type hint. So you wrap the self-referencing type name in **quotes**.
+
+```python
+# Wrong - Python doesn't know what Comment is yet
+replies: Optional[List[Comment]] = None
+
+# Correct - use a string (forward reference)
+replies: Optional[List["Comment"]] = None
+```
+
+---
+
+### 2. `model_rebuild()` — Always Call It
+
+After defining a self-referencing model, you **must** call `model_rebuild()`. Without it, Pydantic can't fully resolve the forward reference, leading to **performance degradation or errors**.
+
+```python
+Comment.model_rebuild()  # Always do this after self-referencing models
+```
+
+---
+
+### 3. Optional + List + Self-Reference
+
+The replies field combines three things at once:
+- `Optional` — replies may or may not exist (can be `None`)
+- `List` — if they exist, it's a list
+- `"Comment"` — each item in the list is itself a `Comment`
+
+---
+
+### 4. Pydantic Validates the Entire Tree Automatically
+
+You don't need to write any custom validation logic. Pydantic walks the entire nested structure and validates every level for you.
+
+---
+
+## Full Working Code Example
+
+```python
+from typing import List, Optional
+from pydantic import BaseModel
+
+
+class Comment(BaseModel):
+    id: int
+    content: str
+    replies: Optional[List["Comment"]] = None  # forward reference + optional
+
+
+# Required after self-referencing model definition
+Comment.model_rebuild()
+
+
+# --- Usage ---
+
+comment = Comment(
+    id=1,
+    content="First comment",
+    replies=[
+        Comment(
+            id=2,
+            content="Reply one",
+            replies=[
+                Comment(
+                    id=3,
+                    content="Nested reply",
+                    replies=None  # no further nesting here
+                )
+            ]
+        ),
+        Comment(
+            id=4,
+            content="Reply two"
+        )
+    ]
+)
+
+print(comment.model_dump())
+```
+
+**Output (simplified):**
+```
+{
+  "id": 1,
+  "content": "First comment",
+  "replies": [
+    {
+      "id": 2,
+      "content": "Reply one",
+      "replies": [
+        {"id": 3, "content": "Nested reply", "replies": None}
+      ]
+    },
+    {"id": 4, "content": "Reply two", "replies": None}
+  ]
+}
+```
+
+---
+
+## Summary Cheatsheet
+
+| Concept | What to do |
+|---|---|
+| Self-referencing type | Wrap in quotes: `"Comment"` |
+| Field may not exist | Wrap in `Optional[...]` |
+| Default to no replies | `= None` |
+| Resolve forward refs | Call `Comment.model_rebuild()` |
+| Nested validation | Pydantic handles it automatically |
+
+---
+
+## Real-World Use Cases
+
+- Nested comments / threaded replies
+- File system trees (folder inside folder)
+- Org charts (employee has sub-employees)
+- Category trees (category has sub-categories)
+
+The core idea is simple: **any time data can be infinitely nested of the same type, use a recursive Pydantic model.**
+
+---
+
+## 99. Advance nested models patterns (10:17)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
