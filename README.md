@@ -17343,5 +17343,105 @@ class DateRange(BaseModel):
 
 ## 97. Nested models in pydantic (07:55)
 
+## Pydantic Nested Models – Summary & Notes
+
+## What is a Nested Model?
+
+A **nested model** is when one Pydantic model is used *as a field type inside another* Pydantic model. This lets you model real-world relationships like a User who has an Address.
+
+- Nested models allow us to compose the complex data structure by embedding one pydantic model inside the other pydantic model.
+
+---
+
+## Key Concepts
+
+### 1. Model Composition
+Instead of storing address as a plain string, you embed the full `Address` model inside `User`.
+
+```python
+from pydantic import BaseModel
+
+class Address(BaseModel):
+    street: str
+    city: str
+    postal_code: str
+
+class User(BaseModel):
+    id: int
+    name: str
+    address: Address  # <-- nested model used as a type
+```
+
+### 2. Type Annotation with a Model Class
+The `address` field uses `Address` as its type — not `str` or `int`. Pydantic understands this and treats it accordingly.
+
+### 3. Automatic Validation
+Pydantic validates *both* models — it checks `User` fields AND `Address` fields automatically. You don't need to write separate validation logic.
+
+### 4. Hierarchical Data Structure
+This creates a parent-child structure: `User` → `Address`. This is called a **hierarchical data structure**.
+
+---
+
+## How to Use It
+
+### Method 1 – Create objects directly
+```python
+addr = Address(street="123 MG Road", city="Bengaluru", postal_code="560001")
+user = User(id=1, name="Benjamin", address=addr)
+
+print(user)
+# id=1 name='Benjamin' address=Address(street='123 MG Road', city='Bengaluru', postal_code='560001')
+```
+
+### Method 2 – Pass a dictionary using `**` unpacking
+```python
+user_data = {
+    "id": 1,
+    "name": "Benjamin",
+    "address": {
+        "street": "123 MG Road",
+        "city": "Bengaluru",
+        "postal_code": "560001"
+    }
+}
+
+user = User(**user_data)
+print(user)
+```
+
+Both methods produce the same result. The dictionary method is useful when data comes from an API or JSON payload.
+
+---
+
+## Important Pointers
+
+| Point | Detail |
+|---|---|
+| Nested model = model inside model | One Pydantic class used as a field type in another |
+| Validation is automatic | Pydantic validates all nested levels, not just the top |
+| Type annotation matters | Use the class name (e.g. `Address`) as the type, not `str` |
+| Dict unpacking (`**`) | Use `**dict` to pass a dictionary when creating a model instance |
+| Postal codes as strings | Always use `str` for postal codes — some regions include letters |
+
+---
+
+## Quick Mental Model
+
+```
+User
+ ├── id: int
+ ├── name: str
+ └── address: Address
+          ├── street: str
+          ├── city: str
+          └── postal_code: str
+```
+
+This is the core idea — clean, validated, hierarchical data structures with minimal code.
+
+---
+
+## 98. Self referencing models in pydantic (06:49)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
