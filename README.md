@@ -17915,4 +17915,138 @@ class Order(BaseModel):
 
 ## 101. Model dump and model dump json in serialization of pydantic (17:15)
 
+## Pydantic Serialization — Concepts & Notes
+
+## What is Serialization?
+
+Serialization is simply **converting a Pydantic model into a format that can be easily stored, transmitted, or processed** — like a Python dictionary, JSON string, or XML.
+
+Think of it as: *complex Python object → simple portable format*
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. Basic Model Setup
+
+```python
+from pydantic import BaseModel, ConfigDict
+from typing import List
+from datetime import datetime
+
+class Address(BaseModel):
+    street: str
+    city: str
+    zip_code: str
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+    is_active: bool = True
+    created_at: datetime
+    address: Address
+    tags: List[str] = []
+```
+
+---
+
+### 2. `model_dump()` — Convert to Python Dictionary
+
+Converts the Pydantic model (including nested sub-models) into a plain Python `dict`.
+
+```python
+user = User(
+    id=1,
+    name="Hitesh",
+    email="h@hitesh.ai",
+    created_at=datetime(2024, 3, 15, 14, 30),
+    address=Address(street="MG Road", city="Bengaluru", zip_code="560001"),
+    tags=["premium", "subscriber"]
+)
+
+python_dict = user.model_dump()
+print(python_dict)
+# Output: {'id': 1, 'name': 'Hitesh', 'address': {'street': 'MG Road', ...}, ...}
+```
+
+> Nested models like `Address` are **recursively converted** to dicts too.
+
+---
+
+### 3. `model_dump_json()` — Convert to JSON String
+
+Converts the model into a **JSON-encoded string** (not a regular string — it can be parsed back into JSON).
+
+```python
+json_string = user.model_dump_json()
+print(type(json_string))  # <class 'str'>
+print(json_string)
+# Output: '{"id":1,"name":"Hitesh","address":{"street":"MG Road",...},...}'
+```
+
+---
+
+### 4. `model_dump` vs `model_dump_json` — Key Difference
+
+| Method | Returns | Use When |
+|---|---|---|
+| `model_dump()` | Python `dict` | You need to work with data in Python |
+| `model_dump_json()` | JSON `str` | You need to send/store data externally |
+
+---
+
+### 5. ⚠️ The `datetime` Problem (Most Important Gotcha)
+
+By default, when you serialize a `datetime` field to JSON, Pydantic outputs an ugly, non-human-readable format. You need to **configure a custom encoder**.
+
+**Without custom encoder:**
+```python
+# model_dump_json() output for created_at:
+# "2024-03-15T14:30:00"  ← ISO format, not always what you want
+```
+
+**With custom encoder using `model_config`:**
+```python
+from pydantic import BaseModel, ConfigDict
+
+class User(BaseModel):
+    model_config = ConfigDict(
+        json_encoders={
+            datetime: lambda v: v.strftime("%d-%m-%Y %H:%M:%S")
+        }
+    )
+    id: int
+    name: str
+    created_at: datetime
+    # ... other fields
+
+user = User(id=1, name="Hitesh", created_at=datetime(2024, 3, 15, 14, 30))
+print(user.model_dump_json())
+# created_at is now: "15-03-2024 14:30:20"  ← clean, readable format
+```
+
+**Format cheatsheet for `strftime`:**
+```
+%d  → day       (15)
+%m  → month     (03)
+%Y  → year      (2024)
+%H  → hour      (14)
+%M  → minute    (30)
+%S  → second    (00)
+```
+
+---
+
+## Summary of Key Takeaways
+
+1. **Serialization** = converting Pydantic models to dict/JSON for storage or transmission
+2. **`model_dump()`** gives you a Python dictionary (good for in-memory Python work)
+3. **`model_dump_json()`** gives you a JSON string (good for APIs, file storage)
+4. **`datetime` fields** are the trickiest part — always configure `json_encoders` in `model_config` to control the output format
+5. **Sub-models are handled automatically** — Pydantic recursively serializes nested models
+6. When in doubt about `strftime` formats, keep the docs open — nobody memorizes them
+
+---
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
