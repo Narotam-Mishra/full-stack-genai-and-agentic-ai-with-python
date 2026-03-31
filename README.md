@@ -17582,5 +17582,337 @@ The core idea is simple: **any time data can be infinitely nested of the same ty
 
 ## 99. Advance nested models patterns (10:17)
 
+## Pydantic Advanced Nested Models – Concepts & Notes
+
+This tutorial covers three advanced patterns for structuring Pydantic models that mirror real-world data relationships.
+
+---
+
+### 1. Optional Nested Models
+
+A nested model doesn't have to be required. Use `Optional` when a field might or might not exist.
+
+**Key idea:** A company may or may not have a physical address. An employee may or may not belong to a company.
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+
+class Address(BaseModel):
+    street: str
+    city: str
+    postal_code: str
+
+class Company(BaseModel):
+    name: str
+    address: Optional[Address] = None  # address may not exist
+
+class Employee(BaseModel):
+    name: str
+    company: Optional[Company] = None  # freelancer has no company
+
+# Usage
+emp1 = Employee(name="Alice")                          # no company
+emp2 = Employee(name="Bob", company=Company(name="PwC"))  # has company
+
+print(emp1)  # company=None
+print(emp2)  # company=Company(name='PwC', address=None)
+```
+
+---
+
+### 2. Mixed Data Types (Union)
+
+A field can accept **more than one type** using `Union`. Common in blog/content systems where a section can be text OR an image.
+
+```python
+from pydantic import BaseModel
+from typing import List, Union
+
+class TextContent(BaseModel):
+    type: str = "text"
+    content: str
+
+class ImageContent(BaseModel):
+    type: str = "image"
+    url: str
+    alt_text: str
+
+class Article(BaseModel):
+    title: str
+    sections: List[Union[TextContent, ImageContent]]  # mixed list
+
+# Usage
+article = Article(
+    title="Intro to AI",
+    sections=[
+        TextContent(content="AI is transforming the world."),
+        ImageContent(url="https://img.com/ai.png", alt_text="AI diagram"),
+        TextContent(content="Let's explore further..."),
+    ]
+)
+```
+
+Each item in `sections` can be either a `TextContent` or `ImageContent` — Pydantic validates both correctly.
+
+---
+
+### 3. Deeply Nested Structures
+
+Models can reference other models which themselves reference other models — creating a chain of dependencies. This reflects real-world hierarchies like Country → State → City → Address → Organization.
+
+```python
+from pydantic import BaseModel
+from typing import List, Optional
+
+class Country(BaseModel):
+    name: str
+    code: str  # e.g., "IN", "US"
+
+class State(BaseModel):
+    name: str
+    country: Country
+
+class City(BaseModel):
+    name: str
+    state: State
+
+class Address(BaseModel):
+    street: str
+    city: City
+    postal_code: str
+
+class Organization(BaseModel):
+    name: str
+    headquarters: Address
+    branches: List[Address] = []  # optional list of branch addresses
+
+# Usage
+org = Organization(
+    name="TechCorp",
+    headquarters=Address(
+        street="123 MG Road",
+        city=City(
+            name="Bengaluru",
+            state=State(
+                name="Karnataka",
+                country=Country(name="India", code="IN")
+            )
+        ),
+        postal_code="560001"
+    ),
+    branches=[]
+)
+
+print(org.headquarters.city.state.country.name)  # India
+```
+
+The dependency chain here is: `Organization → Address → City → State → Country`. This is exactly what "deeply nested" means.
+
+---
+
+### Quick Reference
+
+| Pattern | When to use | Key typing import |
+|---|---|---|
+| Optional Nested | Field may or may not exist | `Optional` |
+| Mixed Data Types | Field can be one of multiple model types | `Union`, `List` |
+| Deeply Nested | Real-world hierarchies with multiple levels | None needed |
+
+**Bottom line:** These aren't special Pydantic features — they're just smart combinations of `Optional`, `Union`, and `List` applied to nested models. 
+
+---
+
+## 100. Best practice for pydantic model design (06:03)
+
+## Pydantic Best Practices – Concepts & Notes
+
+This tutorial covers practical guidelines for building Pydantic models in real projects, grouped into three categories.
+
+---
+
+### 1. Model Organization
+
+**Define leaf models first, build upward.**
+
+Start with the most independent model (no dependencies), then compose more complex ones on top. This avoids forward-reference issues and keeps code readable.
+
+```python
+# GOOD - leaf first, build upward
+class Country(BaseModel):      # no dependencies - leaf
+    name: str
+    code: str
+
+class State(BaseModel):        # depends on Country
+    name: str
+    country: Country
+
+class City(BaseModel):         # depends on State
+    name: str
+    state: State
+
+# BAD - defining Organization first and trying to reference
+# models that don't exist yet causes NameErrors or confusion
+```
+
+**Use clear, meaningful names.**
+
+Naming is one of the hardest problems in programming. Avoid `A`, `B`, `temp`, `data`. A model name should immediately tell you what it represents.
+
+```python
+# BAD
+class M1(BaseModel):
+    x: str
+    y: Optional[M2] = None
+
+# GOOD
+class Employee(BaseModel):
+    name: str
+    department: Optional[Department] = None
+```
+
+**Group related models in the same file.**
+
+If `Country`, `State`, `City`, `Address` all serve the same domain, keep them together. Don't over-import across files unnecessarily.
+
+---
+
+### 2. Performance Considerations
+
+**Avoid deeply nested models (5–6+ levels).**
+
+Each level of nesting adds serialization/deserialization overhead. Use `.model_dump()` explicitly instead of letting Pydantic recurse uncontrolled.
+
+```python
+org = Organization(...)
+
+# GOOD - explicit dump, controlled output
+data = org.model_dump()
+
+# Avoid accessing deeply chained attributes repeatedly in loops
+# as it triggers repeated validation/traversal
+```
+
+**Watch out for circular references.**
+
+If Model A references Model B, and Model B references Model A, you get a memory heap — the object keeps loading itself indefinitely.
+
+```python
+# DANGEROUS - circular reference
+class A(BaseModel):
+    b: Optional["B"] = None
+
+class B(BaseModel):
+    a: Optional[A] = None   # A and B reference each other - memory risk
+```
+
+Use `Optional` and set defaults to `None` to break the cycle, or restructure the relationship entirely.
+
+**Don't overuse computed fields.**
+
+Every time a model is instantiated, computed fields get recalculated. Use them only when genuinely needed.
+
+```python
+from pydantic import BaseModel, computed_field
+
+class Circle(BaseModel):
+    radius: float
+
+    @computed_field        # recalculated on every instantiation
+    @property
+    def area(self) -> float:
+        return 3.14 * self.radius ** 2
+
+# Fine for occasional use, but avoid in models
+# instantiated thousands of times in a loop
+```
+
+**Paginate large nested lists.**
+
+If a model contains a list that could have thousands of nested objects, don't load them all at once. Paginate instead.
+
+---
+
+### 3. Data Modeling Tips
+
+**Model real-world relationships accurately.**
+
+Your Pydantic models should mirror actual business reality, just like database schemas do.
+
+```python
+# If in real life an employee MAY not have a manager (e.g., CEO),
+# reflect that with Optional
+class Employee(BaseModel):
+    name: str
+    manager: Optional["Employee"] = None   # top-level has no manager
+```
+
+**Use `Optional` appropriately — not everything is required.**
+
+Don't make every field mandatory just because you can. Real data is often incomplete.
+
+```python
+class UserProfile(BaseModel):
+    username: str                        # always required
+    bio: Optional[str] = None            # user may skip this
+    profile_picture: Optional[str] = None
+```
+
+**Use `Union` for polymorphic relationships.**
+
+When a field can legitimately be one of several types, `Union` is the right tool — not a workaround.
+
+```python
+from typing import Union, List
+
+class TextBlock(BaseModel):
+    type: str = "text"
+    content: str
+
+class ImageBlock(BaseModel):
+    type: str = "image"
+    url: str
+
+class Page(BaseModel):
+    blocks: List[Union[TextBlock, ImageBlock]]  # real polymorphism
+```
+
+**Business rules take priority over everything.**
+
+Even if a validation adds a small performance cost, if the business demands it — implement it. Correctness over micro-optimization.
+
+```python
+from pydantic import field_validator
+
+class Order(BaseModel):
+    quantity: int
+    price: float
+
+    @field_validator("quantity")
+    @classmethod
+    def must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("Quantity must be at least 1")  # business rule
+        return v
+```
+
+---
+
+### Quick Cheat Sheet
+
+| Category | Practice |
+|---|---|
+| Organization | Define leaf models first, build upward |
+| Organization | Use meaningful names, group related models |
+| Performance | Avoid 5–6+ nesting levels |
+| Performance | Watch for circular references (memory heap) |
+| Performance | Don't overuse computed fields |
+| Data Modeling | Use `Optional` liberally — not all fields are required |
+| Data Modeling | Use `Union` for polymorphic fields |
+| Data Modeling | Business rule always wins |
+
+---
+
+## 101. Model dump and model dump json in serialization of pydantic (17:15)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
