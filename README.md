@@ -18047,6 +18047,8 @@ print(user.model_dump_json())
 5. **Sub-models are handled automatically** — Pydantic recursively serializes nested models
 6. When in doubt about `strftime` formats, keep the docs open — nobody memorizes them
 
+- [Pydantic Serialization](https://docs.pydantic.dev/latest/concepts/serialization/)
+
 ---
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
