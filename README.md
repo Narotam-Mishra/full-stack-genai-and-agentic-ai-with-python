@@ -4,7 +4,7 @@
 
 ## 14 Objects - Mutable and Immutable in Python (18:18)
 
-## Python Data Types & Objects – Summary + Notes
+## Python Data Types & Objects – Concepts + Notes
 
 ## What This Section Covers
 - What **objects** are in Python
@@ -111,6 +111,184 @@ print(id(my_list))   # e.g., 5000  ← same! object modified in place
 
 ## 15 Numbers, Booleans and Operator in Depth in Python (27:00)
 
+## Python Numbers & Booleans – Concepts + Notes
+
+## What This Section Covers
+- Types of numbers in Python
+- Arithmetic operators
+- Booleans and logical operations
+- Floating point precision
+
+---
+
+## 1. Types of Numbers in Python
+
+| Type | Name | Example | Use Case |
+|---|---|---|---|
+| `int` | Integer | `14`, `3`, `-5` | Counting, whole numbers |
+| `bool` | Boolean | `True`, `False` | Yes/No decisions |
+| `float` | Floating point / Real | `1.75`, `95.5` | Decimals, precision |
+| `complex` | Complex | `2+3j` | Scientific/math (rare) |
+
+---
+
+## 2. Integers & Arithmetic Operators
+
+```python
+black_tea_grams = 14
+ginger_grams = 3
+
+# Addition
+total_grams = black_tea_grams + ginger_grams   # 17
+
+# Subtraction
+remaining = black_tea_grams - ginger_grams     # 11
+
+# Multiplication
+doubled = black_tea_grams * 2                  # 28
+
+# True division (keeps decimal)
+milk_liters = 7
+servings = 4
+milk_per_serving = milk_liters / servings      # 1.75
+
+# Floor division (drops decimal)
+teabags = 7
+pots = 4
+bags_per_pot = teabags // pots                 # 1 (not 1.75)
+
+# Modulo — gives the remainder
+total_pods = 10
+pods_per_cup = 3
+leftover = total_pods % pods_per_cup           # 1
+
+# Exponent (power)
+base = 2
+scale = 3
+powerful = base ** scale                       # 8 (2×2×2)
+```
+
+### Readability Tip — Underscores in big numbers
+```python
+total_leaves = 1_000_000_000   # same as 1000000000, just easier to read
+print(total_leaves)            # 1000000000
+```
+
+---
+
+## 3. Booleans
+
+Only two values: `True` or `False` (capital first letter).
+
+```python
+is_boiling = True
+is_tea_added = False
+```
+
+### Booleans are secretly 1 and 0
+```python
+stir_count = 5
+is_boiling = True
+
+total_actions = stir_count + is_boiling   # 5 + 1 = 6
+print(total_actions)                      # 6
+```
+
+### Converting values to Boolean with `bool()`
+```python
+print(bool(0))        # False
+print(bool(1))        # True
+print(bool(11))       # True  ← any non-zero number is True
+print(bool("Hitesh")) # True  ← any non-empty string is True
+print(bool(None))     # False
+print(bool(""))       # False ← empty string is False
+```
+
+**Values that are `False`:** `0`, `None`, `""` (empty string), `[]` (empty list), `{}` (empty dict)  
+**Everything else is `True`.**
+
+---
+
+## 4. Logical Operators
+
+Three operators: `and`, `or`, `not`
+
+| Operator | Meaning | Result |
+|---|---|---|
+| `and` | Both must be True | `True and False` → `False` |
+| `or` | At least one True | `True or False` → `True` |
+| `not` | Flips True/False | `not True` → `False` |
+
+```python
+water_hot = True
+tea_added = False
+
+can_serve = water_hot and tea_added   # False — tea not added yet!
+print(can_serve)                      # False
+
+tea_added = True
+can_serve = water_hot and tea_added   # True — both conditions met
+print(can_serve)                      # True
+```
+
+Real-world analogy:
+- **`and`** → "Tea AND biscuit" — you need both
+- **`or`** → "Tea OR coffee" — either one works
+- **`not`** → flips the answer
+
+---
+
+## 5. Floating Point Numbers
+
+Used when decimal precision matters — stock prices, temperature, measurements.
+
+```python
+ideal_temp = 95.5
+current_temp = 95.4
+
+difference = ideal_temp - current_temp
+print(difference)   # may show 0.09999999999999432 due to float precision
+```
+
+### Why does this happen?
+Computers store decimals in binary, which sometimes causes tiny rounding errors. This is a known limitation of floats — not a Python bug.
+
+### When you need high precision, use `decimal` or `fractions`
+```python
+from decimal import Decimal
+
+a = Decimal("95.5")
+b = Decimal("95.4")
+print(a - b)   # 0.1  ← exact!
+```
+
+```python
+from fractions import Fraction
+
+f = Fraction(1, 3)
+print(f)   # 1/3  ← exact fraction
+```
+
+### Check your system's float limits
+```python
+import sys
+print(sys.float_info)   # shows max float, min float, precision etc.
+```
+
+---
+
+## Key Takeaways
+
+- Python has 4 number types: `int`, `bool`, `float`, `complex`
+- Use `/` for true division, `//` for floor division, `%` for remainder, `**` for power
+- `True = 1`, `False = 0` — they work in arithmetic
+- Only a few values are `False`: `0`, `None`, `""`, empty collections
+- `and` needs both true, `or` needs one true, `not` flips the value
+- Floats can have tiny precision errors — use `decimal` or `fractions` when exactness is critical
+
+---
+
+## 16 String - Index, Slice and Encoding (12:23)
 
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
