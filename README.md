@@ -1,5 +1,120 @@
 # [Gen AI Engineering with Python](https://chatgpt.com/share/69bbb1b8-b64c-8004-a981-3a6ccd5ff19b) 
 
+## Sec 3 - Data Types in Python
+
+## 14 Objects - Mutable and Immutable in Python (18:18)
+
+## Python Data Types & Objects – Summary + Notes
+
+## What This Section Covers
+- What **objects** are in Python
+- **Mutability vs Immutability**
+- How Python stores data in memory
+
+---
+
+## 1. Everything in Python is an Object
+
+Every piece of data in Python is an **object**, and every object has three things:
+
+| Property | Meaning | Example |
+|---|---|---|
+| **Identity** | Unique ID in memory | like a fingerprint |
+| **Type** | What kind of data it is | int, str, set... |
+| **Value** | The actual data | 2, "hello", {1,2,3} |
+
+```python
+x = 42
+print(type(x))   # <class 'int'>
+print(id(x))     # some unique number like 140234567
+print(x)         # 42
+```
+
+---
+
+## 2. Variables are Just References (Pointers)
+
+A variable doesn't *hold* a value — it **points to** an object in memory.
+
+```python
+sugar = 2
+print(sugar)  # 2
+```
+
+Think of it as: `sugar` → `[2 in memory]`
+
+---
+
+## 3. Mutability vs Immutability
+
+### The Golden Rule
+> ✅ Always check mutability using **identity (`id()`)**, never by looking at the value.
+
+### Immutable — Cannot be changed in memory
+Numbers, strings, and tuples are immutable. When you "change" them, Python actually creates a **new object**.
+
+```python
+sugar = 2
+print(id(sugar))   # e.g., 9788320
+
+sugar = 12
+print(id(sugar))   # completely different number!
+```
+
+The value `2` still exists in memory — unchanged. Python just made `sugar` point to a **new object** `12`. You changed the **reference**, not the object itself.
+
+### Mutable — Can be changed in memory
+Sets, lists, and dicts are mutable. You can modify them and the **id stays the same**.
+
+```python
+spice_mix = set()
+print(id(spice_mix))   # e.g., 140234944
+
+spice_mix.add("ginger")
+spice_mix.add("cardamom")
+
+print(id(spice_mix))   # SAME id as before!
+print(spice_mix)       # {'ginger', 'cardamom'}
+```
+
+The object itself was modified in memory — nothing new was created.
+
+---
+
+## 4. Side-by-Side Comparison
+
+```python
+# IMMUTABLE - numbers
+a = 5
+print(id(a))   # e.g., 1000
+a = 10
+print(id(a))   # e.g., 2000  ← different! new object created
+
+# MUTABLE - list
+my_list = [1, 2]
+print(id(my_list))   # e.g., 5000
+my_list.append(3)
+print(id(my_list))   # e.g., 5000  ← same! object modified in place
+```
+
+---
+
+## Key Takeaways
+
+- **Everything in Python is an object** with an identity, type, and value
+- **Variables are references** pointing to objects in memory
+- **Immutable** = object cannot be changed (numbers, strings, tuples) — Python creates a new object instead
+- **Mutable** = object can be changed in place (lists, sets, dicts) — same id before and after modification
+- **Never judge mutability by value** — always use `id()` to check
+
+---
+
+## 15 Numbers, Booleans and Operator in Depth in Python (27:00)
+
+
+
+summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
+
 ## Sec 6 - Functions in Python
 
 ## 39. Functions - Reducing Duplication and Splitting Complex Tasks (14:30)
