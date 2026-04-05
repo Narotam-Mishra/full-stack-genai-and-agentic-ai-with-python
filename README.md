@@ -290,6 +290,125 @@ print(sys.float_info)   # shows max float, min float, precision etc.
 
 ## 16 String - Index, Slice and Encoding (12:23)
 
+## Python Strings – Concepts + Notes
+
+## What This Section Covers
+- What strings are
+- Indexing — accessing individual characters
+- Slicing — extracting parts of a string
+- Encoding & decoding strings
+
+---
+
+## 1. What is a String?
+
+Any text wrapped in quotes (single or double) is a **string**.  
+Strings are **immutable** — they cannot be changed in memory. Any modification creates a new object.
+
+```python
+chai_type = "Ginger Chai"
+customer_name = "Priya"
+
+print(f"Order for {customer_name}: {chai_type} please!")
+# Output: Order for Priya: Ginger Chai please!
+```
+
+---
+
+## 2. Indexing — Accessing Individual Characters
+
+Every character in a string has a **position number (index)** starting from `0`.
+
+```
+String:  A  r  o  m  a  t  i  c
+Index:   0  1  2  3  4  5  6  7
+```
+
+```python
+chai_desc = "Aromatic and bold"
+
+print(chai_desc[0])   # A  ← first character
+print(chai_desc[1])   # r
+print(chai_desc[7])   # c
+```
+
+### Negative Indexing — count from the end
+```python
+print(chai_desc[-1])  # d  ← last character
+print(chai_desc[-4])  # b
+```
+
+---
+
+## 3. Slicing — Extracting a Portion of a String
+
+**Syntax:** `string[start : end : step]`
+
+- `start` — where to begin (inclusive)
+- `end` — where to stop (**not inclusive**)
+- `step` — how many characters to jump each time
+
+```python
+chai_desc = "Aromatic and bold"
+
+# Get first word "Aromatic" (index 0 to 7, end 8 is not included)
+first_word = chai_desc[0:8]
+print(first_word)   # Aromatic
+
+# Shorthand — skip 0 if starting from beginning
+first_word = chai_desc[:8]
+print(first_word)   # Aromatic
+
+# Get last word — start from index 13, no end = go till finish
+last_word = chai_desc[13:]
+print(last_word)    # bold
+
+# Step of 2 — every second character
+print(chai_desc[0:8:2])   # Aoa  ← skips every other letter
+```
+
+### Reversing a String — step of `-1`
+```python
+print(chai_desc[::-1])   # dlob dna citamorA
+```
+This is the most popular Python trick for reversing a string.
+
+---
+
+## 4. Encoding & Decoding Strings
+
+When working with **non-English characters** (Hindi, Japanese, Spanish accents etc.), you need to encode them properly to avoid errors.
+
+The most common encoding standard is **UTF-8**.
+
+```python
+label_text = "chaié"   # special character é
+
+# Encode — converts string to bytes for safe storage/transfer
+encoded_label = label_text.encode("utf-8")
+print(encoded_label)   # b'chai\xc3\xa9'  ← raw bytes
+
+# Decode — converts bytes back to readable string
+decoded_label = encoded_label.decode("utf-8")
+print(decoded_label)   # chaié  ← back to normal
+```
+
+> Always decode with the **same encoding** you used to encode.
+
+---
+
+## Key Takeaways
+
+- Strings are **immutable** — any change creates a new object in memory
+- **Indexing starts at 0**, not 1
+- The **end index in slicing is never inclusive** — always go one beyond what you want
+- `string[::-1]` is the Pythonic shorthand to **reverse a string**
+- Use **`encode("utf-8")`** and **`decode("utf-8")`** when dealing with special or non-English characters
+- Strings have many built-in methods like `.upper()`, `.lower()`, `.count()`, `.capitalize()` — best learned while building real projects
+
+---
+
+## 17 Tuple and Membership Testing (08:45)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
