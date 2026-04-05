@@ -410,6 +410,109 @@ print(decoded_label)   # chaié  ← back to normal
 
 ## 17 Tuple and Membership Testing (08:45)
 
+## Python Tuples – Concepts + Notes
+
+## What This Section Covers
+- What tuples are and how to create them
+- Unpacking tuples
+- Swapping variables using tuples
+- Membership testing with `in`
+
+---
+
+## 1. What is a Tuple?
+
+A tuple is a collection of values wrapped in **parentheses `()`**.  
+Tuples are **immutable** — once created, they cannot be changed.
+
+```python
+masala_spices = ("cardamom", "clove", "cinnamon")
+print(masala_spices)   # ('cardamom', 'clove', 'cinnamon')
+```
+
+Think of a tuple as a **fixed list** — perfect for data that should never change.
+
+---
+
+## 2. The 3 Types of Brackets (Quick Reference)
+
+| Symbol | Name | Used For |
+|---|---|---|
+| `()` | Parentheses | Tuples, function calls |
+| `[]` | Square Brackets | Lists, indexing |
+| `{}` | Curly Braces | Dictionaries, sets |
+
+---
+
+## 3. Unpacking a Tuple
+
+Extracting individual values from a tuple into separate variables.
+
+```python
+masala_spices = ("cardamom", "clove", "cinnamon")
+
+# Unpack into variables — count must match!
+spice1, spice2, spice3 = masala_spices
+
+print(spice1)   # cardamom
+print(spice2)   # clove
+print(spice3)   # cinnamon
+```
+
+> The number of variables on the left **must match** the number of items in the tuple.
+
+---
+
+## 4. Swapping Variables — A Python Superpower
+
+Normally swapping two variables needs a third temporary variable. Python lets you skip that entirely, thanks to tuples working behind the scenes.
+
+```python
+ginger_ratio = 2
+cardamom_ratio = 1
+
+print(f"Before — Ginger: {ginger_ratio}, Cardamom: {cardamom_ratio}")
+# Before — Ginger: 2, Cardamom: 1
+
+# Swap in one line!
+ginger_ratio, cardamom_ratio = cardamom_ratio, ginger_ratio
+
+print(f"After — Ginger: {ginger_ratio}, Cardamom: {cardamom_ratio}")
+# After — Ginger: 1, Cardamom: 2
+```
+
+No third variable needed. Python handles this swap cleanly under the hood using tuple packing/unpacking.
+
+---
+
+## 5. Membership Testing with `in`
+
+Check if a value **exists inside** a tuple using the `in` keyword.
+
+```python
+masala_spices = ("cardamom", "clove", "cinnamon")
+
+print("cinnamon" in masala_spices)   # True
+print("ginger" in masala_spices)     # False
+print("Cinnamon" in masala_spices)   # False ← case sensitive!
+```
+
+> Membership testing is **case sensitive** — `"cinnamon"` and `"Cinnamon"` are treated as different values.
+
+---
+
+## Key Takeaways
+
+- Tuples use `()` parentheses and are **immutable** — values cannot be changed after creation
+- **Unpacking** lets you extract tuple values into individual variables in one line
+- Python's **variable swapping** (`a, b = b, a`) works because of tuples behind the scenes — no temp variable needed
+- Use the `in` keyword to test if a value exists in a tuple (**membership test**)
+- Tuples are great for **fixed data** — coordinates, RGB colors, database records, config values
+
+---
+
+## 18 Basics of List in Python (13:38)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 ## Sec 6 - Functions in Python
