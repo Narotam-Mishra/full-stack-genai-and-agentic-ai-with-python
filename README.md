@@ -513,6 +513,122 @@ print("Cinnamon" in masala_spices)   # False ← case sensitive!
 
 ## 18 Basics of List in Python (13:38)
 
+## Python Lists – Concepts & Key Concepts
+
+- A list is a collection of items.
+- Written using square brackets [].
+- Can store multiple values (strings, numbers, etc.).
+
+---
+
+## Mutable vs Immutable (Quick Recap)
+
+| Type | Examples | Can Change? |
+|---|---|---|
+| Immutable | int, str, tuple | ❌ No |
+| Mutable | list, dict, set | ✅ Yes |
+
+---
+
+## What is a List?
+
+A list is an ordered collection of items (called an **array** in other languages). Items can be of any type and can be added, removed, or reordered freely.
+
+```python
+ingredients = ["water", "milk", "black tea"]
+```
+
+---
+
+## Key Concepts & Methods
+
+### 1. `append()` — Add to the end
+```python
+ingredients = ["water", "milk", "black tea"]
+ingredients.append("sugar")
+print(ingredients)  # ['water', 'milk', 'black tea', 'sugar']
+```
+
+### 2. `remove()` — Remove by value
+```python
+ingredients.remove("water")
+print(ingredients)  # ['milk', 'black tea', 'sugar']
+```
+> Finds and removes the first match regardless of position.
+
+### 3. `extend()` — Merge two lists
+```python
+chai = ["water", "milk"]
+spices = ["ginger", "cardamom"]
+chai.extend(spices)
+print(chai)  # ['water', 'milk', 'ginger', 'cardamom']
+```
+
+### 4. `insert(index, value)` — Add at a specific position
+```python
+chai = ["water", "milk", "ginger", "cardamom"]
+chai.insert(2, "black tea")
+print(chai)  # ['water', 'milk', 'black tea', 'ginger', 'cardamom']
+```
+> Items at that position and beyond shift right.
+
+### 5. `pop()` — Remove & return the last item
+```python
+last = chai.pop()
+print(last)   # 'cardamom'
+print(chai)   # ['water', 'milk', 'black tea', 'ginger']
+```
+> Useful when you need the removed value for later use.
+
+### 6. `reverse()` — Reverse the list in-place
+```python
+chai.reverse()
+print(chai)  # ['ginger', 'black tea', 'milk', 'water']
+```
+> ⚠️ This modifies the original list and returns `None` — don't assign it to a variable.
+
+### 7. `sort()` — Sort alphabetically / numerically
+```python
+chai.sort()
+print(chai)  # ['black tea', 'ginger', 'milk', 'water']
+```
+
+### 8. `max()` and `min()` — Find highest / lowest value
+```python
+sugar_levels = [1, 2, 3, 4, 5]
+print(max(sugar_levels))  # 5
+print(min(sugar_levels))  # 1
+```
+> Very useful when data comes dynamically (e.g., from a database).
+
+---
+
+## Indexing — How Positions Work
+
+Lists are **zero-indexed**, meaning the first item is at position `0`.
+
+```python
+chai = ["water", "milk", "black tea"]
+#        index 0   index 1   index 2
+print(chai[0])  # 'water'
+print(chai[1])  # 'milk'
+```
+
+---
+
+## Important Pointers to Remember
+
+- Lists use `[]` square brackets.
+- Items can be of mixed types: `[1, "hello", True]`.
+- `reverse()` and `sort()` **modify the list in-place** and return `None` — a common beginner mistake is writing `chai = chai.sort()`, which sets `chai` to `None`.
+- `append()` adds one item; `extend()` merges an entire list.
+- `pop()` both removes and returns the item — handy for stack-like operations.
+- Indexing starts at `0`, always.
+
+---
+
+## 19 Operator overloading and bytearray in python (10:24)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 ## Sec 6 - Functions in Python
