@@ -1139,12 +1139,6 @@ print(queue.popleft())             # urgent_order
 
 ---
 
-summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
-
-- source .venv/bin/activate
-
----
-
 ## Sec 6 - Functions in Python
 
 ## 39. Functions - Reducing Duplication and Splitting Complex Tasks (14:30)
@@ -19195,5 +19189,8 @@ print(user.model_dump_json())
 - [Pydantic Serialization](https://docs.pydantic.dev/latest/concepts/serialization/)
 
 ---
+
+
+- Command to activate venv - `source .venv/bin/activate`
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
