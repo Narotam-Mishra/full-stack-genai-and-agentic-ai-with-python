@@ -627,7 +627,215 @@ print(chai[1])  # 'milk'
 
 ---
 
-## 19 Operator overloading and bytearray in python (10:24)
+## 19. Operator overloading and bytearray in python (10:24)
+
+## Python Lists (Part 2) – Operator Overloading & Byte Arrays
+
+---
+
+## 1. Operator Overloading with Lists
+
+"Operator overloading" means using an operator (like `+` or `*`) for a purpose beyond its original design. With lists, `+` and `*` do something special.
+
+### `+` — Concatenate two lists
+```python
+base_liquid = ["water", "milk"]
+extra_flavor = ["ginger"]
+
+liquid_mix = base_liquid + extra_flavor
+print(liquid_mix)  # ['water', 'milk', 'ginger']
+```
+> Same result as `extend()`, but creates a **new list** instead of modifying the original.
+
+---
+
+### `*` — Repeat a list N times
+```python
+strong_brew = ["black tea"] * 3
+print(strong_brew)  # ['black tea', 'black tea', 'black tea']
+```
+
+With multiple elements, the **entire list** repeats as a unit:
+```python
+strong_brew = ["black tea", "water"] * 3
+print(strong_brew)
+# ['black tea', 'water', 'black tea', 'water', 'black tea', 'water']
+```
+> The order is preserved — the whole list repeats, not individual items independently.
+
+---
+
+## 2. `bytearray` — A Rarely Used But Useful Type
+
+`bytearray` is a mutable sequence of bytes, useful for working with raw string/character data at the byte level.
+
+### Creating a bytearray
+```python
+raw_spice = bytearray(b"cinnamon")
+print(raw_spice)  # bytearray(b'cinnamon')
+```
+
+### Using `replace()` on a bytearray
+```python
+raw_spice = bytearray(b"cinnamon")
+raw_spice = raw_spice.replace(b"cinnamon", b"cardamom")
+print(raw_spice)  # bytearray(b'cardamom')
+```
+
+> ⚠️ **Key gotcha:** Methods like `replace()` return a **new bytearray** — they don't modify in place. You must reassign the result, otherwise the original stays unchanged.
+
+```python
+# WRONG — original not updated
+raw_spice.replace(b"cinnamon", b"cardamom")
+print(raw_spice)  # still bytearray(b'cinnamon')
+
+# CORRECT — reassign the result
+raw_spice = raw_spice.replace(b"cinnamon", b"cardamom")
+print(raw_spice)  # bytearray(b'cardamom')
+```
+
+---
+
+## Key Pointers to Remember
+
+| Concept | What to Know |
+|---|---|
+| `list1 + list2` | Creates a new combined list (doesn't modify originals) |
+| `list * n` | Repeats the whole list n times, order preserved |
+| `bytearray` | Mutable byte-level sequence, mainly for characters/strings |
+| `replace()` on bytearray | Returns a new object — must reassign to see the change |
+| Operator overloading | Same operator does different things depending on the data type |
+
+---
+
+## Quick Comparison: Ways to Combine Lists
+
+```python
+a = [1, 2]
+b = [3, 4]
+
+# Method 1: extend (modifies a in-place)
+a.extend(b)         # a is now [1, 2, 3, 4]
+
+# Method 2: + operator (creates new list)
+combined = a + b    # a unchanged, combined = [1, 2, 3, 4]
+
+# Method 3: append (adds b as a single element — usually not what you want)
+a.append(b)         # a = [1, 2, [3, 4]]  ← nested list!
+```
+
+---
+
+**Bottom line:** Operator overloading makes list manipulation more expressive and concise. `bytearray` is a niche tool you'll use rarely, but understanding that methods can return new objects (rather than modifying in place) is an important pattern you'll see throughout Python.
+
+---
+
+## 20. Set and frozenset in python (09:01)
+
+## Python Sets — Concepts & Notes
+
+## What is a Set?
+
+A **set** is a collection of **unique, unordered** elements. The core idea: **no duplicates allowed**. It comes from mathematical set theory (union, intersection, difference).
+
+---
+
+## Creating a Set
+
+```python
+essential_spices = {"cardamom", "ginger", "cinnamon"}
+optional_spices  = {"cloves", "ginger", "black pepper"}
+```
+
+> Use curly braces `{}`. Order doesn't matter — sets are unordered.
+
+---
+
+## Key Operations
+
+### 1. Union `|` — "Give me everything, no repeats"
+
+Combines both sets but keeps only unique elements.
+
+```python
+all_spices = essential_spices | optional_spices
+print(all_spices)
+# {'cardamom', 'ginger', 'cinnamon', 'cloves', 'black pepper'}
+# ginger appears only once!
+```
+
+---
+
+### 2. Intersection `&` — "Give me only what's common"
+
+Returns elements present in **both** sets.
+
+```python
+common_spices = essential_spices & optional_spices
+print(common_spices)
+# {'ginger'}
+```
+
+---
+
+### 3. Difference `-` — "Give me A, but remove anything also in B"
+
+Returns elements in the first set that are **not** in the second.
+
+```python
+only_in_essential = essential_spices - optional_spices
+print(only_in_essential)
+# {'cardamom', 'cinnamon'}  ← ginger removed since it's in both
+```
+
+---
+
+### 4. Membership Test `in` — "Is this element in the set?"
+
+```python
+print("cloves" in essential_spices)   # False
+print("cloves" in optional_spices)    # True
+```
+
+---
+
+## Frozen Set — Immutable Version of a Set
+
+A `frozenset` works exactly like a set but **cannot be modified** after creation.
+
+```python
+frozen = frozenset({"cardamom", "ginger"})
+# frozen.add("cloves")  ← This would throw an error!
+```
+
+Use it when you need a set that should never change (e.g., as a dictionary key).
+
+---
+
+## Quick Reference Cheat Sheet
+
+| Operation | Symbol | Meaning |
+|---|---|---|
+| Union | `\|` | All elements from both, no duplicates |
+| Intersection | `&` | Only elements common to both |
+| Difference | `-` | Elements in A but not in B |
+| Membership | `in` | Check if element exists in set |
+| Frozen Set | `frozenset()` | Immutable set |
+
+---
+
+## Key Takeaways
+
+- Sets **guarantee uniqueness** — perfect for deduplication
+- Sets are **unordered** — don't rely on index positions
+- The `|`, `&`, `-` operators mirror mathematical set theory
+- `frozenset` is the immutable variant — same behaviour, just locked
+- Membership testing with `in` works the same as lists/tuples
+
+---
+
+## 21. Dictionary in python (16:38)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
