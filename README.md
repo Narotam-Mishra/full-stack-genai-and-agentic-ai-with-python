@@ -836,6 +836,168 @@ Use it when you need a set that should never change (e.g., as a dictionary key).
 
 ## 21. Dictionary in python (16:38)
 
+## Python Dictionaries — Concepts & Notes
+
+## What is a Dictionary?
+
+A dictionary stores data as **key-value pairs** instead of numeric indexes. Think of it like a labeled box — instead of calling something by position `0` or `1`, you call it by a meaningful name like `"type"` or `"size"`.
+
+> List: `data[0]` → Dictionary: `data["name"]`
+
+---
+
+## Creating a Dictionary
+
+**Method 1 — using `dict()`:**
+```python
+chai_order = dict(type="masala chai", size="large", sugar=2)
+```
+
+**Method 2 — using `{}` (most common):**
+```python
+chai_order = {"type": "masala chai", "size": "large", "sugar": 2}
+```
+
+**Method 3 — empty dict, then add:**
+```python
+chai_recipe = {}
+chai_recipe["base"] = "black tea"
+chai_recipe["liquid"] = "milk"
+```
+
+---
+
+## Accessing Data
+
+```python
+print(chai_recipe["base"])   # black tea
+```
+
+> Use the key name inside square brackets — same syntax as adding data.
+
+---
+
+## Deleting Data
+
+```python
+del chai_recipe["liquid"]
+print(chai_recipe)   # {'base': 'black tea'} — liquid is gone
+```
+
+---
+
+## Membership Test
+
+```python
+print("sugar" in chai_order)   # True
+print("notes" in chai_order)   # False
+```
+
+---
+
+## Useful Dictionary Methods
+
+### `.keys()` — get all keys
+```python
+print(chai_order.keys())
+# dict_keys(['type', 'size', 'sugar'])
+```
+
+### `.values()` — get all values
+```python
+print(chai_order.values())
+# dict_values(['masala chai', 'large', 2])
+```
+
+### `.items()` — get all key-value pairs as tuples
+```python
+print(chai_order.items())
+# dict_items([('type', 'masala chai'), ('size', 'large'), ('sugar', 2)])
+```
+
+---
+
+## Removing Items
+
+### `.pop("key")` — remove a specific key
+```python
+chai_order.pop("sugar")
+print(chai_order)   # sugar is removed
+```
+
+### `.popitem()` — remove the last inserted item
+```python
+last = chai_order.popitem()
+print("Removed:", last)
+```
+
+---
+
+## Updating a Dictionary
+
+Merge another dictionary into an existing one using `.update()`:
+
+```python
+chai_recipe = {"base": "black tea"}
+
+extra_spices = {"cardamom": "crushed", "ginger": "sliced"}
+chai_recipe.update(extra_spices)
+
+print(chai_recipe)
+# {'base': 'black tea', 'cardamom': 'crushed', 'ginger': 'sliced'}
+```
+
+---
+
+## Safe Value Retrieval with `.get()`
+
+Accessing a key that doesn't exist **crashes** your app:
+
+```python
+# This will throw a KeyError and crash!
+note = chai_order["customer_note"]
+```
+
+Use `.get()` instead — returns a default value if key is missing:
+
+```python
+note = chai_order.get("customer_note", "No note was given")
+print(note)   # No note was given
+```
+
+This is a best practice for production code — never blindly access keys.
+
+---
+
+## Quick Reference Cheat Sheet
+
+| Operation | Code | Notes |
+|---|---|---|
+| Create | `d = {"key": "value"}` | Most common way |
+| Add/Update key | `d["key"] = "value"` | Overwrites if key exists |
+| Access | `d["key"]` | Crashes if key missing |
+| Safe access | `d.get("key", "default")` | Returns default if missing |
+| Delete | `del d["key"]` | Removes by key |
+| All keys | `d.keys()` | Returns dict_keys |
+| All values | `d.values()` | Returns dict_values |
+| All pairs | `d.items()` | Returns list of tuples |
+| Merge | `d.update(other_dict)` | Adds/overwrites from other |
+| Pop last | `d.popitem()` | Removes last item |
+
+---
+
+## Key Takeaways
+
+- Dictionaries solve the problem of **numeric-only indexing** in lists
+- Every entry is a **key-value pair** — keys must be unique
+- **Order doesn't matter** for lookup — you always reference by name
+- `.get()` is the safe alternative to direct key access — use it whenever a key might not exist
+- All set operations (union, intersection etc.) also apply to dictionaries
+
+---
+
+## 22. Touch on Advance Data types like Collections (07:03)
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
