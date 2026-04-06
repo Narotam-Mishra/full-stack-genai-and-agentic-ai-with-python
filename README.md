@@ -998,8 +998,152 @@ This is a best practice for production code — never blindly access keys.
 
 ## 22. Touch on Advance Data types like Collections (07:03)
 
+## Python Advanced Data Types — Concepts Summary
+
+This tutorial is a **bonus/preview lecture** introducing advanced data types in Python that go beyond the built-in ones. The instructor's key message: you don't need to master these now, but it's good to know they exist.
+
+---
+
+## Core Idea: Importing External/Standard Modules
+
+Unlike `str`, `list`, or `dict` which are available by default, these advanced types require an **import statement** to bring them in.
+
+```python
+# Built-in — no import needed
+name = "Chai"
+scores = [10, 20, 30]
+
+# Advanced — must import first
+import arrow
+from collections import namedtuple
+```
+
+---
+
+## 1. Date & Time Types
+
+Python has several ways to work with dates and times:
+
+| Module | Purpose |
+|---|---|
+| `datetime` | Date + time combined |
+| `time` | Time only |
+| `calendar` | Calendar operations |
+
+```python
+from datetime import datetime, timedelta
+
+now = datetime.now()
+print(now)  # 2026-04-06 10:30:00
+
+# timedelta — difference between two times
+order_placed = datetime(2026, 4, 1, 10, 0)
+order_delivered = datetime(2026, 4, 3, 15, 30)
+duration = order_delivered - order_placed
+print(duration)  # 2 days, 5:30:00
+```
+
+**timedelta** is especially useful for measuring durations — like time between order placement and delivery, or how long a program took to run.
+
+---
+
+## 2. `arrow` — Third-Party Date/Time Library
+
+`arrow` simplifies working with timezones and date formatting. Must be installed first:
+
+```bash
+pip install arrow
+```
+
+```python
+import arrow
+
+# Get current UTC time
+brewing_time = arrow.utcnow()
+print(brewing_time)  # 2026-04-06T05:00:00+00:00
+
+# Convert to a different timezone
+india_time = brewing_time.to("Asia/Kolkata")
+print(india_time)  # 2026-04-06T10:30:00+05:30
+
+europe_time = brewing_time.to("Europe/Rome")
+print(europe_time)
+```
+
+Think of `arrow` as a friendlier wrapper around Python's built-in datetime — timezone conversions become one-liners.
+
+---
+
+## 3. `collections` Module — Advanced Data Structures
+
+The `collections` module (part of Python's standard library, but needs importing) gives you several powerful data types built on top of familiar ones:
+
+| Type | What it is |
+|---|---|
+| `namedtuple` | Tuple with named fields |
+| `deque` | Double-ended queue (pronounced "deck") |
+| `Counter` | Counts occurrences of items |
+| `OrderedDict` | Dict that remembers insertion order |
+| `defaultdict` | Dict with default values |
+| `ChainMap` | Combines multiple dicts into one view |
+
+### `namedtuple` Example (covered in tutorial)
+
+```python
+from collections import namedtuple
+
+# Define a chai profile structure
+ChaiProfile = namedtuple("ChaiProfile", ["flavor", "aroma", "color"])
+
+# Create an instance
+masala_chai = ChaiProfile(flavor="spicy", aroma="strong", color="brown")
+
+# Access by name — clean and readable
+print(masala_chai.flavor)  # spicy
+print(masala_chai.aroma)   # strong
+print(masala_chai.color)   # brown
+```
+
+### `Counter` Example
+
+```python
+from collections import Counter
+
+orders = ["masala", "ginger", "masala", "plain", "ginger", "masala"]
+count = Counter(orders)
+print(count)  # Counter({'masala': 3, 'ginger': 2, 'plain': 1})
+```
+
+### `deque` Example
+
+```python
+from collections import deque
+
+# Efficient add/remove from both ends
+queue = deque(["order1", "order2", "order3"])
+queue.appendleft("urgent_order")   # add to front
+queue.append("order4")             # add to back
+print(queue.popleft())             # urgent_order
+```
+
+---
+
+## Key Takeaways
+
+- Advanced data types **don't come loaded by default** — you must import them.
+- The `datetime`, `time`, and `calendar` modules handle all date/time needs in standard Python.
+- `arrow` and `dateutil` are third-party libraries that make date/time work much easier.
+- The `collections` module is a goldmine of useful structures — `namedtuple`, `Counter`, `deque`, and more.
+- All these advanced types are **built on top of Python's basic types** — they just package them more conveniently for specific use cases.
+- Don't force yourself to learn all of these at once — come back to them when a specific problem calls for them.
+
+---
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
+
+- source .venv/bin/activate
+
+---
 
 ## Sec 6 - Functions in Python
 
