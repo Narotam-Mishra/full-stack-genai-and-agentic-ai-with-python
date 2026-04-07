@@ -9076,7 +9076,137 @@ Next OOP topics will be very useful:
 
 ## 61. Class and Object Namespace (08:19)
 
+### What's the Core Idea?
+
+A **class** is like a blueprint/template. **Objects** are real things created from that blueprint. Each object has its own space (called a **namespace**) — changes to one object don't affect others or the original class.
+
+---
+
+### Key Concepts with Code Examples
+
+#### 1. Creating a Class with Properties
+
+```python
+class SimpleChai:
+    origin = "India"   # property inside a class
+```
+
+> Variables inside a class are called **properties** (not just variables).
+
+```python
+print(SimpleChai.origin)   # Output: India
+```
+
+---
+
+#### 2. Adding Properties Dynamically
+
+You can add new properties to a class even after defining it:
+
+```python
+class SimpleChai:
+    origin = "India"
+
+SimpleChai.is_hot = True   # adding new property on the fly
+
+print(SimpleChai.origin)   # India
+print(SimpleChai.is_hot)   # True
+```
+
+---
+
+#### 3. Creating Objects from a Class
+
+```python
+class SimpleChai:
+    origin = "India"
+    is_hot = True
+
+masala = SimpleChai()   # creating an object
+
+print(masala.origin)    # India  (inherited from class)
+print(masala.is_hot)    # True   (inherited from class)
+```
+
+---
+
+#### 4. Namespace — The Heart of This Lecture
+
+Each object has its **own namespace**. Changing a property on an object does **not** affect the class or other objects.
+
+```python
+class SimpleChai:
+    origin = "India"
+    is_hot = True
+
+masala = SimpleChai()
+masala.is_hot = False   # changed only for masala
+
+print(SimpleChai.is_hot)  # True  ✅ class unchanged
+print(masala.is_hot)      # False ✅ only masala changed
+```
+
+Think of it like this: the blueprint says "shirt color = yellow", but you can paint your own shirt purple — the blueprint stays yellow.
+
+---
+
+#### 5. Adding Unique Properties to an Object
+
+Objects can have **extra properties** that don't even exist in the class:
+
+```python
+class SimpleChai:
+    origin = "India"
+    is_hot = True
+
+masala = SimpleChai()
+masala.flavor = "Masala"   # new property, only on this object
+
+print(masala.flavor)       # Masala
+print(SimpleChai.flavor)   # ❌ AttributeError — class doesn't have this
+```
+
+---
+
+#### 6. Multiple Objects, Independent Namespaces
+
+```python
+class SimpleChai:
+    origin = "India"
+
+masala = SimpleChai()
+ginger = SimpleChai()
+
+masala.is_hot = False
+ginger.is_hot = True
+
+print(masala.is_hot)   # False
+print(ginger.is_hot)   # True  — completely independent!
+```
+
+---
+
+### Important Pointers (Quick Notes)
+
+| Concept | Key Takeaway |
+|---|---|
+| Class | Blueprint/template for creating objects |
+| Object | A real instance created from the class |
+| Property | Variable that lives inside a class |
+| Namespace | Each object's own private space for its data |
+| Object change | Does NOT affect the class or other objects |
+| Extra properties | Can be added to individual objects, won't exist in the class |
+| Default values | New objects always get the class's original values |
+
+---
+
+### One-Line Summary
+
+> A class is a template. Objects are copies of that template. Each copy lives in its own namespace — fully independent from the original and from each other.
+
 - Each object has its own entity, that's called as namespace that doesn't bother other ones.
+
+---
 
 ## 62. Attribute Shadowing in python (06:14)
 
