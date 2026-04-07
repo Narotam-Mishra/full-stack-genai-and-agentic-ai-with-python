@@ -19320,7 +19320,313 @@ print(user.model_dump_json())
 
 ---
 
+## [Sec 14 - Core Foundations of Generative AI](https://chatgpt.com/share/69d535b0-c790-83e8-8d76-5a8d9432d133)
+
+## 102. Understanding Large Language Models (LLMs) (05:55)
+
+## 🧠 What is an LLM (Simple Summary)
+
+A **Large Language Model (LLM)** is an AI system that:
+
+* Understands human language (like English)
+* Generates human-like responses
+* Is trained on **huge amounts of text data (internet, books, etc.)**
+
+👉 Examples:
+
+* ChatGPT
+* Gemini
+* Claude
+
+💡 In simple terms:
+**LLM = a smart text prediction machine that talks like humans**
+
+---
+
+## 📌 Key Points (Important Notes)
+
+### 1. LLM = Large Language Model
+
+* “Large” → trained on massive data
+* “Language” → works with text (human language)
+* “Model” → mathematical system trained using ML
+
+---
+
+### 2. What LLMs Do
+
+* Understand your question
+* Process it
+* Generate a response
+
+👉 Example:
+
+```
+You: What is 2 + 2?
+LLM: 4
+```
+
+---
+
+### 3. ChatGPT is NOT the LLM itself
+
+* ChatGPT = interface (chat app)
+* GPT = actual LLM model behind it
+
+---
+
+### 4. Training Data
+
+* LLMs are trained on:
+
+  * Internet text
+  * Articles
+  * Books
+  * Code
+
+⚠️ Important:
+They don’t “know” things like humans — they **learn patterns from data**
+
+---
+
+### 5. Core Goal of LLM
+
+👉 Understand + Generate human language
+
+---
+
+### 6. Many LLMs Exist
+
+Different companies build their own models:
+
+* OpenAI → GPT models
+* Google → Gemini
+* Anthropic → Claude
+
+---
+
+## 🔑 Important Concepts (with Simple Code Examples)
+
+---
+
+## 1. 🧩 Tokenization (Breaking text into pieces)
+
+LLMs don’t read full sentences — they break them into **tokens**.
+
+👉 Example:
+
+```
+"Hello world"
+→ ["Hello", "world"]
+```
+
+### 🐍 Python Example
+
+```python
+text = "Hello world"
+tokens = text.split()
+
+print(tokens)
+```
+
+✅ Output:
+
+```
+['Hello', 'world']
+```
+
+---
+
+## 2. 🔢 Vector Embeddings (Text → Numbers)
+
+LLMs convert words into numbers so machines can understand them.
+
+👉 Example:
+
+```
+"cat" → [0.2, 0.8, 0.1]
+"dog" → [0.21, 0.79, 0.11]
+```
+
+(similar words → similar numbers)
+
+### 🐍 Simple Example
+
+```python
+from sklearn.feature_extraction.text import CountVectorizer
+
+sentences = ["I love AI", "I love coding"]
+
+vectorizer = CountVectorizer()
+vectors = vectorizer.fit_transform(sentences)
+
+print(vectors.toarray())
+```
+
+---
+
+## 3. 🎯 Prediction (Core Idea of LLM)
+
+LLM predicts the **next word**.
+
+👉 Example:
+
+```
+"I love programming in"
+→ Python (predicted)
+```
+
+### 🐍 Simple Simulation
+
+```python
+def predict_next_word(text):
+    if text == "I love programming in":
+        return "Python"
+
+print(predict_next_word("I love programming in"))
+```
+
+---
+
+## 4. 🧠 Attention Mechanism (Focus on Important Words)
+
+LLM decides:
+👉 which words are important in a sentence
+
+Example:
+
+```
+"The cat sat on the mat"
+```
+
+Model focuses more on:
+
+* cat
+* sat
+* mat
+
+(not much on "the", "on")
+
+---
+
+## 5. 🤖 Training Process (Very High Level)
+
+Steps:
+
+1. Feed lots of text data
+2. Break into tokens
+3. Convert to numbers
+4. Train model to predict next word
+5. Improve accuracy over time
+
+---
+
+## 🔄 How LLM Works (Flow)
+
+```
+User Input → Tokenization → Embeddings → Model (Attention) → Output Text
+```
+
+---
+
+## 💡 Simple Real-Life Analogy
+
+Think of LLM like:
+
+🧑‍🎓 A student who:
+
+* Read entire internet
+* Doesn’t memorize everything
+* But learns patterns
+* And guesses best answer
+
+---
+
+## 🚀 Final Takeaways
+
+* LLM = AI that understands + generates human language
+* It works by **predicting next words**
+* Uses:
+
+  * Tokenization
+  * Embeddings
+  * Attention
+* ChatGPT is just a UI to talk to an LLM
+* Many companies build different LLMs
+
+---
+
+## What is an LLM? — Key Notes (Contd...)
+
+**LLM = Large Language Model.** It's an AI system trained to understand and generate human language. ChatGPT (by OpenAI), Gemini (by Google), and Claude (by Anthropic) are all examples.
+
+**How you use it:** You type a question in plain English → the LLM understands it → gives back a human-readable answer. No special syntax, no programming language — just natural language.
+
+**What "trained" means:** These models are trained on massive datasets — essentially a huge chunk of the internet (tweets, articles, websites, books). From this, they learn patterns in language.
+
+**Why it matters:** Before LLMs, to talk to a machine you had to learn its language (C, Python, SQL...). LLMs flip this — the machine learns *your* language.
+
+**Many LLMs exist:** GPT-4o, GPT-o3 (OpenAI), Gemini 2.5 Pro (Google), Claude Sonnet (Anthropic) — each trained on different data, with different speeds and capabilities, but the core goal is the same.
+
+---
+
+Here's a visual of how you interact with an LLM at a high level:---
+
+## Code Analogy — "Before vs After LLMs"
+
+Before LLMs, you had to talk to a machine in *its* language:
+
+```python
+# Without LLM — rigid, structured command
+def get_weather(city: str) -> str:
+    if city == "Bengaluru":
+        return "27°C, partly cloudy"
+    return "City not found"
+
+# User must know exact function name and parameter
+print(get_weather("Bengaluru"))
+```
+
+With an LLM, you just describe what you want in plain English:
+
+```python
+# With LLM — you send natural language, it figures out the rest
+import openai
+
+client = openai.OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "What's the weather like in Bengaluru today?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+# → "Bengaluru typically has a pleasant climate..."
+```
+
+No rigid syntax. You talk naturally, the LLM understands context.
+
+---
+
+## Coming Up in the Series
+
+The transcript mentions these topics are covered next — these are the *real* meat:
+
+**Tokenization** — how the LLM breaks your text into chunks it can process
+**Vector Embeddings** — how words become numbers that carry meaning
+**Attention is All You Need** — Google's landmark paper, the foundation of all modern LLMs (transformers)
+
+These three topics explain *how* the magic actually works internally. This first video was just the "what is it" foundation — the next ones will be much more technically interesting. Let me know when you want notes on those!
+
+---
+
+## 103. Deep dive into the GPT Architecture (09:07)
+
+
+
+summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
 
-summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
