@@ -19572,6 +19572,8 @@ Think of LLM like:
 
 Here's a visual of how you interact with an LLM at a high level:---
 
+![alt text](./notes/LLM_Arch.png)
+
 ## Code Analogy — "Before vs After LLMs"
 
 Before LLMs, you had to talk to a machine in *its* language:
@@ -19610,21 +19612,667 @@ No rigid syntax. You talk naturally, the LLM understands context.
 
 ---
 
-## Coming Up in the Series
+## 103. Deep dive into the GPT Architecture (09:07)
 
-The transcript mentions these topics are covered next — these are the *real* meat:
+## 🧠 Simple Summary (How LLM Works)
 
-**Tokenization** — how the LLM breaks your text into chunks it can process
-**Vector Embeddings** — how words become numbers that carry meaning
-**Attention is All You Need** — Google's landmark paper, the foundation of all modern LLMs (transformers)
+When you type something like:
 
-These three topics explain *how* the magic actually works internally. This first video was just the "what is it" foundation — the next ones will be much more technically interesting. Let me know when you want notes on those!
+```id="2exz59"
+Hi
+```
+
+👉 The LLM:
+
+1. Takes your input (**input tokens**)
+2. Processes it internally
+3. Generates a response (**output tokens**)
+
+```id="o1xq4x"
+Input → LLM → Output
+```
+
+Example:
+
+```id="k8fjjk"
+You: Hi  
+LLM: Hey there, how are you?
+```
 
 ---
 
-## 103. Deep dive into the GPT Architecture (09:07)
+## 📌 Important Concepts & Notes
 
+---
 
+## 1. 🔤 Input Tokens & Output Tokens
+
+* **Input Tokens** → what user sends
+* **Output Tokens** → what model generates
+
+👉 Example:
+
+```id="dc78d0"
+Input: "Hello"
+Tokens: ["Hello"]
+
+Output: "Hi there"
+Tokens: ["Hi", "there"]
+```
+
+---
+
+### 🐍 Python Example (Token Simulation)
+
+```python
+text = "Hello world"
+
+# simple tokenization
+tokens = text.split()
+
+print("Tokens:", tokens)
+```
+
+---
+
+## 2. 🧠 GPT Full Form Explained
+
+**GPT = Generative Pretrained Transformer**
+
+Let’s break it:
+
+---
+
+## 3. 🎯 Generative (Most Important Idea)
+
+👉 LLM **generates** new text (not just searching)
+
+### 🔍 Difference:
+
+* Google → finds existing web pages
+* LLM → creates new answers
+
+👉 Example:
+
+```id="qsvwqe"
+You: Write a poem about AI
+LLM: (creates a brand new poem)
+```
+
+---
+
+### 🐍 Simple Code Example (Generation)
+
+```python
+def generate_response(input_text):
+    if input_text == "Hi":
+        return "Hey there!"
+    return "I am generating a response"
+
+print(generate_response("Hi"))
+```
+
+---
+
+## 4. 📚 Pretrained (How LLM Learns)
+
+👉 LLM is trained on **huge data before you use it**
+
+* Books
+* Articles
+* Internet text
+
+💡 Just like:
+
+* A student studies first
+* Then answers questions
+
+---
+
+### 🐍 Example (Pretrained Knowledge Simulation)
+
+```python
+knowledge = {
+    "2+2": "4",
+    "capital of India": "New Delhi"
+}
+
+def answer(question):
+    return knowledge.get(question, "I don't know")
+
+print(answer("2+2"))
+```
+
+---
+
+## 5. 🔁 Transformer (Core Technology)
+
+![Image](https://miro.medium.com/1%2AvrSX_Ku3EmGPyqF_E-2_Vg.png)
+
+![Image](https://jalammar.github.io/images/t/transformer_self-attention_visualization_3.png)
+
+![Image](https://miro.medium.com/1%2AEV2BdvxKSUDN1Ii1Pbv3pg.png)
+
+![Image](https://miro.medium.com/1%2Atb9TT-mwFn1WPzkkbjoMCQ.png)
+
+👉 A **Transformer** is the brain of LLM
+
+It helps model:
+
+* Understand context
+* Focus on important words
+* Generate better output
+
+💡 Based on famous paper:
+👉 **"Attention Is All You Need"** by Google Research
+
+---
+
+## 6. 🎯 Why “Generative Pretrained Transformer” is a Smart Name
+
+Think like this:
+
+| Word        | Meaning            |
+| ----------- | ------------------ |
+| Generative  | Creates new text   |
+| Pretrained  | Learned from data  |
+| Transformer | Model architecture |
+
+👉 So GPT literally describes:
+
+```id="cxumxf"
+A model that:
+- is trained beforehand
+- uses transformer architecture
+- generates text
+```
+
+---
+
+## 7. 🔄 Full Flow of LLM
+
+```id="v2y46y"
+User Input
+   ↓
+Tokenization
+   ↓
+Transformer Model
+   ↓
+Generated Output
+```
+
+---
+
+## 8. 🤯 Key Insight
+
+👉 LLM is NOT:
+
+* thinking like humans
+* searching like Google
+
+👉 It is:
+
+```id="1w2pqa"
+A smart prediction system that generates text
+based on learned patterns
+```
+
+---
+
+## 🚀 Real-Life Analogy
+
+LLM = Smart student:
+
+* Studied entire internet (pretrained)
+* Writes answers in own words (generative)
+* Focuses on important parts (transformer/attention)
+
+---
+
+## 🔥 Final Takeaways
+
+* Input → tokens → model → output tokens
+* GPT = Generative + Pretrained + Transformer
+* It generates text (not searches)
+* Transformer = core engine
+* Everything is based on training data
+
+---
+
+## GPT = Generative Pre-trained Transformer — Key Concepts (Contd...)
+
+### 1. Input Tokens & Output Tokens
+
+Whatever you send to an LLM = **input tokens**. Whatever it sends back = **output tokens**. "Token" will be defined more precisely in a later video, but for now think of it as the unit of text the LLM processes.
+
+```python
+# Conceptually, this is what's happening:
+input_tokens  = "hi"                        # what you send
+output_tokens = "Hey there, how are you?"  # what comes back
+```
+
+---
+
+### 2. G — Generative
+
+LLMs **generate** new content on the spot. They are *not* search engines. Google finds existing pages by keyword matching. An LLM creates a brand new response that may never have existed before.
+
+```python
+# Search engine approach — finds existing content
+def google_search(query):
+    index = {"jwks": ["auth0.com/docs", "rfc.ietf.org"]}
+    return index.get(query, [])  # just returns links
+
+# LLM approach — generates fresh content
+def llm_generate(prompt):
+    # doesn't look up a database of answers
+    # generates word-by-word based on learned patterns
+    return generate_next_tokens(prompt)  # creates something new
+```
+
+---
+
+### 3. P — Pre-trained
+
+The LLM doesn't generate randomly — it generates based on knowledge it gained during **pre-training** (learning from massive internet data before you ever talk to it). Like a professor who studied for years before teaching you.
+
+```python
+# Pre-training (done ONCE by OpenAI/Google/Anthropic, not by you)
+training_data = ["Wikipedia", "Books", "Reddit", "GitHub", ...]
+
+model = Transformer()
+model.train(training_data)  # learns language patterns from billions of texts
+model.save("gpt-4")         # frozen knowledge snapshot
+
+# Inference (what happens when YOU use it)
+response = model.generate("What is photosynthesis?")
+# Uses pre-trained knowledge — doesn't re-learn each time
+```
+
+---
+
+### 4. T — Transformer
+
+This is the actual *architecture* (the internal engine design) that makes all modern LLMs work. ChatGPT, Gemini, Claude, Mistral — they are all transformers. This comes from a famous Google research paper called **"Attention is All You Need"** (covered in the next video).
+
+```python
+# Every major LLM today is built on the Transformer architecture
+models = {
+    "GPT-4":   {"company": "OpenAI",     "architecture": "Transformer"},
+    "Gemini":  {"company": "Google",     "architecture": "Transformer"},
+    "Claude":  {"company": "Anthropic",  "architecture": "Transformer"},
+    "Mistral": {"company": "Mistral AI", "architecture": "Transformer"},
+}
+
+# They all share the same core engine — different training data & tuning
+```
+
+---
+
+### 5. The Brilliant Naming Insight
+
+The instructor makes a sharp point: OpenAI named their model **GPT** (Generative Pre-trained Transformer) — which is actually the *generic category name* for all such models, not just OpenAI's. It's like opening a shoe brand called "Shoes" — technically accurate, slightly cheeky.
+
+```python
+# All of these are GPTs in the generic sense:
+is_gpt = lambda model: model["architecture"] == "Transformer" and model["pretrained"] == True
+
+print(is_gpt({"architecture": "Transformer", "pretrained": True}))  # True for ALL of them
+```
+
+![alt text](./notes/GPT.png)
+
+------
+
+## 104. How LLM Work under the Hood? (07:16)
+
+## 🧠 Simple Summary (Transformer in LLM)
+
+A **Transformer** is the **core brain of LLMs**.
+
+👉 It was introduced in the famous paper
+**“Attention Is All You Need”** by Google Research
+
+---
+
+### 💡 Main Idea:
+
+👉 Transformer takes input → predicts **next token** → repeats again and again
+
+---
+
+## 🔄 How GPT (Transformer) Works
+
+```text
+Input → Predict next token → Add it → Repeat → Final sentence
+```
+
+---
+
+### Example:
+
+Input:
+
+```text
+"Hey there"
+```
+
+Steps:
+
+```text
+1. "Hey there" → predicts → "I"
+2. "Hey there I" → predicts → "am"
+3. "Hey there I am" → predicts → "good"
+4. "Hey there I am good" → predicts → "."
+5. Stop
+```
+
+Final Output:
+
+```text
+"Hey there I am good."
+```
+
+---
+
+## 📌 Important Concepts & Notes
+
+---
+
+## 1. 🔁 Transformer = Sequence-to-Sequence Model
+
+![Image](https://miro.medium.com/0%2A376uJu_fc_uR8H3X.png)
+
+![Image](https://docs.pytorch.org/tutorials/_images/seq2seq.png)
+
+![Image](https://www.tensorflow.org/images/tutorials/transformer/transformer.png)
+
+![Image](https://media2.dev.to/dynamic/image/width%3D1000%2Cheight%3D420%2Cfit%3Dcover%2Cgravity%3Dauto%2Cformat%3Dauto/https%3A%2F%2Fdev-to-uploads.s3.amazonaws.com%2Fuploads%2Farticles%2Fp4vmggxl78ymngesur3t.png)
+
+👉 Transformer takes a **sequence (sentence)** as input
+👉 Produces another **sequence (sentence)** as output
+
+---
+
+### Example:
+
+* English → Hindi (translation)
+* Question → Answer
+
+---
+
+## 2. 🎯 Core Idea: Predict Next Token
+
+👉 Transformer **does NOT generate full sentence at once**
+
+It only does:
+
+```text
+Predict NEXT token
+```
+
+---
+
+### 🐍 Python Example (Simulation)
+
+```python
+def predict_next(text):
+    mapping = {
+        "Hey there": "I",
+        "Hey there I": "am",
+        "Hey there I am": "good",
+        "Hey there I am good": "."
+    }
+    return mapping.get(text, "<END>")
+
+text = "Hey there"
+
+while True:
+    next_word = predict_next(text)
+    
+    if next_word == "<END>":
+        break
+    
+    text += " " + next_word
+
+print(text)
+```
+
+---
+
+## 3. 🔄 Iterative Generation (Loop)
+
+👉 Model runs in a loop:
+
+```text
+Input → Predict → Append → Repeat
+```
+
+---
+
+### 🐍 Example
+
+```python
+sentence = "Hello"
+
+for _ in range(3):
+    sentence += " world"
+
+print(sentence)
+```
+
+---
+
+## 4. ⚡ Why LLMs Need High Power (GPU)
+
+👉 Because:
+
+* It predicts token **one by one**
+* Each prediction = heavy math
+* Runs multiple times per sentence
+
+💡 That’s why:
+
+* LLMs need GPUs (not just CPUs)
+
+---
+
+## 5. 🌍 Real Use Case: Translation
+
+👉 Transformer was first used in:
+
+* Language translation (like Google Translate)
+
+Example:
+
+```text
+Input: "Hello"
+Output: "नमस्ते"
+```
+
+---
+
+## 6. 🧩 Key Insight
+
+👉 GPT is just:
+
+```text
+A transformer that predicts next token repeatedly
+```
+
+---
+
+## 🔥 Full Flow of Transformer in GPT
+
+```text
+User Input
+   ↓
+Tokenization
+   ↓
+Transformer Model
+   ↓
+Predict next token
+   ↓
+Append to input
+   ↓
+Repeat until END
+```
+
+---
+
+## 🧠 Real-Life Analogy
+
+Think like this:
+
+👉 You are completing a sentence:
+
+```text
+"I am feeling very ____"
+```
+
+Your brain predicts:
+
+```text
+"happy"
+```
+
+👉 Then continues predicting next word
+
+💡 That’s exactly how GPT works
+
+---
+
+## 🚀 Final Takeaways
+
+* Transformer = core of all LLMs
+* Works on sequences (input → output)
+* Predicts **one token at a time**
+* Repeats process in a loop
+* Needs high compute (GPU)
+* Used in translation, chatbots, etc.
+
+---
+
+Here's a clean breakdown of this video — it's all about **how a Transformer actually generates text**, one token at a time.
+
+---
+
+## How a Transformer Works — Key Notes
+
+---
+
+### 1. Where "Transformer" Comes From
+
+The Transformer architecture was introduced in Google's 2017 paper **"Attention is All You Need"**. Every modern LLM — GPT, Gemini, Claude, Mistral — runs on this architecture. Google first used it in **Google Translate** (converting an English sequence → Hindi/French sequence).
+
+---
+
+### 2. The Core Job of a GPT: Predict the Next Token
+
+This is the single most important idea in the video. A GPT doesn't "think" or "understand" in a human sense. It does one thing repeatedly:
+
+> **Given all the tokens so far → predict the very next token**
+
+That's it. The entire magic of ChatGPT is this loop running thousands of times.
+
+```python
+# Simplified mental model of how GPT generates text
+
+def predict_next_token(input_tokens: list[str]) -> str:
+    # Black box: trained transformer model
+    # looks at ALL previous tokens and predicts the most likely next one
+    return transformer_model(input_tokens)
+
+def generate(prompt: str) -> str:
+    tokens = prompt.split()   # e.g. ["hey", "there"]
+    
+    while True:
+        next_token = predict_next_token(tokens)
+        
+        if next_token == "<END>":    # special stop signal
+            break
+        
+        tokens.append(next_token)   # grow the sequence
+    
+    return " ".join(tokens)
+
+# Example run:
+# Input:  ["hey", "there"]
+# Step 1: predict → "I"       → tokens = ["hey", "there", "I"]
+# Step 2: predict → "am"      → tokens = ["hey", "there", "I", "am"]
+# Step 3: predict → "good"    → tokens = ["hey", "there", "I", "am", "good"]
+# Step 4: predict → "<END>"   → stop!
+# Output: "hey there I am good"
+
+print(generate("hey there"))
+# → "hey there I am good"
+```
+
+---
+
+### 3. The Autoregressive Loop
+
+Each new token gets **appended** to the input before the next prediction. So the model always sees the *full history* when making each prediction. This is called **autoregressive generation**.
+
+```python
+# Visualizing each iteration clearly:
+
+iterations = [
+    {"input": ["hey", "there"],                    "predicted": "I"},
+    {"input": ["hey", "there", "I"],               "predicted": "am"},
+    {"input": ["hey", "there", "I", "am"],         "predicted": "good"},
+    {"input": ["hey", "there", "I", "am", "good"], "predicted": "<END>"},
+]
+
+for step, it in enumerate(iterations, 1):
+    print(f"Step {step}: Input={it['input']} → Next token: '{it['predicted']}'")
+
+# Step 1: Input=['hey', 'there']                    → Next token: 'I'
+# Step 2: Input=['hey', 'there', 'I']               → Next token: 'am'
+# Step 3: Input=['hey', 'there', 'I', 'am']         → Next token: 'good'
+# Step 4: Input=['hey', 'there', 'I', 'am', 'good'] → Next token: '<END>'
+```
+
+---
+
+### 4. Why LLMs Need GPUs
+
+Every single token prediction runs the full transformer model — a massive mathematical operation. For a 100-word response, that's 100+ separate model runs, each involving millions of calculations.
+
+```python
+# Cost breakdown — why it's compute-heavy:
+
+prompt = "Explain quantum computing in simple terms"
+avg_response_tokens = 200   # a typical response
+
+# For EACH token, the model must:
+# 1. Process ALL previous tokens (attention over full context)
+# 2. Run through ~96 layers of neural network (for GPT-4 scale)
+# 3. Pick the most probable next token from a 50,000+ word vocabulary
+
+compute_per_token = "~billions of floating point operations"
+total_runs = avg_response_tokens  # 200 separate forward passes
+
+print(f"To generate {total_runs} tokens → model runs {total_runs} times")
+print(f"Each run: {compute_per_token}")
+print("→ GPU required: parallel matrix math at massive scale")
+```
+
+---
+
+## Quick Summary Table
+
+| Concept | What it means |
+|---|---|
+| Transformer | Architecture from Google's 2017 paper — the engine inside all LLMs |
+| Input tokens | The sequence you feed into the model at each step |
+| Next token prediction | The *only* job of the transformer — predict what comes next |
+| Autoregressive loop | Append predicted token → feed back in → repeat until `<END>` |
+| Why GPU needed | Each token = one full model run = billions of float ops |
+
+---
+
+## 105. Fundamentals of Tokenization in NLP (08:05)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
