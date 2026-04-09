@@ -20634,6 +20634,130 @@ print("Decoded:", decoded)
 
 ## 106. Implementing a Custom Tokenizer in python (04:15)
 
+## What This Tutorial Covers
+
+Using OpenAI's **`tiktoken`** library to tokenize and de-tokenize text — essentially doing what GPT-4o does internally before processing your input.
+
+---
+
+## Setup Steps
+
+```bash
+# Step 1: Create a virtual environment
+python -m venv venv
+
+# Step 2: Activate it
+source venv/bin/activate       # Mac/Linux
+venv\Scripts\activate          # Windows
+
+# Step 3: Install tiktoken
+pip install tiktoken
+
+# Step 4: Save dependencies
+pip freeze > requirements.txt
+```
+
+---
+
+## The Complete Code
+
+```python
+import tiktoken
+
+# Step 1: Create an encoder for a specific model
+encoder = tiktoken.encoding_for_model("gpt-4o")
+
+# Step 2: Your input text
+text = "Hey there, my name is Piyush Garg"
+
+# Step 3: Tokenize (encode text → numbers)
+tokens = encoder.encode(text)
+print("Tokens:", tokens)
+# Output: [225216, 3274, 11, 714, 836, 374, 29103, 84, 480, 1494]
+# (exact numbers depend on model)
+
+# Step 4: De-tokenize (numbers → text)
+decoded = encoder.decode(tokens)
+print("Decoded:", decoded)
+# Output: Hey there, my name is Piyush Garg
+```
+
+---
+
+## What's Happening Under the Hood
+
+```
+"Hey there, my name is Piyush Garg"
+            ↓  encoder.encode()
+[225216, 3274, 11, 714, 836, ...]    ← these go to the LLM
+
+LLM predicts next tokens...
+[342, 561, 789, ...]                 ← model's output tokens
+
+            ↓  encoder.decode()
+"I am doing great!"                  ← shown to user
+```
+
+---
+
+## Key Pointers
+
+**`tiktoken`** is OpenAI's official tokenizer library — lightweight and fast, made specifically to mirror how GPT models tokenize internally.
+
+**`encoding_for_model("gpt-4o")`** loads the exact tokenizer rules for that model — always match the model you're targeting.
+
+**`encode(text)`** converts a string into a list of integer token IDs.
+
+**`decode(tokens)`** converts a list of token IDs back into a readable string.
+
+**Tokens are model-specific** — the same sentence produces different token IDs for GPT-4o vs GPT-3.5 vs Gemini.
+
+---
+
+## Bonus: Inspecting Individual Tokens
+
+```python
+import tiktoken
+
+encoder = tiktoken.encoding_for_model("gpt-4o")
+text = "Piyush"
+
+tokens = encoder.encode(text)
+
+# See how each token maps back to text
+for token in tokens:
+    print(f"Token ID: {token}  →  '{encoder.decode([token])}'")
+
+# Example output:
+# Token ID: 47032  →  'Pi'
+# Token ID: 80844  →  'yush'
+```
+
+This shows that a single word like `"Piyush"` can split into **multiple tokens** — which is why token count is always higher than word count.
+
+---
+
+## Why This Matters for Real Projects
+
+```python
+# Practical use case: counting tokens before sending to API
+import tiktoken
+
+def count_tokens(text: str, model: str = "gpt-4o") -> int:
+    encoder = tiktoken.encoding_for_model(model)
+    return len(encoder.encode(text))
+
+prompt = "Explain quantum computing in simple terms."
+print(f"Token count: {count_tokens(prompt)}")
+# Helps you stay within model limits and estimate API cost
+```
+
+This pattern is very useful as you can use it to guard against exceeding context windows in your LangChain/RAG pipelines before hitting the OpenAI API.
+
+---
+
+## 107. The Transformer Breakthrough: Google Paper on Attention (06:42)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
