@@ -20153,13 +20153,7 @@ Your brain predicts:
 
 ---
 
-Here's a clean breakdown of this video — it's all about **how a Transformer actually generates text**, one token at a time.
-
----
-
-## How a Transformer Works — Key Notes
-
----
+## How a Transformer Works — Key Concepts & Notes
 
 ### 1. Where "Transformer" Comes From
 
@@ -20273,6 +20267,372 @@ print("→ GPU required: parallel matrix math at massive scale")
 ---
 
 ## 105. Fundamentals of Tokenization in NLP (08:05)
+
+## 🧠 What is a Token (Simple Explanation)
+
+A **token** is a small piece of text.
+
+👉 It can be:
+
+* A letter → `"A"`
+* A word → `"Hello"`
+* Part of a word → `"Py"`, `"thon"`
+* Even a space or punctuation → `" "`, `"."`
+
+💡 In short:
+**Token = smallest unit of text that an LLM understands**
+
+---
+
+## 🔢 Why Tokens Are Needed
+
+Computers **don’t understand text**, they understand **numbers**.
+
+So:
+👉 Text → converted into → numbers (tokens)
+
+Example:
+
+```id="t1"
+A → 1  
+B → 2  
+C → 3  
+```
+
+---
+
+## 📌 Key Points (Important Notes)
+
+### 1. Tokenization = Text → Numbers
+
+* Input text is broken into tokens
+* Each token is mapped to a number
+
+---
+
+### 2. Each Model Has Its Own Token System
+
+* GPT-4 tokenization ≠
+* Gemini tokenization
+
+👉 Same sentence → different tokens in different models
+
+---
+
+### 3. LLM Works Only With Numbers
+
+Flow:
+
+```
+Text → Tokens (numbers) → Model → New Tokens → Text
+```
+
+---
+
+### 4. LLM Predicts One Token at a Time
+
+* Takes input tokens
+* Predicts next token
+* Adds it to sequence
+* Repeats
+
+---
+
+### 5. Detokenization = Numbers → Text
+
+* Converts output tokens back into human-readable text
+
+---
+
+## 🔄 Full LLM Flow (Very Important)
+
+```id="flow1"
+User Input (text)
+        ↓
+Tokenization (text → numbers)
+        ↓
+LLM (predict next token)
+        ↓
+Repeat prediction
+        ↓
+Detokenization (numbers → text)
+        ↓
+Final Answer
+```
+
+---
+
+## 🧩 Concept 1: Tokenization (with Code)
+
+### Simple Example
+
+```python id="c1"
+text = "Hello world"
+tokens = text.split()
+
+print(tokens)
+```
+
+✅ Output:
+
+```id="o1"
+['Hello', 'world']
+```
+
+👉 This is a **very basic tokenizer** (real ones are more complex)
+
+---
+
+## 🔢 Concept 2: Assigning Numbers to Tokens
+
+```python id="c2"
+vocab = {
+    "Hello": 1,
+    "world": 2
+}
+
+tokens = ["Hello", "world"]
+token_ids = [vocab[word] for word in tokens]
+
+print(token_ids)
+```
+
+✅ Output:
+
+```id="o2"
+[1, 2]
+```
+
+---
+
+## 🔁 Concept 3: Predicting Next Token
+
+👉 LLM predicts next number (token)
+
+### Simple Simulation
+
+```python id="c3"
+def predict_next(tokens):
+    # fake prediction logic
+    if tokens == [1, 2]:
+        return 3  # suppose 3 = "!"
+
+tokens = [1, 2]
+next_token = predict_next(tokens)
+
+print(next_token)
+```
+
+---
+
+## ➕ Concept 4: Iterative Generation
+
+```python id="c4"
+tokens = [1, 2]
+
+for _ in range(3):
+    next_token = tokens[-1] + 1  # dummy logic
+    tokens.append(next_token)
+
+print(tokens)
+```
+
+✅ Output:
+
+```id="o4"
+[1, 2, 3, 4, 5]
+```
+
+👉 This mimics how LLM keeps generating tokens
+
+---
+
+## 🔤 Concept 5: Detokenization (Back to Text)
+
+```python id="c5"
+reverse_vocab = {
+    1: "Hello",
+    2: "world"
+}
+
+token_ids = [1, 2]
+words = [reverse_vocab[id] for id in token_ids]
+
+sentence = " ".join(words)
+print(sentence)
+```
+
+✅ Output:
+
+```id="o5"
+Hello world
+```
+
+---
+
+## 🧠 Real Tokenization (Important Insight)
+
+In reality:
+
+* Tokens are NOT just words
+* They can be:
+
+  * `"Py"` + `"thon"`
+  * `"un"` + `"believable"`
+
+👉 Example:
+
+```
+"Piyush" → ["Pi", "yush"]
+```
+
+---
+
+## ⚠️ Important Observations
+
+* Spaces are also tokens
+* Special tokens exist:
+
+  * Start token
+  * End token
+  * Role tokens (user, assistant)
+
+---
+
+## 💡 Simple Analogy
+
+Think of tokenization like:
+
+🧱 Breaking a sentence into LEGO pieces
+🔢 Numbering each piece
+🤖 Letting AI arrange next piece
+
+---
+
+## 🚀 Final Takeaways
+
+* Token = smallest unit of text
+* Tokenization = text → numbers
+* LLM only understands numbers
+* It predicts **next token step by step**
+* Output is converted back using **detokenization**
+* Different models use different token systems
+
+---
+
+## Tokenization in LLMs – Simple Concepts Notes 🧠
+
+## What is a Token?
+
+A **token** is a unit of text that a model can understand. It could be a character, a word, or even a part of a word — and it **varies from model to model**.
+
+Think of it like this: humans read letters and words, but computers prefer numbers. So tokens are basically a **bridge** between human text and machine numbers.
+
+---
+
+## Simple Analogy
+
+```
+A = 1,  B = 2,  C = 3,  D = 4,  E = 5
+
+Input: "BDE"  →  Tokens: [2, 4, 5]
+
+Feed [1, 2, 3] to transformer → it predicts → 4
+Feed [1, 2, 3, 4] to transformer → it predicts → 5
+```
+
+The model never sees letters — only numbers.
+
+---
+
+## The Full LLM Pipeline
+
+```
+User Input → [Tokenize] → Numbers → [Transformer] → Predicted Numbers → [De-tokenize] → Output Text → User
+```
+
+**Step by step:**
+1. You type: `"Hey there"`
+2. Tokenizer converts it to numbers: `[225216, 3274, ...]`
+3. Transformer predicts the next token number
+4. That number is appended to the list and fed back in
+5. Process repeats until response is complete
+6. De-tokenizer converts the number list back to readable English
+
+---
+
+## Tokenization in Code (Basic Python Example)
+
+```python
+# Simple custom tokenizer — character level
+
+# Build vocabulary
+vocab = {char: idx for idx, char in enumerate("abcdefghijklmnopqrstuvwxyz ")}
+reverse_vocab = {idx: char for char, idx in vocab.items()}
+
+def tokenize(text):
+    return [vocab[ch] for ch in text.lower() if ch in vocab]
+
+def detokenize(tokens):
+    return "".join(reverse_vocab[t] for t in tokens)
+
+# Example
+text = "hello world"
+tokens = tokenize(text)
+print("Tokens:", tokens)
+# Tokens: [7, 4, 11, 11, 14, 26, 22, 14, 17, 11, 3]
+
+recovered = detokenize(tokens)
+print("Recovered:", recovered)
+# Recovered: hello world
+```
+
+---
+
+## Real-World Tokenization (using tiktoken for GPT)
+
+```python
+import tiktoken
+
+# Load GPT-4o tokenizer
+enc = tiktoken.get_encoding("o200k_base")
+
+text = "Hey there, my name is Piyush"
+
+# Tokenize
+tokens = enc.encode(text)
+print("Token IDs:", tokens)
+
+# De-tokenize
+decoded = enc.decode(tokens)
+print("Decoded:", decoded)
+```
+
+---
+
+## Key Pointers to Remember
+
+**Tokenization** — converting user input text into a sequence of numbers the LLM understands.
+
+**De-tokenization** — converting the model's output numbers back into human-readable text.
+
+**Each model has its own tokenizer** — GPT-4, GPT-3.5, Gemini, Claude all use different mappings, so the same word can produce different token IDs in each model.
+
+**LLMs predict one token at a time** — the model doesn't generate the full response at once; it adds one token to the sequence, feeds the whole thing back in, and repeats until done.
+
+**Token ≠ Word** — in real models, a word like `"Piyush"` might become `["Pi", "yush"]` — two separate tokens. Even a single space can be its own token.
+
+---
+
+## Why This Matters Practically
+
+- **Token limits** (like "4096 tokens max") apply to this number sequence — both your input and the model's output count toward it
+- **Longer tokens = higher API cost** since pricing is usually per token
+- **Tokenization affects model behavior** — the way text is split into tokens can subtly influence how the model reasons about it
+
+---
+
+## 106. Implementing a Custom Tokenizer in python (04:15)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
