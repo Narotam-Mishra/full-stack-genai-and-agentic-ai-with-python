@@ -3,8 +3,10 @@
 
 import tiktoken
 
-# returns the encoding used by a model
+# returns the encoding obj used by a model
 enc = tiktoken.encoding_for_model("gpt-4o")
+
+# print("Enc", enc)
 
 text = "Hey there! My name is Peter King"
 

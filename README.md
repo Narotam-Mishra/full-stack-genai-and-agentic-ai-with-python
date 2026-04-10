@@ -20758,6 +20758,440 @@ This pattern is very useful as you can use it to guard against exceeding context
 
 ## 107. The Transformer Breakthrough: Google Paper on Attention (06:42)
 
+## 🧠 Simple Concepts & Summary
+
+* LLMs (like GPT) are built using a model called a **Transformer**
+* This comes from the famous paper:
+  👉 Attention Is All You Need
+
+💡 Main idea:
+
+> The model takes input text → converts it into numbers → processes it → predicts next token step-by-step
+
+---
+
+## 📌 Key Components (Important Notes)
+
+---
+
+## 1. 🔤 Input Embeddings
+
+👉 Converts tokens → vectors (numbers)
+
+Example:
+
+```id="ex_embed"
+"Hello" → [0.12, 0.87, 0.45]
+```
+
+---
+
+## 2. 📍 Positional Encoding
+
+👉 Adds position information to tokens
+
+Why?
+
+* Because model sees all tokens at once (not sequentially)
+
+Example:
+
+```id="pos1"
+"I love AI"
+```
+
+Without position → meaningless
+With position → model knows order
+
+---
+
+## 3. 🎯 Multi-Head Attention (Core Idea)
+
+👉 Model focuses on important words
+
+Example:
+
+```id="attn1"
+"The cat sat on the mat"
+```
+
+Focus:
+
+* cat ↔ sat
+* sat ↔ mat
+
+---
+
+## 4. 🔮 Output Generation
+
+* Model predicts **next token**
+* Repeats until full sentence is formed
+
+---
+
+## 5. 📊 Linear + Softmax Layer
+
+👉 Converts output into probabilities
+
+Example:
+
+```id="prob1"
+Next word probabilities:
+"I" → 0.6  
+"You" → 0.2  
+"They" → 0.1  
+```
+
+👉 Highest probability wins → `"I"`
+
+---
+
+## 🔄 Full Transformer Flow
+
+```id="flow3"
+Input Text
+   ↓
+Tokenization
+   ↓
+Embeddings
+   ↓
+Positional Encoding
+   ↓
+Attention Layers
+   ↓
+Linear + Softmax
+   ↓
+Next Token
+   ↓
+Repeat
+```
+
+---
+
+## 🧩 Step-by-Step Example
+
+Input:
+
+```id="inp1"
+"Hey there, how are you?"
+```
+
+Process:
+
+1. Convert to tokens
+2. Convert to embeddings
+3. Add position info
+4. Apply attention
+5. Predict next token
+
+Output:
+
+```id="outp1"
+"I"
+```
+
+Then:
+
+```id="loop1"
+"Hey there, how are you? I"
+→ next token → "am"
+→ next token → "fine"
+```
+
+---
+
+## 🐍 Basic Code Examples (Concept Simulation)
+
+## 1. Input Embedding (Text → Numbers)
+
+```python
+# fake embeddings
+vocab = {
+    "hey": [0.1, 0.2],
+    "there": [0.3, 0.4]
+}
+
+text = ["hey", "there"]
+embeddings = [vocab[word] for word in text]
+
+print(embeddings)
+```
+
+---
+
+## 2. Positional Encoding (Add Position)
+
+```python
+embeddings = [[0.1, 0.2], [0.3, 0.4]]
+
+# add position index
+pos_encoded = [
+    [val + i for val in emb]
+    for i, emb in enumerate(embeddings)
+]
+
+print(pos_encoded)
+```
+
+---
+
+## 3. Attention (Simplified Idea)
+
+```python
+sentence = ["The", "cat", "sat"]
+
+# fake attention scores
+attention = {
+    "cat": ["sat"],
+    "sat": ["cat"]
+}
+
+print(attention)
+```
+
+👉 Real attention is math-heavy, but concept = **focus on relevant words**
+
+---
+
+## 4. Next Token Prediction
+
+```python
+def predict_next(text):
+    if text.endswith("how are you"):
+        return "I"
+    return "..."
+
+print(predict_next("Hey there, how are you"))
+```
+
+---
+
+## 5. Softmax (Probability Distribution)
+
+```python
+import numpy as np
+
+scores = np.array([2.0, 1.0, 0.1])
+exp_scores = np.exp(scores)
+probs = exp_scores / np.sum(exp_scores)
+
+print(probs)
+```
+
+---
+
+## ⚠️ Important Insight (Developer vs ML Engineer)
+
+### 🧑‍🔬 ML Engineers
+
+* Work on:
+
+  * Math
+  * Research
+  * Building models (Transformers)
+
+---
+
+### 👨‍💻 Developers (YOU)
+
+* Work on:
+
+  * APIs
+  * Apps
+  * AI products
+  * Agents
+
+💡 You DON’T need deep math to build AI apps
+
+---
+
+## 🚀 Key Takeaways
+
+* Transformer = backbone of LLMs
+* Core steps:
+
+  * Embedding
+  * Position
+  * Attention
+  * Prediction
+* LLM generates text **token by token**
+* Math is optional for developers
+* Focus more on **building applications (Agentic AI)**
+
+---
+
+## 💡 Simple Analogy
+
+Think of Transformer like:
+
+📖 Reading a sentence
+👀 Paying attention to important words
+✍️ Predicting next word
+
+---
+
+# Transformer Architecture & LLMs – Summary Notes
+
+> **Context:** This is from a course on **Agentic AI for developers** (not ML researchers). The instructor is giving a high-level overview of how LLMs work internally — it's bonus/background content, not the core of the course.
+
+---
+
+## 🔑 Key Concepts Explained Simply
+
+### 1. The Transformer Architecture ("Attention is All You Need")
+The transformer is the backbone of modern LLMs, introduced in a famous Google research paper. You don't need to master the math, but here's the flow:
+
+```
+Input Text
+   ↓
+Input Embeddings       ← convert words to numbers (vectors)
+   ↓
+Positional Encoding    ← remember word order
+   ↓
+Multi-Head Attention   ← understand relationships between words
+   ↓
+Output Side (Decoder)
+   ↓
+Linear Layer           ← scores for each possible next token
+   ↓
+Softmax                ← converts scores to probabilities
+   ↓
+Predicted Next Token
+```
+
+---
+
+### 2. Input Embeddings
+Words can't be fed directly to a model — they're converted to **vectors** (lists of numbers that capture meaning).
+
+```python
+# Conceptual example (using a library like sentence-transformers)
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+sentence = "Hey there, how are you?"
+embedding = model.encode(sentence)
+
+print(embedding.shape)   # e.g., (384,) — a vector of 384 numbers
+print(embedding[:5])     # first 5 values of the vector
+```
+
+---
+
+### 3. Positional Encoding
+Transformers process all words at once (not one by one), so they need a way to know **word order**. Positional encoding adds position info to each word's vector.
+
+```python
+# Simplified concept
+words = ["Hey", "there", "how", "are", "you"]
+
+# Each word gets its embedding + position tag
+for i, word in enumerate(words):
+    print(f"Position {i}: '{word}'")
+
+# Output:
+# Position 0: 'Hey'
+# Position 1: 'there'
+# ...
+```
+
+---
+
+### 4. Multi-Head Attention
+This is the "magic" of transformers — it lets the model understand **which words are related to which**, even across long distances.
+
+```python
+# Conceptual idea: attention scores
+sentence = ["The", "cat", "sat", "on", "the", "mat"]
+
+# The model learns that "cat" and "sat" are closely related
+# Attention score (simplified):
+attention = {
+    "cat": {"sat": 0.8, "the": 0.1, "mat": 0.1},
+    "sat": {"cat": 0.7, "mat": 0.6, "on": 0.3},
+}
+print("'cat' pays most attention to:", max(attention["cat"], key=attention["cat"].get))
+# Output: 'cat' pays most attention to: sat
+```
+
+---
+
+### 5. How Text Generation Works (Autoregressive Loop)
+
+```python
+# Pseudocode of transformer text generation
+input_text = "Hey there, how are you?"
+output = ["<START>"]
+
+while True:
+    next_token = model.predict_next_token(input_text, output)
+    output.append(next_token)
+    
+    if next_token == "<END>":
+        break
+
+print(" ".join(output))
+# → "<START> I am doing fine <END>"
+```
+
+Each step predicts **one token at a time**, appends it, then re-runs — until a stop condition is met.
+
+---
+
+### 6. Softmax – Probability Distribution
+The final layer converts raw scores into probabilities for each possible next token.
+
+```python
+import math
+
+def softmax(scores):
+    exp_scores = [math.exp(s) for s in scores]
+    total = sum(exp_scores)
+    return [e / total for e in exp_scores]
+
+# Model's raw scores for possible next words
+scores = {"I": 3.0, "You": 1.0, "We": 0.5}
+probs = softmax(list(scores.values()))
+
+for word, prob in zip(scores.keys(), probs):
+    print(f"{word}: {prob:.2%}")
+
+# Output:
+# I: 70.05%
+# You: 21.24%
+# We: 8.71%   ← model picks "I" as most likely
+```
+
+---
+
+## 👥 Two Types of AI People (Important Distinction)
+
+| ML Researcher | Application Developer (You!) |
+|---|---|
+| Builds foundation models | Builds apps using models |
+| Heavy math & research | Development & deployment |
+| Writes white papers | Solves business problems |
+| Knows model internals | Uses APIs & frameworks |
+
+> **This course is for developers.** Agentic AI, workflows, and agents are all **application development** — no deep math required.
+
+---
+
+## 📌 Key Takeaways
+
+- The transformer has two sides: **Encoder** (understands input) and **Decoder** (generates output)
+- Text → Embeddings → Positional Encoding → Attention → Probability → Token (repeat)
+- **You don't need to master transformer math** to build powerful AI apps
+- Concepts like embeddings and attention are good to know at a high level — they'll make sense when you use vector databases, RAG pipelines, etc. in real projects
+- The real course focus is **agentic AI development** — this was just background context
+
+---
+
+## 108. Deep Diving into Vector Embeddings (09:09) 
+
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
