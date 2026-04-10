@@ -21939,6 +21939,542 @@ The final position-aware vectors are what gets passed into the **attention mecha
 
 ## 110. Understanding Multi-Head Attention for Rich Context (05:19) 
 
+## 🧠 Big Picture (Where We Are)
+
+So far in transformer:
+
+```
+Text → Tokens → Embeddings → Positional Encoding → ✅ Self-Attention → Output
+```
+
+Now we understand the **brain of transformers** 🔥
+
+---
+
+## 🔥 1. Self-Attention (Most Important Concept)
+
+## 📌 Idea
+
+👉 Words in a sentence **look at each other** to understand meaning.
+
+---
+
+## 🧩 Problem Example
+
+* "river bank"
+* "ICICI bank"
+
+👉 Same word **"bank"**, but different meanings
+
+---
+
+## ✅ Solution
+
+👉 Let words **communicate with each other**
+
+* "river" tells "bank" → meaning = river side
+* "ICICI" tells "bank" → meaning = financial institution
+
+---
+
+## 💡 Simple Intuition
+
+👉 **Meaning of a word depends on surrounding words**
+
+---
+
+## 🧪 Basic Python Analogy
+
+```python
+sentence = ["river", "bank"]
+
+# simple attention idea
+for word in sentence:
+    context = [w for w in sentence if w != word]
+    print(f"{word} looks at {context}")
+```
+
+Output:
+
+```
+river looks at ['bank']
+bank looks at ['river']
+```
+
+👉 Words "talk" to each other
+
+---
+
+## 🧠 Slightly Better Simulation
+
+```python
+import numpy as np
+
+# fake embeddings
+river = np.array([1, 0])
+bank = np.array([0.5, 0.5])
+
+# attention score (dot product)
+score = np.dot(river, bank)
+
+print(score)
+```
+
+👉 Higher score = more influence
+
+---
+
+## 🔥 2. Multi-Head Attention
+
+## 📌 Idea
+
+👉 Instead of one perspective, model looks at **multiple perspectives simultaneously**
+
+---
+
+## 🧩 Real-Life Example
+
+You see a dog in a train 🚆
+
+Your brain notices:
+
+* 🐶 It's a dog
+* 🐕 Breed = Labrador
+* 😴 It's sleeping
+* 🚪 It's near the door
+
+👉 Multiple observations at once = **Multi-head attention**
+
+---
+
+## 💡 Key Insight
+
+👉 Each "head" focuses on different things:
+
+* Grammar
+* Meaning
+* Relationships
+* Position
+
+---
+
+## 🧪 Simple Code Analogy
+
+```python
+import numpy as np
+
+word = np.array([1, 2])
+
+# multiple "heads" (different transformations)
+head1 = word * 2     # focus on feature 1
+head2 = word + 3     # focus on feature 2
+head3 = word - 1     # focus on feature 3
+
+# combine results
+multi_head_output = (head1 + head2 + head3) / 3
+
+print(multi_head_output)
+```
+
+👉 Multiple views → better understanding
+
+---
+
+## 🔥 3. Feed Forward Layer
+
+## 📌 Idea
+
+👉 After attention, pass data through a **neural network**
+
+* Just like a normal ML model
+* Refines the understanding
+
+---
+
+## 🧪 Simple Example
+
+```python
+def feed_forward(x):
+    return max(0, x * 2 + 1)  # simple ReLU-like
+
+print(feed_forward(3))
+```
+
+---
+
+## 🔥 4. Linear Layer (Next Token Prediction)
+
+## 📌 Idea
+
+👉 Model predicts **possible next words + probabilities**
+
+---
+
+## 🧩 Example
+
+Input: `"Hi"`
+
+Model predicts:
+
+```
+hello → 0.7
+hey   → 0.2
+hi    → 0.1
+```
+
+---
+
+## 🧪 Code Example
+
+```python
+tokens = ["hello", "hey", "hi"]
+scores = [2.0, 1.0, 0.5]  # raw scores
+```
+
+---
+
+## 🔥 5. Softmax (Convert to Probabilities)
+
+## 📌 Idea
+
+👉 Converts scores → probabilities (sum = 1)
+
+---
+
+## 🧪 Code Example
+
+```python
+import numpy as np
+
+scores = np.array([2.0, 1.0, 0.5])
+
+exp_scores = np.exp(scores)
+probs = exp_scores / np.sum(exp_scores)
+
+print(probs)
+```
+
+👉 Output:
+
+```
+[0.62, 0.23, 0.15]
+```
+
+---
+
+## 🎯 Final Selection
+
+👉 Choose word with highest probability
+
+```python
+tokens = ["hello", "hey", "hi"]
+probs = [0.62, 0.23, 0.15]
+
+next_word = tokens[np.argmax(probs)]
+print(next_word)
+# hello
+```
+
+---
+
+## 📊 Complete Flow (Very Important ⭐)
+
+```
+Input Sentence
+   ↓
+Tokenization
+   ↓
+Embeddings
+   ↓
+Positional Encoding
+   ↓
+Self-Attention (words interact)
+   ↓
+Multi-Head Attention (multiple perspectives)
+   ↓
+Feed Forward Network
+   ↓
+Linear Layer (scores)
+   ↓
+Softmax (probabilities)
+   ↓
+Next Word Prediction
+```
+
+---
+
+## 🧾 Key Takeaways
+
+### ✅ Self-Attention
+
+* Words understand meaning using context
+* "bank" changes meaning based on surrounding words
+
+---
+
+### ✅ Multi-Head Attention
+
+* Looks at multiple aspects at once
+* Improves understanding
+
+---
+
+### ✅ Feed Forward
+
+* Simple neural network processing
+
+---
+
+### ✅ Linear + Softmax
+
+* Predicts next token
+* Chooses most probable output
+
+---
+
+## 💡 One-Line Intuition
+
+👉
+
+* **Self-attention = words talk to each other**
+* **Multi-head = talk in multiple ways**
+* **Softmax = pick best next word**
+
+---
+
+## 🚀 Final Note (Very Important)
+
+As your instructor said:
+
+* You **don’t need to implement this from scratch** as a developer
+* But understanding this helps you:
+
+  * Use LLMs better
+  * Debug issues
+  * Build smarter AI apps
+
+---
+
+## Self-Attention & Multi-Head Attention — Simple Concepts & Notes
+
+### The Problem Positional Encoding Didn't Solve
+
+Even after knowing *where* a word is, the model still doesn't understand *context*. Consider the word **"bank"**:
+
+- "I sat by the river **bank**" → bank = riverbank
+- "I deposited money at the **bank**" → bank = financial institution
+
+Same word, same position — but completely different meanings. The surrounding words must *influence* the meaning of "bank". That's what self-attention does.
+
+------
+
+### Step 4a — Self-Attention
+
+Self-attention lets every token's vector "look at" every other token's vector and update its own meaning based on what it sees. The word "bank" looks at "river" nearby and shifts its vector towards the *riverbank* meaning.
+
+```python
+import numpy as np
+
+def self_attention(vectors):
+    """
+    Simplified self-attention: each token attends to all others.
+    In reality Q, K, V weight matrices are learned during training.
+    """
+    n = len(vectors)
+    # Score: how much should token i pay attention to token j?
+    # We use dot product as a simple similarity measure
+    scores = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            scores[i][j] = np.dot(vectors[i], vectors[j])
+
+    # Convert scores to probabilities (softmax per row)
+    def softmax(x):
+        e = np.exp(x - np.max(x))
+        return e / e.sum()
+
+    attention_weights = np.array([softmax(row) for row in scores])
+
+    # New vector = weighted sum of all vectors
+    updated_vectors = attention_weights @ np.array(vectors)
+    return updated_vectors, attention_weights
+
+# Simulate "river bank" — bank's vector shifts based on river
+river_vec = np.array([0.9, 0.1, 0.2])   # river
+bank_vec  = np.array([0.5, 0.5, 0.5])   # ambiguous bank
+
+updated, weights = self_attention([river_vec, bank_vec])
+
+print("Attention weights (bank → river):", weights[1][0].round(3))
+print("Updated bank vector:", updated[1].round(3))
+# Bank's vector is now influenced by river — meaning shifts to riverbank
+```
+
+---
+
+### Step 4b — Multi-Head Attention
+
+Instead of one attention pass, the model runs *several* attention mechanisms in parallel (called "heads"), each focusing on a different aspect of meaning — grammar, topic, entity type, etc. Think of the train example from the video: you simultaneously notice the dog's breed, its behavior, its position near the door, and the moving train — all at once.
+
+```python
+import numpy as np
+
+def multi_head_attention(vectors, num_heads=3):
+    """
+    Run self-attention multiple times in parallel.
+    Each head learns to focus on a different aspect.
+    """
+    dim = len(vectors[0])
+    results = []
+
+    for head in range(num_heads):
+        # Each head uses different random weights (learned in real training)
+        np.random.seed(head)   # different seed = different focus per head
+        W = np.random.randn(dim, dim) * 0.1
+
+        # Project vectors through this head's weight matrix
+        projected = [W @ v for v in vectors]
+
+        # Run self-attention on the projected vectors
+        updated, weights = self_attention(projected)
+        results.append(updated)
+        print(f"Head {head+1} attention pattern: {weights[0].round(2)}")
+
+    # Concatenate all heads' outputs (simplified: average here)
+    final = np.mean(results, axis=0)
+    return final
+
+tokens = {
+    "the":  np.array([0.1, 0.3, 0.5]),
+    "dog":  np.array([0.8, 0.2, 0.1]),
+    "slept":np.array([0.3, 0.9, 0.2]),
+}
+
+vectors = list(tokens.values())
+output  = multi_head_attention(vectors, num_heads=3)
+
+# Head 1 might focus on: subject-verb relationship
+# Head 2 might focus on: entity type (dog = animal)
+# Head 3 might focus on: action context (slept = resting)
+```
+
+---
+
+### Step 5 — Feed Forward Layer
+
+After attention, each token's updated vector passes through a simple neural network (two layers with a ReLU in between). This refines the representation further.
+
+```python
+import numpy as np
+
+def feed_forward(vector, hidden_size=8):
+    dim = len(vector)
+    np.random.seed(42)
+
+    # Layer 1: expand
+    W1 = np.random.randn(hidden_size, dim) * 0.1
+    b1 = np.zeros(hidden_size)
+    h  = np.maximum(0, W1 @ vector + b1)   # ReLU activation
+
+    # Layer 2: compress back
+    W2 = np.random.randn(dim, hidden_size) * 0.1
+    b2 = np.zeros(dim)
+    return W2 @ h + b2
+
+refined_vector = feed_forward(np.array([0.5, 0.3, 0.8]))
+print("Refined vector:", refined_vector.round(3))
+```
+
+---
+
+### Step 6 — Linear + Softmax (Output)
+
+The final step converts the vector into a probability distribution over the entire vocabulary. The token with the highest probability becomes the next word.
+
+```python
+import numpy as np
+
+vocab = ["hello", "hi", "bye", "yes", "no", "thanks"]
+
+def predict_next_token(context_vector):
+    np.random.seed(7)
+    # Linear layer: vector → score for each vocab word
+    W = np.random.randn(len(vocab), len(context_vector))
+    scores = W @ context_vector
+
+    # Softmax: scores → probabilities (all sum to 1.0)
+    def softmax(x):
+        e = np.exp(x - np.max(x))
+        return e / e.sum()
+
+    probs = softmax(scores)
+
+    # Show all probabilities
+    for word, prob in zip(vocab, probs):
+        print(f"  {word:8s}: {prob:.1%}")
+
+    # Pick the highest probability token
+    best = vocab[np.argmax(probs)]
+    print(f"\nPredicted next token: '{best}'")
+
+context = np.array([0.6, 0.2, 0.9])
+predict_next_token(context)
+
+# Output might be:
+#   hello   : 42.3%
+#   hi      : 31.1%
+#   bye     :  8.4%
+#   ...
+# Predicted next token: 'hello'
+```
+
+---
+
+### The "Temperature" Knob (Softmax Tuning)
+
+The video mentions you can "tune softmax up or down." This is the **temperature** parameter you see in LLM APIs.
+
+```python
+def softmax_with_temperature(scores, temperature=1.0):
+    # Low temp (0.1)  → model picks highest prob almost always (focused)
+    # High temp (2.0) → model spreads probability, more creative/random
+    scaled = scores / temperature
+    e = np.exp(scaled - np.max(scaled))
+    return e / e.sum()
+
+scores = np.array([3.0, 1.0, 0.5, 0.2])
+
+print("Temp 0.1 (focused):", softmax_with_temperature(scores, 0.1).round(3))
+# [1.000, 0.000, 0.000, 0.000]  → always picks top token
+
+print("Temp 1.0 (default):", softmax_with_temperature(scores, 1.0).round(3))
+# [0.739, 0.100, 0.061, 0.042]  → balanced
+
+print("Temp 2.0 (creative):", softmax_with_temperature(scores, 2.0).round(3))
+# [0.484, 0.221, 0.172, 0.123]  → more spread out, surprising outputs
+```
+
+---
+
+### Complete Picture — Key Takeaways
+
+| Step | What it does | Analogy |
+|---|---|---|
+| Self-attention | Tokens update each other's meaning based on context | "River" changes what "bank" means |
+| Multi-head attention | Multiple parallel attention passes, each focusing differently | Noticing breed, behavior, and danger all at once |
+| Feed forward | Refines each token's representation through a small neural net | Processing what you observed |
+| Linear | Converts vector to scores over all vocabulary words | Listing candidate next words |
+| Softmax | Picks the most probable next token | Choosing the best candidate |
+| Temperature | Controls randomness of the pick | Low = safe, High = creative |
+
+As an application developer building AI agents, you'll never implement these directly — but understanding them tells you *why* LLMs handle context the way they do, why temperature matters, and why longer context windows are expensive.
+
+---
+
+## Sec 15 - API Setup and Integration
+
+## 111. Configuring your OpenAI Account (02:43) 
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
