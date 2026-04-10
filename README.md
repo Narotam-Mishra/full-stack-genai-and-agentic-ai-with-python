@@ -21030,7 +21030,7 @@ Think of Transformer like:
 
 ---
 
-# Transformer Architecture & LLMs – Summary Notes
+## Transformer Architecture & LLMs – Summary Notes
 
 > **Context:** This is from a course on **Agentic AI for developers** (not ML researchers). The instructor is giving a high-level overview of how LLMs work internally — it's bonus/background content, not the core of the course.
 
@@ -21190,7 +21190,754 @@ for word, prob in zip(scores.keys(), probs):
 
 ## 108. Deep Diving into Vector Embeddings (09:09) 
 
+## 🧠 What are Vector Embeddings? (Simple Explanation)
 
+* Computers **don’t understand words directly**.
+* They only understand **numbers**.
+* So we convert words → numbers → vectors (lists of numbers).
+
+👉 These vectors capture **meaning (semantics)** of words.
+
+---
+
+## 📌 Key Idea
+
+👉 Words with similar meaning are placed **close together** in space.
+
+Examples:
+
+* `"dog"` 🐶 and `"cat"` 🐱 → close
+* `"Paris"` and `"India"` → closer than `"Paris"` and `"dog"`
+* `"Eiffel Tower"` and `"India Gate"` → close (tourist places)
+
+---
+
+## 📊 How it Works (Intuition)
+
+Think of a graph:
+
+* Each word = a **point**
+* Coordinates = **vector embedding**
+
+Example (fake numbers):
+
+```
+dog  → [0.2, 0.8]
+cat  → [0.25, 0.75]
+Paris → [0.9, 0.1]
+India → [0.85, 0.15]
+```
+
+👉 Notice:
+
+* dog & cat → close
+* Paris & India → close
+
+---
+
+## Important Concepts
+
+## 1. Tokenization
+
+* Breaking text into smaller parts (tokens)
+
+```python
+text = "dog ate cat"
+tokens = text.split()
+
+print(tokens)
+# ['dog', 'ate', 'cat']
+```
+
+---
+
+## 2. Numerical Representation
+
+* Convert tokens → numbers
+
+```python
+word_to_id = {
+    "dog": 1,
+    "ate": 2,
+    "cat": 3
+}
+
+ids = [word_to_id[word] for word in tokens]
+print(ids)
+# [1, 2, 3]
+```
+
+---
+
+## 3. Vector Embeddings
+
+* Each word gets a **vector (list of numbers)**
+
+```python
+embeddings = {
+    "dog": [0.2, 0.8],
+    "cat": [0.25, 0.75],
+    "Paris": [0.9, 0.1],
+    "India": [0.85, 0.15]
+}
+
+print(embeddings["dog"])
+# [0.2, 0.8]
+```
+
+---
+
+## 4. Semantic Meaning (Core Idea ⭐)
+
+👉 Vectors capture **meaning**, not just spelling.
+
+* dog ≈ cat → animals
+* Paris ≈ India → countries
+* Eiffel Tower ≈ India Gate → landmarks
+
+---
+
+## 5. Distance = Similarity
+
+👉 Closer vectors = more similar meaning
+
+We measure using **cosine similarity**:
+
+```python
+import numpy as np
+
+def cosine_similarity(a, b):
+    a = np.array(a)
+    b = np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+dog = [0.2, 0.8]
+cat = [0.25, 0.75]
+
+print(cosine_similarity(dog, cat))
+# close to 1 → very similar
+```
+
+---
+
+## 6. Relationships (Very Important 🚀)
+
+👉 Embeddings capture relationships like:
+
+```
+Paris → France
+India → Delhi
+```
+
+This works using vector math:
+
+```
+Paris - France + India ≈ Delhi
+```
+
+### Code Example
+
+```python
+# fake vectors for illustration
+Paris = np.array([1, 2])
+France = np.array([0.5, 1])
+India = np.array([2, 3])
+
+result = Paris - France + India
+print(result)
+```
+
+👉 This is how models **infer relationships**
+
+---
+
+## 7. Direction Matters
+
+👉 Movement in space = meaning
+
+* Same direction = same relationship
+* Example:
+
+  * Paris → Eiffel Tower
+  * India → India Gate
+
+👉 Both follow similar **semantic direction**
+
+---
+
+## 8. High Dimensions (Reality)
+
+* Not 2D ❌
+* Not 3D ❌
+* Usually **hundreds or thousands of dimensions** ✅
+
+Example:
+
+```
+dog → [0.12, -0.44, 0.98, ..., 0.33]  (512 dimensions)
+```
+
+---
+
+## 9. Real-world Use Cases
+
+Vector embeddings are used in:
+
+* 🔍 Search engines (Google)
+* 🤖 ChatGPT & LLMs
+* 🛒 Recommendations (Amazon, Netflix)
+* 📄 Document similarity
+* 🧠 Semantic search
+
+---
+
+## 🧩 Mini End-to-End Example
+
+```python
+from sklearn.metrics.pairwise import cosine_similarity
+
+# word embeddings (fake)
+words = {
+    "dog": [0.2, 0.8],
+    "cat": [0.25, 0.75],
+    "car": [0.9, 0.1]
+}
+
+# compare similarity
+sim = cosine_similarity(
+    [words["dog"]],
+    [words["cat"]]
+)
+
+print(sim)
+# high similarity
+
+sim2 = cosine_similarity(
+    [words["dog"]],
+    [words["car"]]
+)
+
+print(sim2)
+# low similarity
+```
+
+---
+
+## 🧾 Final Summary
+
+* Words → Tokens → Numbers → Vectors
+* Vectors store **meaning (semantics)**
+* Similar words → **close in space**
+* Relationships → **captured via direction**
+* Real embeddings → **high-dimensional vectors**
+
+---
+
+## 💡 One-Line Intuition
+
+👉 **Vector embeddings = giving “meaning” to words using numbers so machines can understand relationships.**
+
+- [Vector Embedding Map](https://projector.tensorflow.org/)
+
+---
+
+## What are Vector Embeddings? (Contd...)
+
+When you read a word like "dog" or "Paris", your brain automatically forms a mental image — a real-world meaning. Machines can't do this with raw text. **Vector embeddings** solve this by converting words into numbers that capture their *semantic meaning* (real-world meaning and relationships).
+
+> **Definition:** Vector embeddings are numerical representations of data (text, images, etc.) that capture their meaning and relationships in space.
+
+---
+
+## The Core Idea: Words as Points in Space
+
+Think of a 2D graph. Each word gets plotted as a point. Words with similar meanings are placed *close together*:
+
+- "Dog" and "Cat" → close (both animals)
+- "Paris" and "India" → close (both countries)
+- "Eiffel Tower" and "India Gate" → close (both 
+tourist monuments)
+
+![alt text](image.png)
+
+The arrows show something powerful: the *direction* from Paris → Eiffel Tower is the **same direction** as India → India Gate. This means the model learned "country → famous monument" as a relationship — without being told explicitly!
+
+---
+
+## Important Concepts
+
+**1. Semantic Meaning**
+The numerical representation captures *real-world meaning*, not just spelling. "Dog" and "canine" will be near each other even though they look completely different as text.
+
+**2. Dimensions**
+In reality, embeddings aren't 2D — they're hundreds or thousands of dimensions (e.g. OpenAI's `text-embedding-ada-002` uses 1536 dimensions). More dimensions = richer meaning.
+
+**3. Distance = Similarity**
+Words that are close in the embedding space are *semantically similar*. We measure this with **cosine similarity**.
+
+---
+
+## Code Examples
+
+### Getting embeddings with OpenAI (Python)
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+def get_embedding(text):
+    response = client.embeddings.create(
+        model="text-embedding-ada-002",
+        input=text
+    )
+    return response.data[0].embedding
+
+# Each word becomes a list of 1536 numbers
+dog_vector    = get_embedding("dog")
+cat_vector    = get_embedding("cat")
+paris_vector  = get_embedding("Paris")
+
+print(f"Dog embedding (first 5 values): {dog_vector[:5]}")
+# Output: [0.0023, -0.0034, 0.0198, -0.0045, 0.0123, ...]
+```
+
+---
+
+### Measuring Similarity (Cosine Similarity)
+
+```python
+import numpy as np
+
+def cosine_similarity(vec1, vec2):
+    # How similar are two vectors? Returns value between -1 and 1
+    # 1 = identical, 0 = unrelated, -1 = opposite
+    dot_product = np.dot(vec1, vec2)
+    magnitude   = np.linalg.norm(vec1) * np.linalg.norm(vec2)
+    return dot_product / magnitude
+
+# Compare similarities
+dog_cat_sim    = cosine_similarity(dog_vector, cat_vector)
+dog_paris_sim  = cosine_similarity(dog_vector, paris_vector)
+
+print(f"Dog ↔ Cat similarity:   {dog_cat_sim:.3f}")    # High ~0.85 (both animals)
+print(f"Dog ↔ Paris similarity: {dog_paris_sim:.3f}")  # Low  ~0.20 (unrelated)
+```
+
+---
+
+### Simple Manual Embedding (to understand the concept)
+
+```python
+# Imagine a tiny 3D embedding space:
+# Dimension 1: "is an animal" (0 to 1)
+# Dimension 2: "is a place"   (0 to 1)
+# Dimension 3: "is famous"    (0 to 1)
+
+simple_embeddings = {
+    "dog":         [0.9, 0.0, 0.1],  # mostly animal
+    "cat":         [0.9, 0.0, 0.1],  # very similar to dog!
+    "Paris":       [0.0, 0.9, 0.8],  # famous place
+    "India":       [0.0, 0.9, 0.7],  # similar to Paris
+    "Eiffel Tower":[0.0, 0.8, 1.0],  # very famous landmark
+}
+
+# Dog and Cat are close → similar vectors
+# Paris and India are close → similar vectors
+# Dog and Paris are far apart → different vectors
+```
+
+---
+
+## Key Takeaways
+
+| Concept | What it means |
+|---|---|
+| Vector embedding | A word/sentence turned into a list of numbers |
+| Semantic meaning | The real-world meaning captured in those numbers |
+| Cosine similarity | How "close" two embeddings are (0 = unrelated, 1 = same) |
+| Clustering | Similar words naturally group together in vector space |
+| Relationships | Directions in space encode relationships (country → capital, etc.) |
+
+Vector embeddings are the **first step in every LLM** — your input text is tokenized, then each token is converted to a vector before the transformer layers process it. That's why the video calls it "Input Embeddings" — it's the entry point of the whole system.
+
+---
+
+## 109. Role of Positional Encoding in Transformers  (03:20) 
+
+## 🧠 What Problem Are We Solving?
+
+### Example:
+
+* Sentence 1: **"dog ate cat"**
+* Sentence 2: **"cat ate dog"**
+
+👉 Both contain same words
+👉 But meanings are completely different ❗
+
+---
+
+## ❌ Problem with Only Vector Embeddings
+
+* Embeddings capture **meaning of words**
+* But they **ignore order (position)**
+
+So:
+
+```
+["dog", "ate", "cat"]
+["cat", "ate", "dog"]
+```
+
+👉 Both look similar to model (same tokens)
+
+---
+
+## ✅ Solution: Positional Encoding
+
+👉 Positional Encoding adds **position information** to each word.
+
+So model knows:
+
+* Who is first?
+* Who is second?
+* Who is last?
+
+---
+
+## 📌 Key Idea
+
+👉 Final Input =
+**Word Embedding + Position Encoding**
+
+---
+
+## 🔥 Step-by-Step Pipeline
+
+## 1. Tokenization
+
+```python
+sentence = "dog ate cat"
+tokens = sentence.split()
+
+print(tokens)
+# ['dog', 'ate', 'cat']
+```
+
+---
+
+## 2. Convert to IDs
+
+```python
+word_to_id = {
+    "dog": 56,
+    "ate": 74,
+    "cat": 89
+}
+
+ids = [word_to_id[word] for word in tokens]
+print(ids)
+# [56, 74, 89]
+```
+
+---
+
+## 3. Vector Embeddings
+
+```python
+embeddings = {
+    56: [0.2, 0.8],   # dog
+    74: [0.5, 0.5],   # ate
+    89: [0.25, 0.75]  # cat
+}
+
+vectors = [embeddings[i] for i in ids]
+print(vectors)
+```
+
+---
+
+## 4. Positional Encoding (Core Concept ⭐)
+
+👉 Add position info to each vector
+
+### Simple Example:
+
+```python
+import numpy as np
+
+# word embeddings
+vectors = np.array([
+    [0.2, 0.8],   # dog
+    [0.5, 0.5],   # ate
+    [0.25, 0.75]  # cat
+])
+
+# positional encodings (simple version)
+positional_encoding = np.array([
+    [0, 0],   # position 0
+    [1, 1],   # position 1
+    [2, 2]    # position 2
+])
+
+# final embeddings
+final_vectors = vectors + positional_encoding
+
+print(final_vectors)
+```
+
+👉 Now:
+
+* "dog" at position 0 ≠ "dog" at position 2
+* Order is preserved ✅
+
+---
+
+## 🧩 Why It Matters
+
+Without positional encoding:
+
+* Model sees → **bag of words**
+* Loses sentence structure ❌
+
+With positional encoding:
+
+* Model understands:
+
+  * Subject
+  * Object
+  * Action
+
+---
+
+## 🔁 Compare Both Sentences
+
+### Without positional encoding:
+
+```
+dog ate cat  → same meaning
+cat ate dog  → same meaning ❌
+```
+
+### With positional encoding:
+
+```
+dog (pos 0) ≠ dog (pos 2)
+cat (pos 2) ≠ cat (pos 0)
+```
+
+👉 Now meanings are different ✅
+
+---
+
+## 🚀 Real Positional Encoding (Advanced Insight)
+
+In real Transformers:
+
+* Uses **sin & cosine functions**
+* Not simple numbers like `[0,1,2]`
+
+👉 Formula (just for awareness):
+
+```
+PE(pos, 2i)   = sin(pos / 10000^(2i/d))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d))
+```
+
+👉 Why?
+
+* Helps model learn **relative positions**
+* Works for long sequences
+
+---
+
+## 🧪 Slightly Advanced Code (Sinusoidal Encoding)
+
+```python
+import numpy as np
+
+def positional_encoding(seq_len, d_model):
+    pe = np.zeros((seq_len, d_model))
+    
+    for pos in range(seq_len):
+        for i in range(0, d_model, 2):
+            pe[pos][i] = np.sin(pos / (10000 ** ((2*i)/d_model)))
+            if i+1 < d_model:
+                pe[pos][i+1] = np.cos(pos / (10000 ** ((2*(i+1))/d_model)))
+    
+    return pe
+
+pe = positional_encoding(3, 4)
+print(pe)
+```
+
+---
+
+## 📊 Final Flow (Very Important)
+
+```
+Text
+ ↓
+Tokenization
+ ↓
+Token IDs
+ ↓
+Word Embeddings
+ ↓
++ Positional Encoding
+ ↓
+Final Input to Transformer
+```
+
+---
+
+## 🧾 Final Summary
+
+* Vector embeddings → give **meaning**
+* Positional encoding → gives **order**
+* Both combined → give **full understanding**
+
+---
+
+## 💡 One-Line Intuition
+
+👉 **Embeddings tell “what the word means”, positional encoding tells “where the word is”.**
+
+---
+
+## Positional Encoding — Simple Concepts Notes
+
+### The Problem: Order Matters!
+
+Consider these two sentences:
+
+- **"Dog ate cat"** → Dog is the aggressor
+- **"Cat ate dog"** → Cat is the aggressor
+
+The tokens are identical (`dog`, `ate`, `cat`) — just in different order. But pure vector embeddings give each token the *same vector regardless of position*. So after embedding, both sentences look identical to the model. That's a big problem.
+
+**Positional encoding fixes this** by adding position information to each token's vector.
+
+---
+
+### The 3-Step Pipeline---
+
+### Code Examples
+
+**Step 1 — Tokenization (word → number)**
+
+```python
+# Simple manual tokenizer (concept demo)
+vocab = {"dog": 56, "ate": 74, "cat": 89}
+
+def tokenize(sentence):
+    return [vocab[word] for word in sentence.split()]
+
+tokens = tokenize("dog ate cat")
+print(tokens)  # [56, 74, 89]
+```
+
+---
+
+**Step 2 — Vector Embeddings (number → vector)**
+
+```python
+import numpy as np
+
+# Each token ID maps to a vector of numbers
+# In real LLMs this is learned during training
+embeddings = {
+    56: np.array([0.2, 0.8, 0.1]),   # dog
+    74: np.array([0.5, 0.3, 0.7]),   # ate
+    89: np.array([0.9, 0.1, 0.4]),   # cat
+}
+
+token_vectors = [embeddings[t] for t in tokens]
+# [[0.2, 0.8, 0.1],
+#  [0.5, 0.3, 0.7],
+#  [0.9, 0.1, 0.4]]
+```
+
+---
+
+**Step 3 — Positional Encoding (add position info)**
+
+```python
+import numpy as np
+
+def positional_encoding(position, embedding_dim):
+    """
+    For each position, generate a unique signal using
+    sine and cosine waves (this is what the original
+    Transformer paper 'Attention is All You Need' uses).
+    """
+    pe = np.zeros(embedding_dim)
+
+    for i in range(0, embedding_dim, 2):
+        pe[i]   = np.sin(position / (10000 ** (i / embedding_dim)))
+        pe[i+1] = np.cos(position / (10000 ** (i / embedding_dim)))
+
+    return pe
+
+# Add positional encoding to each token's embedding
+embedding_dim = 3
+final_vectors = []
+
+for pos, vec in enumerate(token_vectors):
+    pos_signal = positional_encoding(pos, embedding_dim)
+    final_vec  = vec + pos_signal      # simply add the two vectors
+    final_vectors.append(final_vec)
+    print(f"Position {pos}: {vec} + {pos_signal.round(3)} = {final_vec.round(3)}")
+
+# Position 0: [0.2 0.8 0.1] + [0.    1.    0.   ] = [0.2   1.8   0.1  ]
+# Position 1: [0.5 0.3 0.7] + [0.841 0.54  0.   ] = [1.341 0.84  0.7  ]
+# Position 2: [0.9 0.1 0.4] + [0.909 0.416 0.   ] = [1.809 0.516 0.4  ]
+```
+
+---
+
+**Proving it works — same tokens, different order = different vectors**
+
+```python
+sentence1 = ["dog", "ate", "cat"]   # dog eats cat
+sentence2 = ["cat", "ate", "dog"]   # cat eats dog
+
+def encode_sentence(words):
+    result = []
+    for pos, word in enumerate(words):
+        token_id  = vocab[word]
+        base_vec  = embeddings[token_id]
+        pos_vec   = positional_encoding(pos, embedding_dim)
+        result.append((base_vec + pos_vec).round(3))
+    return result
+
+v1 = encode_sentence(sentence1)
+v2 = encode_sentence(sentence2)
+
+# "dog" at position 0 vs "dog" at position 2 → DIFFERENT final vectors
+print("dog at pos 0:", v1[0])   # [0.2  1.8  0.1 ]
+print("dog at pos 2:", v2[2])   # [1.809 0.516 0.4]
+# ✅ Same word, different position → different vector
+```
+
+---
+
+### Key Takeaways
+
+| Concept | Simple explanation |
+|---|---|
+| Problem | Same tokens in different order produce identical embeddings |
+| Positional encoding | Adds a unique position signal to each token's vector |
+| How it's added | `final_vector = embedding_vector + position_vector` |
+| Sine/cosine waves | Used to generate unique, smooth position signals |
+| Why it matters | "Dog ate cat" and "Cat ate dog" now produce different vectors |
+| In the pipeline | Always applied *after* token embeddings, *before* attention layers |
+
+The final position-aware vectors are what gets passed into the **attention mechanism** — the next step in the Transformer pipeline.
+
+---
+
+## 110. Understanding Multi-Head Attention for Rich Context (05:19) 
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
