@@ -22473,7 +22473,690 @@ As an application developer building AI agents, you'll never implement these dir
 
 ## Sec 15 - API Setup and Integration
 
-## 111. Configuring your OpenAI Account (02:43) 
+## 112. Invoking OpenAI APIs with Python (04:53) 
+
+## 🧠 Simple Concepts and Summary
+
+* Install OpenAI SDK
+* Set up API key securely
+* Send a message to an LLM
+* Get a response in Python
+
+💡 In short:
+**You connected your Python app to an LLM (like GPT-4o) and made it chat**
+
+---
+
+## 📌 Important Steps (Must Know)
+
+---
+
+## 1. 📦 Install Required Packages
+
+```bash
+pip install openai
+pip install python-dotenv
+```
+
+👉 `openai` → to call API
+👉 `python-dotenv` → to load environment variables
+
+---
+
+## 2. 🔐 Store API Key Safely
+
+Create `.env` file:
+
+```env
+OPENAI_API_KEY=your_secret_key_here
+```
+
+⚠️ Never hardcode API keys in code
+
+---
+
+## 3. 📂 Load Environment Variables
+
+```python
+from dotenv import load_dotenv
+
+load_dotenv()
+```
+
+👉 This loads `.env` file into your system
+
+---
+
+## 4. 🤖 Create OpenAI Client
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+```
+
+---
+
+## 5. 💬 Send Message to LLM
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Hey there"}
+    ]
+)
+```
+
+---
+
+## 6. 📤 Get Output
+
+```python
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🧩 Full Working Code (Clean Version)
+
+```python
+from openai import OpenAI
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+# Load .env explicitly with override=True to avoid shell var conflicts
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path, override=True)
+
+api_key = os.getenv("OPENAI_API_KEY")
+# print("Loaded from:", env_path)
+
+# pass explicitly to be safe
+client = OpenAI(api_key=api_key)  
+
+res = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "How OpenAI supress their competitor?"}]
+)
+
+print("Response:", res.choices[0].message.content)
+```
+
+---
+
+## 🔄 How It Works Internally
+
+```text
+Your Python Code
+      ↓
+OpenAI API Request
+      ↓
+LLM (GPT-4o processes input)
+      ↓
+Response Generated
+      ↓
+Returned to your app
+```
+
+---
+
+## 🧠 Important Concepts Explained
+
+---
+
+## 1. 📩 Messages Format
+
+```python
+messages = [
+    {"role": "user", "content": "Hello"}
+]
+```
+
+👉 Roles:
+
+* `user` → your input
+* `assistant` → AI response
+* `system` → instructions
+
+---
+
+## 2. 🤖 Model Selection
+
+```python
+model="gpt-4o"
+```
+
+👉 Different models:
+
+* Fast vs powerful
+* Cheap vs expensive
+
+---
+
+## 3. 📊 Response Structure
+
+```python
+response.choices[0].message.content
+```
+
+👉 Meaning:
+
+* `choices[0]` → first output
+* `message.content` → actual text
+
+---
+
+## 4. ⚠️ Common Error (Very Important)
+
+❌ Error:
+
+```
+API key not found
+```
+
+✅ Fix:
+
+* Install dotenv
+* Use `load_dotenv()`
+
+---
+
+## 🐍 Extra: Multi-turn Conversation Example
+
+```python
+messages = [
+    {"role": "user", "content": "Hi"},
+    {"role": "assistant", "content": "Hello!"},
+    {"role": "user", "content": "What is AI?"}
+]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=messages
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 💡 Simple Analogy
+
+Think of this like:
+
+📱 Your Python app = WhatsApp
+🌐 OpenAI API = Internet
+🤖 GPT = Person replying
+
+---
+
+## 🚀 Final Takeaways
+
+* OpenAI API lets you use LLMs in your app
+* Use `.env` to securely store API keys
+* Send input via `messages`
+* Get response from `response.choices`
+* This is the **base of all AI apps, chatbots, agents**
+
+---
+
+## 🔥 What You Can Build Now
+
+With this knowledge, you can build:
+
+* Chatbots
+* AI assistants
+* Code generators
+* AI SaaS apps
+
+---
+
+## Using OpenAI API in Python (Contd...)
+
+## Step-by-Step Breakdown
+
+### 1. Install the OpenAI Library
+```bash
+pip install openai
+```
+After installing, save dependencies:
+```bash
+pip freeze > requirements.txt
+```
+
+---
+
+### 2. Set Up Your Project Structure
+```
+hello_world/
+├── main.py
+└── .env
+```
+
+---
+
+### 3. Store Your API Key in a `.env` File
+Never hardcode your API key directly in code. Store it safely:
+```
+# .env
+OPENAI_API_KEY=your-secret-key-here
+```
+
+---
+
+### 4. Load the `.env` File Using `python-dotenv`
+By default, Python doesn't read `.env` files automatically. You need this package:
+```bash
+pip install python-dotenv
+```
+Then load it at the top of your script:
+```python
+from dotenv import load_dotenv
+load_dotenv()  # reads .env and loads variables into the environment
+```
+
+---
+
+### 5. Create the OpenAI Client and Make a Call
+```python
+from openai import OpenAI
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+# Load .env explicitly with override=True to avoid shell var conflicts
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path, override=True)
+
+api_key = os.getenv("OPENAI_API_KEY")
+# print("Loaded from:", env_path)
+
+# pass explicitly to be safe
+client = OpenAI(api_key=api_key)  
+
+res = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "How OpenAI supress their competitor?"}]
+)
+
+print("Response:", res.choices[0].message.content)
+```
+
+---
+
+## Key Concepts Explained
+
+### `model` Parameter
+Specifies which LLM to use. Each model has different capabilities and pricing:
+
+| Model | Notes |
+|---|---|
+| `gpt-4o` | Powerful, multimodal |
+| `gpt-4o-mini` | Faster, cheaper |
+| `gpt-4` | Older flagship |
+| `gpt-4.1` | Latest variant |
+
+---
+
+### `messages` — How to Talk to the AI
+The API uses a **role-based message format**. Each message has a `role` and `content`:
+
+```python
+messages=[
+    {"role": "system", "content": "You are a helpful assistant."},  # Sets AI behavior
+    {"role": "user",   "content": "What is Python?"},               # User's question
+    {"role": "assistant", "content": "Python is a programming language."}, # AI's past reply
+    {"role": "user",   "content": "Give me an example."}            # Follow-up
+]
+```
+
+- **`system`** — sets the AI's personality/instructions
+- **`user`** — your message to the AI
+- **`assistant`** — previous AI replies (used for multi-turn conversations)
+
+---
+
+### `response.choices[0].message.content`
+The API can return multiple response candidates (`choices`). We always pick the first one (`[0]`) and read its `.message.content`:
+
+```python
+# Full response object (simplified)
+response.choices[0].message.content  # → "Nice to meet you!"
+```
+
+---
+
+## Common Error & Fix
+
+**Error:**
+```
+OpenAIError: The api_key must be set either by passing api_key or by setting OPENAI_API_KEY
+```
+
+**Cause:** You created the `.env` file but forgot to call `load_dotenv()` before initializing the client.
+
+**Fix:** Always call `load_dotenv()` before `OpenAI()`.
+
+---
+
+## Complete Working Code
+```python
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Hey there!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## Quick Recap — Important Pointers
+- Install `openai` and `python-dotenv` via pip
+- Always store API keys in a `.env` file, never hardcode them
+- Call `load_dotenv()` **before** creating the `OpenAI()` client
+- Use `chat.completions.create()` to send a message
+- Messages follow a role-based format: `system`, `user`, `assistant`
+- Access the reply via `response.choices[0].message.content`
+
+---
+
+## 113. Creating and Setting up Google Gemini's Account (02:21)
+
+## Using Gemini API in Python — Concept and Tutorial Summary
+
+---
+
+## Why Gemini Instead of OpenAI?
+
+| | OpenAI (GPT) | Google Gemini |
+|---|---|---|
+| Cost | Paid (per token) | Free (as of now) |
+| Setup | Requires billing | No billing needed |
+| Package | `openai` | `google-genai` |
+
+---
+
+## Step-by-Step Setup
+
+### 1. Get Your Free API Key
+- Go to **aistudio.google.com**
+- Click **"Get API Key"**
+- Create a new API key — no billing or credit card required
+- Copy the key
+
+---
+
+### 2. Install the Package
+```bash
+pip install google-genai
+```
+
+---
+
+### 3. Store the Key in `.env`
+```
+GEMINI_API_KEY=your-gemini-api-key-here
+```
+
+---
+
+### 4. Write the Code
+
+```python
+from dotenv import load_dotenv
+from google import genai
+import os
+
+load_dotenv()
+
+# Create the Gemini client with your API key
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Make a request
+response = client.models.generate_content(
+    model="gemini-2.0-flash",       # Which Gemini model to use
+    contents="Explain how AI works in a few words."  # Your prompt
+)
+
+print(response.text)   # Print the response
+```
+
+**Output:**
+```
+AI learns patterns from data to make intelligent decisions.
+```
+
+---
+
+## Key Concepts Explained
+
+### `client.models.generate_content()`
+This is the Gemini equivalent of OpenAI's `chat.completions.create()`. You pass:
+- **`model`** — which Gemini model to use (e.g. `gemini-2.0-flash`)
+- **`contents`** — your prompt/question as a plain string
+
+```python
+# OpenAI style (more structured)
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hey!"}]
+)
+print(response.choices[0].message.content)
+
+# Gemini style (simpler)
+response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents="Hey!"
+)
+print(response.text)
+```
+
+Gemini's API is noticeably simpler — just pass a plain string instead of a structured messages list.
+
+---
+
+### `response.text`
+Gemini wraps its reply in a `.text` property directly, unlike OpenAI's deeply nested `response.choices[0].message.content`.
+
+```python
+# Gemini — simple
+print(response.text)
+
+# OpenAI — nested
+print(response.choices[0].message.content)
+```
+
+---
+
+## Side-by-Side Comparison
+
+```python
+# ── OpenAI ──────────────────────────────────────
+from openai import OpenAI
+client = OpenAI(api_key="sk-...")
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Explain AI"}]
+)
+print(response.choices[0].message.content)
+
+
+# ── Gemini ──────────────────────────────────────
+from google import genai
+client = genai.Client(api_key="AI...")
+
+response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents="Explain AI"
+)
+print(response.text)
+```
+
+---
+
+## Quick Recap — Important Pointers
+- Gemini API is currently **free** via aistudio.google.com — no billing needed
+- Install the package using `pip install google-genai`
+- Get your API key from **aistudio.google.com → Get API Key**
+- Use `genai.Client(api_key=...)` to create the client
+- Use `client.models.generate_content(model=..., contents=...)` to send a prompt
+- Access the reply simply via `response.text`
+- The Gemini API is simpler and less verbose than the OpenAI API
+
+---
+
+## 114. Using Google Gemini with OpenAI-Compatible API (03:15)
+
+## Using Gemini via OpenAI SDK — Concepts & Tutorial Summary
+
+How to use the **OpenAI Python SDK** to make calls to **Google's Gemini** — so you can follow an OpenAI-based course without spending money.
+
+---
+
+## The Core Idea
+
+Gemini now exposes an **OpenAI-compatible API endpoint**. This means you can point the OpenAI client to Google's servers instead, just by changing two things:
+- The **API key** → use your Gemini key
+- The **base URL** → redirect to Google's API endpoint
+
+No need to learn a different SDK!
+
+---
+
+## The Code
+
+```python
+from dotenv import load_dotenv
+from openai import OpenAI
+import os
+
+load_dotenv()
+
+# Redirect OpenAI SDK to use Gemini instead
+client = OpenAI(
+    api_key=os.getenv("GEMINI_API_KEY"),                        # Your Gemini API key
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"  # Google's endpoint
+)
+
+response = client.chat.completions.create(
+    model="gemini-2.0-flash",        # Must use a Gemini model name, NOT gpt-4o
+    messages=[
+        {"role": "user", "content": "Hey, I am Piyush, nice to meet you!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+**Output:**
+```
+Hello Piyush! Nice to meet you. I am an AI assistant ready to help. How can I assist you?
+```
+
+---
+
+## Key Concepts Explained
+
+### `base_url` — Redirecting API Calls
+By default, the OpenAI client sends requests to OpenAI's servers. Passing `base_url` overrides that destination:
+
+```python
+# Default — calls go to OpenAI
+client = OpenAI(api_key="sk-...")
+
+# Redirected — calls go to Google/Gemini
+client = OpenAI(
+    api_key="AI...",
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+```
+
+Think of it like a GPS reroute — same car, same road rules, different destination.
+
+---
+
+### Model Name Must Match the Provider
+This is the most common mistake. When redirecting to Gemini, you **must** use a Gemini model name:
+
+```python
+# ❌ Wrong — GPT model name won't work with Gemini endpoint
+model="gpt-4o"        # Results in 404 error
+
+# ✅ Correct — Use Gemini model name
+model="gemini-2.0-flash"
+```
+
+---
+
+### How to Verify Which LLM is Answering
+You can simply ask it:
+```python
+messages=[{"role": "user", "content": "Who are you?"}]
+```
+**Gemini will reply:** *"I am a large language model trained by Google."*
+This confirms your calls are reaching Gemini, not OpenAI.
+
+---
+
+## All Three Approaches Side by Side
+
+```python
+# ── Approach 1: OpenAI (Paid) ────────────────────────────
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hey!"}]
+)
+
+# ── Approach 2: Gemini Native SDK (Free) ─────────────────
+from google import genai
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    contents="Hey!"
+)
+
+# ── Approach 3: Gemini via OpenAI SDK (Free) ─────────────
+client = OpenAI(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+response = client.chat.completions.create(
+    model="gemini-2.0-flash",
+    messages=[{"role": "user", "content": "Hey!"}]
+)
+```
+
+Approach 3 is the best of both worlds — free Gemini, familiar OpenAI code style.
+
+---
+
+## Quick Recap — Important Pointers
+- Gemini supports an **OpenAI-compatible API**, so you can use the OpenAI SDK with Gemini
+- Pass your **Gemini API key** and **Google's base URL** to the OpenAI client
+- Always change the **model name** to a Gemini model — forgetting this causes a `404` error
+- The rest of the code (messages format, `response.choices[0].message.content`) stays **identical**
+- This approach is free today, but may change in the future
+- ~99% compatibility when following an OpenAI-based course with Gemini this way
+
+---
+
+## Sec 16 - Advanced Prompt Engineering Techniques
+
+## 115. Prompt Fundamentals: Encoding Instructions for LLMs
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
