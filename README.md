@@ -23638,6 +23638,766 @@ The system prompt acts like a **gatekeeper** between user input and LLM output.
 
 ## 117. One Shot Prompting for Deterministic Inference (03:23)
 
+## 🧠 Simple Concepts & Summary
+
+* **Zero-shot prompting** means:
+
+  > Give instructions **directly to the AI without any examples**
+
+💡 Key idea:
+
+> You tell the AI *what to do*, and it figures it out on its own
+
+---
+
+## 📌 Important Points (Must Know)
+
+---
+
+## 1. 🔹 What is Zero-Shot Prompting?
+
+👉 Definition:
+
+```text
+Model is given a task directly without any examples
+```
+
+---
+
+## 2. ⚡ Example (Simple)
+
+```text
+"Translate 'Hello' to Hindi"
+```
+
+👉 No examples given → still works
+
+---
+
+## 3. 🎯 Your Use Case
+
+You used a **system prompt** to:
+
+* Restrict AI to coding only
+* Give it a name
+* Control behavior
+
+---
+
+## 🧩 Your System Prompt Example
+
+```text
+You should only answer coding-related questions.
+Do not answer anything else.
+Your name is Alexa.
+If user asks something else, say sorry.
+```
+
+👉 This is a **perfect zero-shot prompt**
+
+---
+
+## 🔄 How It Works
+
+```text
+System Prompt (instructions only)
+        ↓
+User Input
+        ↓
+LLM processes
+        ↓
+Output
+```
+
+---
+
+## 🐍 Full Code Example (Zero-Shot Prompting)
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+
+system_prompt = """
+You should only answer coding-related questions.
+Do not answer anything else.
+Your name is Alexa.
+If user asks something else, say sorry.
+"""
+
+response = client.chat.completions.create(
+    model="gemini-1.5-flash",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "Can you write Python code to print Hello?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🧪 Behavior Examples
+
+---
+
+## ❌ Non-Coding Question
+
+```text
+User: Tell me a joke
+```
+
+👉 Output:
+
+```text
+Sorry
+```
+
+---
+
+## ❌ Translation Question
+
+```text
+User: Translate Hello to Hindi
+```
+
+👉 Output:
+
+```text
+Sorry
+```
+
+---
+
+## ✅ Coding Question
+
+```text
+User: Write Python code to print Hello
+```
+
+👉 Output:
+
+```python
+print("Hello")
+```
+
+---
+
+## 🔑 Key Concept: No Examples Needed
+
+👉 Zero-shot =
+
+```text
+Instruction only (no training examples in prompt)
+```
+
+---
+
+## ⚠️ Important Observations
+
+* Works well for **simple tasks**
+* May fail for **complex reasoning**
+* Depends heavily on how clear your instruction is
+
+---
+
+## 🐍 Extra Example (Another Zero-Shot Prompt)
+
+```python
+prompt = "Summarize this text in 2 lines"
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": prompt}]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 💡 Tips for Better Zero-Shot Prompts
+
+---
+
+## 1. Be Clear
+
+```text
+"Explain AI" ❌  
+"Explain AI in 2 lines with example" ✅
+```
+
+---
+
+## 2. Add Rules
+
+```text
+"If not related, say sorry"
+```
+
+---
+
+## 3. Define Role
+
+```text
+"You are a coding expert"
+```
+
+---
+
+## 4. Limit Scope
+
+```text
+"Only answer Python questions"
+```
+
+---
+
+## 🧠 Real-Life Analogy
+
+Think of zero-shot prompting like:
+
+👨‍🏫 Teacher giving instructions:
+
+* “Solve this problem” → no example
+* Student figures it out
+
+---
+
+## 🚀 Final Takeaways
+
+* Zero-shot = direct instruction
+* No examples needed
+* Easy to use
+* Good for simple tasks
+* Requires clear prompts
+
+---
+
+## 🔥 Big Picture
+
+You now understand:
+
+* What prompting is
+* How to control AI
+* First type → Zero-shot prompting
+
+👉 Next level:
+
+* Few-shot prompting (more powerful)
+* Chain-of-thought (best for reasoning)
+
+---
+
+## Zero-Shot Prompting (Contd...)
+
+## What is Zero-Shot Prompting?
+
+**Zero-shot prompting** means giving the model a direct instruction or task *without providing any examples*. You just tell it what to do and it figures out how to do it on its own.
+
+> **Definition:** The model is given a direct question or task without any prior examples.
+
+---
+
+## Code Example
+
+```python
+import google.generativeai as genai
+
+# Zero-shot prompt — direct instructions, no examples given
+system_prompt = """
+You should only and only answer coding related questions.
+Do not answer anything else.
+Your name is Alexa.
+If user asks something other than coding, just say sorry.
+"""
+
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Hey, can you tell me a joke?"}
+]
+
+response = model.generate_content(messages)
+print(response.text)
+# Output: "Sorry."
+```
+
+---
+
+## Testing Different Inputs
+
+```python
+# ❌ Off-topic — Joke
+user_input = "Hey, can you tell me a joke?"
+# Output: "Sorry."
+
+# ❌ Off-topic — Translation
+user_input = "Can you translate the word Hello to Hindi?"
+# Output: "Sorry."
+
+# ✅ On-topic — Coding question
+user_input = "Hey, can you write a Python code to translate a word?"
+# Output: (writes actual Python translation code) ✅
+```
+
+---
+
+## Key Pointers
+
+**1. Zero-shot = No examples, just direct instructions.** You don't show the model *how* to respond — you just tell it *what* to do.
+
+**2. It's the simplest form of prompting.** Write your instruction, throw it at the model, get a response.
+
+**3. The system prompt IS the zero-shot prompt.** The instructions you write in the system prompt define the model's behavior directly.
+
+**4. Works well for clear, well-defined tasks.** The more precise your instruction, the better the zero-shot response.
+
+**5. The model relies entirely on its own training.** Since there are no examples, the model uses what it already knows to generate the response.
+
+---
+
+## Quick Mental Model
+
+```
+Zero-Shot Prompting
+─────────────────────────────────────
+Your Instruction  →  "Only answer coding questions. Say sorry otherwise."
+User Input        →  "Tell me a joke"
+Model Output      →  "Sorry."   ← No examples needed, model just follows rules
+```
+
+---
+
+## Zero-Shot vs What's Coming Next
+
+| Type | Examples Given? | How it Works |
+|---|---|---|
+| **Zero-Shot** | ❌ No | Direct instruction only |
+| **Few-Shot** | ✅ Yes | You show examples of input → output |
+
+Zero-shot is the foundation — next tutorials will build on this by adding examples to guide the model even further.
+
+---
+
+## 118. Few-Shot Prompting for Contextual Generalization (03:31)
+
+## 🧠 Simple Concepts & Summary
+
+* **Few-shot prompting** means:
+
+  > Give **instructions + some examples** to the AI
+
+💡 Key idea:
+
+> Examples help AI understand *exactly what you expect*
+
+---
+
+## 📌 Important Points (Must Know)
+
+---
+
+## 1. 🔹 What is Few-Shot Prompting?
+
+👉 Definition:
+
+```text
+Model is given a task along with a few examples to guide the output
+```
+
+---
+
+## 2. ⚡ Why It’s Better Than Zero-Shot
+
+| Feature      | Zero-Shot | Few-Shot |
+| ------------ | --------- | -------- |
+| Instructions | ✅         | ✅        |
+| Examples     | ❌         | ✅        |
+| Accuracy     | Medium    | High 🚀  |
+
+---
+
+## 3. 🎯 Core Idea
+
+👉 Instead of just saying:
+
+```text
+"Only answer coding questions"
+```
+
+👉 You also show:
+
+```text
+Example inputs → Example outputs
+```
+
+---
+
+## 🧩 Example Prompt (Your Case)
+
+```text
+You should only answer coding-related questions.
+
+Example 1:
+Q: Can you explain (a+b)^2?
+A: Sorry, I can only help with coding-related questions.
+
+Example 2:
+Q: Write Python code to add two numbers
+A:
+def add(a, b):
+    return a + b
+```
+
+---
+
+## 🔄 How Few-Shot Prompting Works
+
+```text
+Instructions + Examples
+        ↓
+User Input
+        ↓
+LLM matches pattern
+        ↓
+Better Output
+```
+
+---
+
+## 🐍 Full Code Example
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+
+system_prompt = """
+You should only answer coding-related questions.
+
+Example 1:
+Q: Can you explain (a+b)^2?
+A: Sorry, I can only help with coding-related questions.
+
+Example 2:
+Q: Write Python code to add two numbers
+A:
+def add(a, b):
+    return a + b
+"""
+
+response = client.chat.completions.create(
+    model="gemini-1.5-flash",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "Can you explain (a+b)^2?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🧪 Behavior Examples
+
+---
+
+## ❌ Non-Coding Question
+
+```text
+User: Explain (a+b)^2
+```
+
+👉 Output:
+
+```text
+Sorry, I can only help with coding-related questions.
+```
+
+---
+
+## ✅ Coding Question
+
+```text
+User: Write Python code to add two numbers
+```
+
+👉 Output:
+
+```python
+def add(a, b):
+    return a + b
+```
+
+---
+
+## 🔑 Key Concept: Learning by Example
+
+👉 AI learns pattern like:
+
+```text
+Input → Output mapping
+```
+
+Just like humans 👇
+
+* Teacher shows examples
+* Student follows pattern
+
+---
+
+## ⚠️ Important Observations
+
+* Examples **improve accuracy a lot**
+* More examples → better performance
+* Used heavily in real-world AI systems
+
+---
+
+## 🐍 Extra Example (Different Use Case)
+
+---
+
+## Sentiment Analysis
+
+```python
+prompt = """
+Classify sentiment:
+
+Text: I love this product → Positive
+Text: This is terrible → Negative
+
+Now classify:
+Text: This is amazing
+"""
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": prompt}]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 💡 Best Practices
+
+---
+
+## 1. Give Clear Examples
+
+```text
+Bad example → confusing  
+Good example → clear pattern
+```
+
+---
+
+## 2. Use Multiple Examples
+
+```text
+2–3 minimum  
+50+ in real systems 🚀
+```
+
+---
+
+## 3. Keep Format Consistent
+
+```text
+Q → A format  
+or Input → Output format
+```
+
+---
+
+## 4. Cover Edge Cases
+
+```text
+Wrong inputs  
+Unexpected queries  
+```
+
+---
+
+## 🧠 Real-Life Analogy
+
+Think of few-shot prompting like:
+
+👨‍🏫 Teacher teaching with examples
+
+* “Solve this” → zero-shot
+* “Here are 3 solved examples” → few-shot
+
+---
+
+## 🚀 Final Takeaways
+
+* Few-shot = instructions + examples
+* Much more powerful than zero-shot
+* Improves accuracy significantly
+* Widely used in real-world AI
+
+---
+
+## 🔥 Big Picture
+
+You now understand:
+
+* Zero-shot → basic
+* Few-shot → powerful & practical
+
+👉 Next level:
+
+* **Chain-of-thought prompting (best for reasoning)**
+
+---
+
+## Few-Shot Prompting (Contd...)
+
+## What is Few-Shot Prompting?
+
+**Few-shot prompting** means giving the model direct instructions *along with some examples* of how it should respond. The examples teach the model the expected behavior before it sees the real question.
+
+> **Definition:** The model is provided with a few examples before asking it to generate a response.
+
+---
+
+## Zero-Shot vs Few-Shot — The Key Difference
+
+```
+Zero-Shot:  Instruction only → Model guesses the pattern
+Few-Shot:   Instruction + Examples → Model learns the pattern from examples
+```
+
+---
+
+## Code Example
+
+```python
+import google.generativeai as genai
+
+system_prompt = """
+You should only and only answer coding related questions.
+Do not answer anything else.
+Your name is Alexa.
+If user asks something other than coding, just say sorry.
+
+Examples:
+
+Q: Can you explain A plus B whole square?
+A: Sorry, I can only help with coding related questions.
+
+Q: Write a code in Python for adding two numbers.
+A: 
+def add(a, b):
+    return a + b
+
+Q: Can you tell me a joke?
+A: Sorry, I can only help with coding related questions.
+"""
+
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Can you explain A plus B whole square?"}
+]
+
+response = model.generate_content(messages)
+print(response.text)
+# Output: "Sorry, I can only help with coding related questions."
+```
+
+---
+
+## Why Examples Matter — Real Difference
+
+Without examples (Zero-Shot), the model *might* still answer a math question since it doesn't clearly know the boundary. With examples (Few-Shot), you've *shown* it exactly what "not coding" looks like:
+
+```python
+# Without examples — model might answer this
+user_input = "Can you explain A plus B whole square?"
+# Output (zero-shot): "(A+B)² = A² + 2AB + B²"  ← sometimes slips through ❌
+
+# With examples — model has seen this pattern before
+user_input = "Can you explain A plus B whole square?"
+# Output (few-shot): "Sorry, I can only help with coding related questions." ✅
+```
+
+---
+
+## How to Structure Few-Shot Examples in the Prompt
+
+```python
+system_prompt = """
+<your instructions here>
+
+Examples:
+
+Q: <example off-topic question>
+A: <expected refusal response>
+
+Q: <example on-topic question>
+A: <expected good response>
+
+Q: <another off-topic question>
+A: <expected refusal response>
+"""
+```
+
+The pattern is simple — Q for question, A for the ideal answer. The more examples you add, the better the model understands the boundary.
+
+---
+
+## Key Pointers
+
+**1. Few-shot is more powerful than zero-shot.** Examples give the model a pattern to follow, not just rules to remember.
+
+**2. Examples act as a guide rail.** They show the model exactly what acceptable and unacceptable responses look like.
+
+**3. More examples = higher accuracy.** In real-world production systems, you should aim for 50–60 examples minimum. This can improve response accuracy by up to 50x.
+
+**4. Examples grow over time.** As your app gets used, you discover new edge cases. You keep adding examples to handle them better.
+
+**5. Few-shot is widely used in production.** It's the industry standard approach — zero-shot is good for learning, but few-shot is what gets used in real apps.
+
+---
+
+## Quick Mental Model
+
+```
+Few-Shot Prompting
+──────────────────────────────────────────────────
+Instructions  →  "Only answer coding questions"
+Example 1     →  Q: Math question  →  A: Sorry...
+Example 2     →  Q: Python code    →  A: def add()...
+Example 3     →  Q: Tell a joke    →  A: Sorry...
+──────────────────────────────────────────────────
+User Input    →  "Explain A+B whole square"
+Model Output  →  "Sorry, I can only help with coding." ✅
+```
+
+---
+
+## Comparison So Far
+
+| Type | Examples Given | Accuracy | Real-world Use |
+|---|---|---|---|
+| **Zero-Shot** | ❌ None | Moderate | Learning / prototyping |
+| **Few-Shot** | ✅ Several | High | Production systems |
+
+---
+
+## 119. Structured Outputs With Few-Shot Prompting (03:13)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
