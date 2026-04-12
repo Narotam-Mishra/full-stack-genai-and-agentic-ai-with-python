@@ -24398,6 +24398,465 @@ Model Output  →  "Sorry, I can only help with coding." ✅
 
 ## 119. Structured Outputs With Few-Shot Prompting (03:13)
 
+## 🧠 Simple Concepts & Summary
+
+* Normally, LLM output is **free-flow text (messy for apps)**
+* Using **few-shot prompting**, you can:
+
+  * Control behavior ✅
+  * Control **output format** ✅
+
+💡 Key idea:
+
+> You can force AI to return **structured data (like JSON)** instead of plain text
+
+---
+
+## 📌 Why This is Important
+
+### ❌ Problem (Default Output)
+
+````text
+Here is your code:
+```python
+print("Hello")
+````
+
+````
+
+👉 Hard to:
+- Parse in backend  
+- Use in apps  
+
+---
+
+### ✅ Solution (Structured Output)
+```json
+{
+  "code": "print('Hello')",
+  "is_coding_question": true
+}
+````
+
+👉 Easy to:
+
+* Parse
+* Use in APIs
+* Build real apps
+
+---
+
+## 🔑 Key Concept: Output Control via Prompt
+
+👉 You define:
+
+```text
+1. Rules
+2. Output format
+3. Examples
+```
+
+---
+
+## 🧩 Your Prompt Structure
+
+---
+
+## 1. Rule
+
+```text
+Strictly follow output in JSON format
+```
+
+---
+
+## 2. Output Format
+
+```json
+{
+  "code": "string or null",
+  "is_coding_question": true/false
+}
+```
+
+---
+
+## 3. Examples (Few-Shot)
+
+### Example 1 (Non-coding)
+
+```json
+{
+  "code": null,
+  "is_coding_question": false
+}
+```
+
+---
+
+### Example 2 (Coding)
+
+```json
+{
+  "code": "function add(a, b) { return a + b; }",
+  "is_coding_question": true
+}
+```
+
+---
+
+## 🐍 Full Code Example
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+
+system_prompt = """
+You should only answer coding-related questions.
+
+Strictly follow output in JSON format:
+{
+  "code": "string or null",
+  "is_coding_question": boolean
+}
+
+Example 1:
+Q: Can you explain (a+b)^2?
+A:
+{
+  "code": null,
+  "is_coding_question": false
+}
+
+Example 2:
+Q: Write code to add two numbers in JavaScript
+A:
+{
+  "code": "function add(a, b) { return a + b; }",
+  "is_coding_question": true
+}
+"""
+
+response = client.chat.completions.create(
+    model="gemini-1.5-flash",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "Write JS code to add n numbers"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🧪 Example Outputs
+
+---
+
+## ❌ Non-Coding Input
+
+```text
+User: Explain (a+b)^2
+```
+
+👉 Output:
+
+```json
+{
+  "code": null,
+  "is_coding_question": false
+}
+```
+
+---
+
+## ✅ Coding Input
+
+```text
+User: Write JS code to add numbers
+```
+
+👉 Output:
+
+```json
+{
+  "code": "function addNumbers(arr) { return arr.reduce((a,b)=>a+b,0); }",
+  "is_coding_question": true
+}
+```
+
+---
+
+## 🔄 How It Works
+
+```text
+Prompt (rules + format + examples)
+        ↓
+LLM understands structure
+        ↓
+Generates structured output
+```
+
+---
+
+## 🐍 Parsing JSON Output (Very Important)
+
+👉 Now you can use output in code:
+
+```python
+import json
+
+output = response.choices[0].message.content
+
+data = json.loads(output)
+
+print(data["code"])
+print(data["is_coding_question"])
+```
+
+---
+
+## 💡 Why This is Powerful
+
+* Enables **backend integration**
+* Used in:
+
+  * AI APIs
+  * Agents
+  * Automation tools
+* Makes output **machine-readable**
+
+---
+
+## ⚠️ Important Tips
+
+---
+
+## 1. Always Say “Strictly”
+
+```text
+"Strictly follow JSON format"
+```
+
+---
+
+## 2. Provide Examples
+
+👉 Without examples → model may break format
+
+---
+
+## 3. Keep Format Simple
+
+👉 Avoid complex nested JSON initially
+
+---
+
+## 4. Validate Output
+
+👉 Sometimes model may still break format
+
+---
+
+## 🧠 Real-Life Analogy
+
+Think of it like:
+
+📄 Filling a form
+
+* Free text → messy
+* Fixed format → structured
+
+---
+
+## 🚀 Final Takeaways
+
+* Few-shot prompting can control:
+
+  * Behavior ✅
+  * Output format ✅
+* JSON output is best for real apps
+* Enables parsing + automation
+* Core skill for **AI developers**
+
+---
+
+## 🔥 Big Picture
+
+You just learned:
+
+* Few-shot prompting (advanced use)
+* Output structuring (production-level skill)
+
+👉 This is exactly how:
+
+* Chatbots
+* AI APIs
+* Agents
+
+are built in real-world systems 🚀
+
+---
+
+## Structuring LLM Output with Few-Shot Prompting (Contd...)
+
+## The Problem — Unstructured Free-Flowing Output
+
+By default, LLMs return plain text or markdown (with ` ``` ` code blocks, headings, etc.). This is hard to use in a real application because you **can't reliably parse or extract specific parts** of the response.
+
+```python
+# Default LLM output — messy markdown, hard to use in code ❌
+"""
+Sure! Here is the Python code:
+```python
+def add(a, b):
+    return a + b
+```
+"""
+## How do you extract just the code from this? It's painful.
+```
+
+---
+
+## The Solution — Bind Output Format Using Few-Shot Prompting
+
+You can instruct the model to **always return a structured JSON response** by adding a format rule + JSON examples in your system prompt.
+
+---
+
+## Code Example
+
+```python
+system_prompt = """
+You should only and only answer coding related questions.
+Do not answer anything else.
+Your name is Alexa.
+If user asks something other than coding, just say sorry.
+
+Rule 1: Strictly follow the output in JSON format.
+
+Output Format:
+{
+    "code": "<the code as string, or null if not a coding question>",
+    "is_coding_question": <true or false (boolean)>
+}
+
+Examples:
+
+Q: Can you explain A plus B whole square?
+A: {"code": null, "is_coding_question": false}
+
+Q: Write a Python code for adding two numbers.
+A: {"code": "def add(a, b):\\n    return a + b", "is_coding_question": true}
+"""
+
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Can you explain A plus B whole square?"}
+]
+
+response = model.generate_content(messages)
+print(response.text)
+# Output: {"code": null, "is_coding_question": false}  ✅ Clean JSON
+```
+
+---
+
+## Testing Both Cases
+
+```python
+import json
+
+def ask_alexa(user_input):
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_input}
+    ]
+    response = model.generate_content(messages)
+    return json.loads(response.text)  # Parse JSON string into Python dict
+
+# ❌ Off-topic question
+result = ask_alexa("Can you explain A plus B whole square?")
+print(result)
+# Output: {"code": None, "is_coding_question": False}
+
+# ✅ Coding question
+result = ask_alexa("Write a code to add n numbers in JavaScript?")
+print(result)
+# Output: {"code": "function addNumbers(n) {...}", "is_coding_question": True}
+
+# Now you can cleanly access specific fields using dot notation
+print(result["code"])               # Just the code
+print(result["is_coding_question"]) # True or False
+```
+
+---
+
+## Why This is Powerful
+
+```python
+# Before (unstructured) — you had to do messy string parsing ❌
+raw_output = "```python\ndef add(a,b):\n    return a+b\n```"
+# How to extract the code? Regex? Split on backticks? Fragile.
+
+# After (structured JSON) — clean and reliable ✅
+result = {"code": "def add(a,b):\n    return a+b", "is_coding_question": True}
+code = result["code"]   # Easy!
+```
+
+---
+
+## Key Pointers
+
+**1. Default LLM output is markdown — hard to use in apps.** Backticks, asterisks, and headings are fine for humans to read but terrible for programmatic use.
+
+**2. You can bind the output structure using few-shot prompting.** Add a format rule + JSON examples in your system prompt to force consistent structured output.
+
+**3. Always add a strict rule in the prompt.** Something like `"Rule 1: Strictly follow the output in JSON format"` makes the model take the format seriously.
+
+**4. Your examples must also follow the JSON format.** The model learns from examples — if your examples show JSON, it will return JSON.
+
+**5. Once you get JSON back, you can parse and use it easily.** Use `json.loads()` to convert the string into a Python dict and access fields like `result["code"]`.
+
+**6. This is a very common real-world pattern.** In production AI apps, structured output (JSON) is almost always preferred over free-flowing text.
+
+---
+
+## Quick Mental Model
+
+```
+Problem:   LLM returns messy markdown text
+                    ↓
+Solution:  Add JSON format rule + JSON examples in system prompt
+                    ↓
+Result:    LLM always returns clean, parseable JSON
+                    ↓
+Benefit:   Your app code can access result["code"] directly
+```
+
+---
+
+## Full Picture — What the System Prompt Now Contains
+
+```
+System Prompt
+├── Role/Instructions     → "Only answer coding questions"
+├── Format Rule           → "Strictly return JSON"
+├── Output Format         → Show the exact JSON structure
+└── Examples (Few-Shot)   → Q&A pairs in the same JSON format
+```
+
+Each layer makes the model's output more predictable, structured, and useful in real applications.
+
+---
+
+## 120. Chain-of-Thought (CoT) for Reasoning (12:49)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
