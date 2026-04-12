@@ -23158,6 +23158,486 @@ Approach 3 is the best of both worlds — free Gemini, familiar OpenAI code styl
 
 ## 115. Prompt Fundamentals: Encoding Instructions for LLMs
 
+## What is Prompting? — Tutorial Concepts and Summary
+
+An introduction to **prompts** — one of the most important skills for working with LLMs and building Agentic AI applications.
+
+---
+
+## What is a Prompt?
+A **prompt** is simply the input/instruction you give to an LLM. The quality of the output depends almost entirely on the quality of your prompt.
+
+```python
+# Basic prompt example
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "user", "content": "Explain black holes."}  # ← This is the prompt
+    ]
+)
+```
+
+> 💡 **Key idea:** Same LLM, better prompt = dramatically better output. You can 10x–20x output quality just by prompting correctly.
+
+---
+
+## Why Prompting Matters
+Think of an LLM like a very smart person. If you give them vague instructions, you get vague results. If you give them clear, structured instructions, you get excellent results.
+
+```python
+# ❌ Vague prompt — unpredictable output
+"Tell me about Python"
+
+# ✅ Better prompt — clear, focused output
+"Explain Python in 3 bullet points for a beginner who knows no programming"
+```
+
+---
+
+## Types of Prompting (Coming Up in This Section)
+
+### 1. Zero-Shot Prompting
+Ask the LLM to do something **without giving any examples**. Just rely on its training knowledge.
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{
+        "role": "user",
+        "content": "Translate 'Hello, how are you?' to French."
+        # No examples given — model figures it out on its own
+    }]
+)
+```
+
+---
+
+### 2. Few-Shot Prompting
+Give the LLM **a few examples** before asking your actual question. This guides the model on the expected format/style.
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{
+        "role": "user",
+        "content": """
+Classify the sentiment of these sentences:
+
+"I love this product!" → Positive
+"This is terrible." → Negative
+"It's okay I guess." → Neutral
+
+Now classify this:
+"Absolutely amazing experience!" → 
+        """
+        # Examples shown first, then the actual question
+    }]
+)
+```
+
+---
+
+### 3. Chain of Thought (CoT) Prompting
+Tell the LLM to **think step by step** before giving the final answer. This dramatically improves accuracy for complex/reasoning tasks.
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{
+        "role": "user",
+        "content": """
+Solve this step by step:
+A train travels 60 km/h for 2 hours, then 80 km/h for 3 hours.
+What is the total distance?
+        """
+        # "step by step" triggers chain-of-thought reasoning
+    }]
+)
+```
+
+**Without CoT:** Model might just guess the answer.
+**With CoT:** Model thinks through `60×2=120`, `80×3=240`, `120+240=360 km` — much more reliable.
+
+---
+
+## Quick Recap — Important Pointers
+- A **prompt** is the instruction/input you send to an LLM
+- Better prompts = dramatically better outputs (10x–20x improvement possible)
+- Three key prompting techniques to learn:
+  - **Zero-shot** — no examples, just ask directly
+  - **Few-shot** — give examples before asking
+  - **Chain of Thought** — ask it to think step by step
+- Prompting is a **core skill** for Agentic AI — pay close attention to this section
+- The same model can give completely different quality answers depending on how you prompt it
+
+> 🔑 **Bottom line:** You don't always need a bigger or better model. Often, you just need a better prompt.
+
+---
+
+## 116. Prompting Types: Zero Shot, Few Shot, One-Shot (03:53)
+
+## 🧠 Simple Concepts & Summary
+
+* A **prompt** = input you give to an AI
+* Without instructions → AI gives random/general answers
+* With **system prompt** → you can control AI behavior
+
+💡 Key idea:
+
+> **Prompting = controlling how the AI behaves**
+
+---
+
+## 📌 Important Points (Must Know)
+
+---
+
+## 1. ❌ Problem Without Prompting
+
+```python
+"Hey, who are you?"
+```
+
+👉 AI can:
+
+* Answer anything
+* Talk about any topic
+* No restriction
+
+---
+
+## 2. ✅ Solution → System Prompt
+
+👉 A **system prompt** is:
+
+> Special instruction given to AI before user input
+
+---
+
+## 🧩 Example System Prompt
+
+```text
+You are a math expert.
+Only answer math-related questions.
+```
+
+---
+
+## 🔄 How Prompting Works
+
+```text
+System Prompt (rules)
+        ↓
+User Input
+        ↓
+LLM processes both
+        ↓
+Controlled Output
+```
+
+---
+
+## 🐍 Code Example (Basic System Prompt)
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {
+            "role": "system",
+            "content": "You are a math expert. Only answer math questions."
+        },
+        {
+            "role": "user",
+            "content": "What is 2 + 2?"
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🧪 Example Behavior
+
+---
+
+## Case 1: Valid Question ✅
+
+```text
+User: What is (a + b)^2?
+```
+
+👉 Output:
+
+```text
+(a + b)^2 = a^2 + 2ab + b^2
+```
+
+---
+
+## Case 2: Invalid Question ❌
+
+```text
+User: Write Python code
+```
+
+👉 Output:
+
+```text
+Sorry, I can only answer math-related questions.
+```
+
+---
+
+## 🔐 Making Prompt More Strict
+
+```python
+{
+  "role": "system",
+  "content": """
+  You are a math expert.
+  Only answer math questions.
+  If question is not related to math, say 'Sorry'.
+  """
+}
+```
+
+---
+
+## 🧠 Key Concept: Controlling AI
+
+Without system prompt:
+
+```text
+AI = general assistant
+```
+
+With system prompt:
+
+```text
+AI = specialized assistant
+```
+
+---
+
+## 🐍 Example: Full Code with Restriction
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+messages = [
+    {
+        "role": "system",
+        "content": "You are a math expert. Only answer math questions. If not, say Sorry."
+    },
+    {
+        "role": "user",
+        "content": "Can you write a Python program?"
+    }
+]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=messages
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 💡 Why System Prompt is Important
+
+* Sets **behavior**
+* Adds **context**
+* Improves **accuracy**
+* Prevents **wrong outputs**
+
+---
+
+## ⚠️ Important Insight
+
+👉 LLM **does NOT remember rules automatically**
+
+You must:
+
+* Define behavior clearly
+* Repeat instructions properly
+
+---
+
+## 🧠 Real-Life Analogy
+
+Think of system prompt like:
+
+👨‍🏫 Giving instructions to a student
+
+* “Do anything” → random work
+* “Solve only math problems” → focused work
+
+---
+
+## 🚀 Final Takeaways
+
+* Prompt = input to AI
+* System prompt = rules for AI
+* Helps:
+
+  * Restrict behavior
+  * Improve accuracy
+  * Build specialized assistants
+
+---
+
+## 🔥 Big Picture
+
+You just learned:
+
+* Free-flow vs controlled AI
+* Importance of system prompts
+* How to restrict LLM behavior
+
+👉 This is **foundation of AI agents & real-world AI apps**
+
+---
+
+## Prompting in LLMs (Contd...)
+
+## What is a Prompt?
+
+A **prompt** is the input/instruction you give to an LLM (Large Language Model). How you structure this input directly controls the quality and relevance of the output you get back.
+
+---
+
+## The Problem with Free-Flowing Conversations
+
+By default, if you just send a user message to an LLM with no context, it will answer *anything* — math, jokes, coding, science, etc. You have **zero control** over its behavior.
+
+```python
+import google.generativeai as genai
+
+model = genai.GenerativeModel("gemini-pro")
+
+# ❌ Bad practice — no context, no restrictions
+response = model.generate_content("Hey I am Piyush, nice to meet you. Who are you?")
+print(response.text)
+# Could answer ANYTHING — jokes, science, math, code...
+```
+
+---
+
+## The Solution — System Prompt
+
+A **system prompt** is a special instruction given to the model *before* the conversation begins. It sets the background, role, and rules for the chatbot.
+
+Think of it as telling the model: *"You are X, and you should only do Y."*
+
+```python
+import google.generativeai as genai
+
+model = genai.GenerativeModel("gemini-pro")
+
+# ✅ Good practice — system prompt sets context
+messages = [
+    {
+        "role": "system",
+        "content": "You are an expert in mathematics. Only and only answer maths related questions."
+    },
+    {
+        "role": "user",
+        "content": "Hey I am Piyush, nice to meet you. Who are you?"
+    }
+]
+
+response = model.generate_content(messages)
+print(response.text)
+# Output: "Hello Piyush! I'm an AI assistant here to help you with mathematics."
+```
+
+---
+
+## Making the System Prompt More Strict
+
+You can further tighten the instructions to make the model refuse off-topic questions completely.
+
+```python
+messages = [
+    {
+        "role": "system",
+        "content": """You are an expert in mathematics. 
+                      Only answer maths related questions.
+                      If the query is NOT related to maths, just say sorry and do not answer."""
+    },
+    {
+        "role": "user",
+        "content": "Can you code a Python program that prints Hello?"  # Off-topic
+    }
+]
+
+response = model.generate_content(messages)
+print(response.text)
+# Output: "Sorry, I can only answer questions related to mathematics."
+```
+
+---
+
+## On-topic Question — Model Responds Correctly
+
+```python
+messages = [
+    {
+        "role": "system",
+        "content": "You are a maths expert. Only answer maths questions. Say sorry otherwise."
+    },
+    {
+        "role": "user",
+        "content": "Can you help me solve (A + B)²?"  # On-topic ✅
+    }
+]
+
+response = model.generate_content(messages)
+print(response.text)
+# Output: "(A + B)² = A² + 2AB + B²  — Here's the full explanation..."
+```
+
+---
+
+## Key Pointers to Remember
+
+**1. Never use an LLM without a system prompt in production.** Without it, the model is unpredictable and uncontrolled.
+
+**2. The system prompt defines the model's role.** Think of it like a job description — you tell it who it is and what it's supposed to do.
+
+**3. Be specific and strict in your instructions.** Vague prompts = vague behavior. The more precise your system prompt, the more reliable the output.
+
+**4. System prompt is the *first* message.** It uses `role: "system"` and comes before any user message in the conversation.
+
+**5. Prompt engineering matters a lot.** *How* you write the system prompt directly impacts accuracy and quality — this is a deep topic on its own (hinted at the end of the video).
+
+---
+
+## Quick Mental Model
+
+```
+System Prompt  →  Sets the rules/role of the bot
+User Message   →  What the user asks
+LLM Response   →  Answer filtered through the system prompt rules
+```
+
+The system prompt acts like a **gatekeeper** between user input and LLM output.
+
+---
+
+## 117. One Shot Prompting for Deterministic Inference (03:23)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
