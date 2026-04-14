@@ -24857,6 +24857,284 @@ Each layer makes the model's output more predictable, structured, and useful in 
 
 ## 120. Chain-of-Thought (CoT) for Reasoning (12:49)
 
+## What is Chain of Thought Prompting?
+
+Instead of asking an LLM to answer directly, you instruct it to **think step-by-step** before giving a final answer — just like how a human thinks through a problem before responding. This improves accuracy significantly.
+
+> This is the core idea behind models like DeepSeek and OpenAI's O3 — they "think before they act."
+
+---
+
+## Key Concepts
+
+### 1. The Problem with Direct Answers
+By default, LLMs go straight from input → output. For complex tasks, this leads to lower accuracy.
+
+```python
+# Without CoT — direct answer
+response = client.messages.create(
+    system="You are a helpful assistant.",
+    messages=[{"role": "user", "content": "What is 2 + 3 * 5 / 10?"}]
+)
+# LLM jumps straight to an answer — may skip steps and get it wrong
+```
+
+---
+
+### 2. Chain of Thought System Prompt
+You guide the model with a structured system prompt that forces it to plan before outputting.
+
+```python
+system_prompt = """
+You are an expert AI assistant.
+You resolve user queries using chain of thought.
+
+Steps:
+1. START — receive the user's input
+2. PLAN — think step-by-step (can repeat multiple times)
+3. OUTPUT — give final answer only after enough planning
+
+Rules:
+- Strictly follow the JSON output format
+- Only run ONE step at a time
+
+Output JSON format:
+{ "step": "start" | "plan" | "output", "content": "<string>" }
+
+Example:
+User: What is 2 + 3 * 5 / 10?
+
+{"step": "start", "content": "User wants to solve: 2 + 3 * 5 / 10"}
+{"step": "plan", "content": "This is a math problem. Apply BODMAS/PEMDAS order."}
+{"step": "plan", "content": "First multiply: 3 * 5 = 15"}
+{"step": "plan", "content": "Then divide: 15 / 10 = 1.5"}
+{"step": "plan", "content": "Now add: 2 + 1.5 = 3.5"}
+{"step": "output", "content": "3.5"}
+"""
+```
+
+---
+
+### 3. JSON Mode / Structured Output
+Force the model to always respond in JSON format using `response_format`.
+
+```python
+response = client.messages.create(
+    model="gpt-4o",
+    response_format={"type": "json_object"},  # enables JSON mode
+    system=system_prompt,
+    messages=messages
+)
+```
+
+---
+
+### 4. Message History (Stateless LLMs)
+LLMs have **no memory between calls**. Every API call is stateless — so you must send the **full conversation history** every time.
+
+```python
+import json
+
+messages = [
+    {"role": "user", "content": "Write a JS code to add N numbers"}
+]
+
+# Step 1 — get first response (start/plan)
+response = call_llm(messages)
+assistant_reply = response  # e.g. {"step": "plan", "content": "..."}
+
+# Append assistant reply to history
+messages.append({
+    "role": "assistant",
+    "content": json.dumps(assistant_reply)  # must be a string
+})
+
+# Step 2 — call again with updated history
+response = call_llm(messages)
+# ... keep looping until step == "output"
+```
+
+The history grows with every turn. The model "remembers" only what you explicitly pass back.
+
+---
+
+### 5. Automating the Thinking Loop
+In the tutorial, messages were added manually. The natural next step is to automate it:
+
+```python
+import json
+
+messages = [{"role": "user", "content": "Write a code to add N numbers in JavaScript"}]
+
+while True:
+    response = call_llm(messages)  # your API call wrapper
+    parsed = json.loads(response)
+
+    print(f"[{parsed['step'].upper()}]: {parsed['content']}")
+
+    # Append assistant response to history
+    messages.append({"role": "assistant", "content": json.dumps(parsed)})
+
+    # Stop once the model reaches the final output
+    if parsed["step"] == "output":
+        print("\nFinal Answer:", parsed["content"])
+        break
+```
+
+This loop keeps feeding the model its own previous reasoning until it decides to output the final answer.
+
+---
+
+## Summary of Important Pointers
+
+| Concept | What it means |
+|---|---|
+| Chain of Thought | Make LLM plan step-by-step before answering |
+| System Prompt Design | Use `start → plan → output` structure with examples |
+| Few-shot examples | Give the model a worked example inside the system prompt |
+| JSON mode | Forces structured, parseable output every time |
+| Stateless API | Always send full message history on every call |
+| Message history | Grows cumulatively; append each assistant reply back |
+| Automation | Loop until `"step": "output"` is returned |
+
+CoT prompting is one of the most impactful techniques for improving LLM reasoning — especially for math, coding, and multi-step logic tasks.
+
+---
+
+## 121. Auto-CoT: Automated Reasoning Prompt Generation (08:47)
+
+## Automating Chain of Thought — Summary & Notes
+
+## What's Being Solved?
+
+In the previous video, planning steps were added **manually** to the message history. This video automates the entire loop so the model keeps thinking on its own until it reaches a final output.
+
+---
+
+## The Core Idea: Message History + Infinite Loop
+
+```python
+message_history = [
+    {"role": "system", "content": SYSTEM_PROMPT}
+]
+
+user_query = input("👉 ")
+message_history.append({"role": "user", "content": user_query})
+
+while True:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        response_format={"type": "json_object"},
+        messages=message_history        # always send full history
+    )
+
+    raw_result = response.choices[0].message.content
+
+    # Append assistant's reply back into history so it remembers what it thought
+    message_history.append({"role": "assistant", "content": raw_result})
+
+    parsed_result = json.loads(raw_result)
+
+    if parsed_result.get("step") == "START":
+        print("🔥 starting:", parsed_result.get("content"))
+        continue
+
+    if parsed_result.get("step") == "PLAN":
+        print("🧠 planning:", parsed_result.get("content"))
+        continue
+
+    if parsed_result.get("step") == "OUTPUT":
+        print("🤖 output:", parsed_result.get("content"))
+        break
+```
+
+---
+
+## Key Concepts Explained
+
+### 1. Message History grows every turn
+Every call appends both the assistant's reply AND the previous messages. This is what gives the model "memory" within a session — it can see all its previous planning steps.
+
+```python
+# Turn 1 — history has: system + user
+# Turn 2 — history has: system + user + assistant(plan1)
+# Turn 3 — history has: system + user + assistant(plan1) + assistant(plan2)
+# ... and so on until OUTPUT
+```
+
+### 2. `continue` vs `break`
+- `continue` — go back to the top of the `while True` loop, call the API again
+- `break` — exit the loop once `OUTPUT` is reached
+
+```python
+if parsed_result.get("step") == "PLAN":
+    print("🧠 planning:", parsed_result.get("content"))
+    continue   # ← keeps the loop going, triggers next API call
+
+if parsed_result.get("step") == "OUTPUT":
+    print("🤖 output:", parsed_result.get("content"))
+    break      # ← stops the loop
+```
+
+### 3. `json.loads()` converts string → dict
+The API always returns a raw string. You need to parse it to access fields like `step` and `content`.
+
+```python
+raw_result = '{"step": "PLAN", "content": "Apply BODMAS"}'  # string from API
+
+parsed = json.loads(raw_result)   # converts to Python dict
+print(parsed.get("step"))         # "PLAN"
+print(parsed.get("content"))      # "Apply BODMAS"
+```
+
+---
+
+## Why Gemini Can Fail Here
+
+The instructor switched from Gemini to OpenAI mid-video because Gemini occasionally:
+- Returns a JSON **list** instead of a single object
+- Fails to decode properly mid-loop
+
+OpenAI's `gpt-4o` with `response_format={"type": "json_object"}` is more consistent for this structured output pattern. (As fixed in the previous response — always normalize with `isinstance(parsed_result, list)` if using Gemini.)
+
+---
+
+## Full Flow Diagram
+
+```
+User input
+    ↓
+Append to message_history
+    ↓
+┌──── while True ────────────────────────┐
+│  Call API with full message_history    │
+│  Append assistant reply to history     │
+│  Parse JSON response                   │
+│                                        │
+│  step == START  → print 🔥, continue  │
+│  step == PLAN   → print 🧠, continue  │
+│  step == OUTPUT → print 🤖, break ────┘
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Why it matters |
+|---|---|
+| `while True` loop | Keeps calling the LLM until it decides to output |
+| Appending to history | Gives the model context of all its previous thinking |
+| `continue` on PLAN | Triggers another round of thinking |
+| `break` on OUTPUT | Stops when thinking is complete |
+| JSON mode | Ensures parseable, structured responses every time |
+| Model choice | GPT-4o is more reliable than Gemini for strict JSON CoT |
+
+The result is a model that genuinely **reasons through problems step by step** — producing noticeably higher quality answers than a direct prompt.
+
+---
+
+## 122. Persona Based Prompting (05:22)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
