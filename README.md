@@ -25135,6 +25135,158 @@ The result is a model that genuinely **reasons through problems step by step** �
 
 ## 122. Persona Based Prompting (05:22)
 
+## Persona-Based Prompting — Concepts Summary & Notes
+
+## What is it?
+
+Persona-based prompting means instructing an AI to **act like a specific person** — mimicking their tone, personality, background, and communication style. Think of it as creating a "clone" of someone inside the AI.
+
+---
+
+## Key Concepts
+
+### 1. The System Prompt is Everything
+The entire persona is defined in the **system prompt**. You tell the AI *who it is* before the conversation even starts.
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+system_prompt = """
+You are an AI assistant named Piyush Garg.
+You are 25 years old, a tech enthusiast and principal engineer.
+Your main tech stack is JavaScript and Python.
+You are currently learning GenAI.
+You talk casually. Example: "Hey, what's up! So basically..."
+"""
+
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Hey there!"}
+]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=messages
+)
+
+print(response.choices[0].message.content)
+# Output: "Hey, what's up! How can I help you today?"
+```
+
+---
+
+### 2. Examples Are the Most Important Part
+Just describing a person isn't enough. You need **real examples** of how that person talks — their actual phrases, sentence patterns, humor, etc.
+
+```python
+system_prompt = """
+You are Rahul, a 22-year-old college student.
+Background: CS student, loves memes, uses Gen-Z slang.
+
+Here are examples of how Rahul talks:
+- "bro that's actually fire ngl"
+- "okay okay wait hear me out"
+- "nah fr that bug had me cooked for 3 hours"
+- "sheesh this library is actually bussin"
+... (add 100-150 such examples for best results)
+"""
+```
+
+The more examples, the better the impersonation. Aim for **100–150 examples** minimum.
+
+---
+
+### 3. Where to Get Examples From
+Real sources that capture how someone actually communicates:
+
+| Source | What it captures |
+|---|---|
+| WhatsApp/Telegram chat exports | Casual conversation tone |
+| LinkedIn comments | Professional tone |
+| Twitter/X replies | Short-form opinions |
+| YouTube/Instagram comments | Reaction style |
+
+---
+
+### 4. What to Include in the Persona Prompt
+
+```python
+system_prompt = """
+You are [NAME], a [AGE]-year-old [PROFESSION].
+
+## Background
+- Works at: [Company]
+- Tech stack: [Skills]
+- Currently learning: [Topic]
+- Personality: [Traits]
+
+## Communication Style
+- Always greets with "Hey, what's up"
+- Uses "basically" and "so yeah" frequently
+- Keeps answers short and practical
+
+## Examples (add 100-150)
+User: "How are you?"
+[NAME]: "All good bro, just grinding. You?"
+
+User: "What do you think of Python?"
+[NAME]: "Python is goated for AI stuff honestly"
+...
+"""
+```
+
+---
+
+## Full Working Example
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+def chat_with_persona(user_message):
+    system_prompt = """
+    You are Arjun, a 24-year-old backend developer from Bengaluru.
+    You love Python, coffee, and late-night debugging sessions.
+    
+    How you talk:
+    - "bro", "man", "dude" are your go-to words
+    - You always relate things back to code examples
+    - Example: "Yeah so basically think of it like a dictionary lookup, O(1) bro"
+    - Example: "Nah that approach won't scale, trust me I learned the hard way"
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message}
+        ]
+    )
+    return response.choices[0].message.content
+
+print(chat_with_persona("Who are you?"))
+# "Hey! I'm Arjun, backend dev from Bengaluru. basically just a guy who talks to APIs all day lol"
+```
+
+---
+
+## Key Takeaways
+
+- The **system role** sets the entire personality before conversation starts
+- A persona has 3 parts: **background info + communication style + real examples**
+- Quality of output is **directly proportional to quality and quantity of examples**
+- Real chat histories (WhatsApp exports, social media comments) are the best source material
+- Use cases: customer support bots in a brand's voice, digital twins, study companions, etc.
+
+---
+
+## Sec 17 - Prompt Serialization & Instruction Formats
+
+## 123. Introduction to Prompt Serialization Styles (2:00)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
