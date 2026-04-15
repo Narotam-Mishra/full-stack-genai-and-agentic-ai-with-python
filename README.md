@@ -25961,6 +25961,631 @@ Solve: 2x + 5 = 15 [/INST]
 
 ## 127. Ollama Overview: Local LLM Runtime Engine (02:24)
 
+## Online vs Offline AI Models
+
+### 🧠 Two Types of LLMs
+
+## ❌ 1. Closed Source Models (Online Only)
+
+Examples:
+
+* GPT-4 / GPT-4o (OpenAI)
+* Gemini (Google)
+
+### 🔴 Key Points:
+
+* Owned by companies (proprietary)
+* Cannot download or run locally
+* Must use APIs
+* Paid (based on tokens)
+
+### Example (API usage):
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+👉 Here:
+
+* Request goes to OpenAI servers
+* You are charged 💰
+
+---
+
+## ✅ 2. Open Source Models (Offline Possible)
+
+Examples:
+
+* DeepSeek
+* Qwen (Alibaba)
+* Gemma (Google)
+* LLaMA (Meta)
+
+---
+
+### 🟢 Key Points:
+
+* Free to use
+* Can run locally (offline)
+* No API cost
+* Full control over data
+
+---
+
+## 🧠 2. Why Run Models Locally?
+
+### 🔐 1. Privacy & Security
+
+* Data stays on your machine
+* No third-party sharing
+
+👉 Example:
+
+* Banks 🏦
+* Healthcare 🏥
+* Enterprise apps
+
+---
+
+### 💸 2. Cost Saving
+
+* No API charges
+* One-time hardware cost
+
+---
+
+### ⚡ 3. Customization
+
+* Fine-tune models
+* Modify behavior
+
+---
+
+## ⚠️ 3. Trade-Offs of Local Models
+
+### ❗ Hardware Requirement
+
+Running LLM locally needs:
+
+* Good CPU
+* GPU (preferred)
+* High RAM
+
+---
+
+### Example:
+
+| Model Size    | Requirement     |
+| ------------- | --------------- |
+| Small (3B–7B) | Laptop possible |
+| Medium (13B)  | Good GPU        |
+| Large (70B+)  | High-end server |
+
+---
+
+## 🛠️ 4. How to Run Models Locally?
+
+### ✅ Tool: Ollama (Main Tool)
+
+👉 Ollama helps you:
+
+* Download models
+* Run them locally
+* Use simple commands
+
+---
+
+### ✅ Tool: Docker (Optional but recommended)
+
+👉 Why Docker?
+
+* Clean environment
+* Easy setup
+* No dependency issues
+
+---
+
+## 🔧 5. Basic Ollama Usage (Concept)
+
+### Step 1: Install Ollama
+
+```bash
+brew install ollama   # Mac
+```
+
+---
+
+### Step 2: Run a Model
+
+```bash
+ollama run llama3
+```
+
+---
+
+### Step 3: Chat with Model
+
+```bash
+>>> Hello
+Hi! How can I help you?
+```
+
+---
+
+## 🧪 6. Using Local Model in Python
+
+Ollama provides API locally:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:11434/api/generate",
+    json={
+        "model": "llama3",
+        "prompt": "Explain AI"
+    }
+)
+
+print(response.json())
+```
+
+---
+
+## 🐳 7. Docker + Ollama (Concept)
+
+Instead of installing directly:
+
+```bash
+docker run -d -p 11434:11434 ollama/ollama
+```
+
+👉 Benefits:
+
+* No system pollution
+* Easy to manage
+
+---
+
+## 🔄 8. When to Use What?
+
+| Use Case           | Best Option     |
+| ------------------ | --------------- |
+| Quick testing      | OpenAI / Gemini |
+| Production (scale) | OpenAI          |
+| Sensitive data     | Local models    |
+| Cost saving        | Local models    |
+| Learning           | Both            |
+
+---
+
+## ⚡ 9. Key Takeaways
+
+### 🔥 1. Closed models = powerful but paid
+
+* GPT, Gemini
+
+---
+
+### 🔥 2. Open models = free but heavy
+
+* DeepSeek, LLaMA, Qwen
+
+---
+
+### 🔥 3. Ollama = easiest way to run locally
+
+---
+
+### 🔥 4. Local models = privacy + control
+
+---
+
+### 🔥 5. Trade-off = hardware vs cost
+
+---
+
+## 🧠 Final Understanding
+
+👉 Think like this:
+
+* **OpenAI/Gemini** → Rent AI (pay per use)
+* **Ollama + Open models** → Own AI (run yourself)
+
+---
+
+## 128. Dockerized Environment Setup for LLMs (04:03)
+
+## Docker Fundamentals – Summary & Notes
+
+## What is Docker?
+
+Docker is a **container management tool** that lets you run software (like Ollama) in isolated, self-contained environments called **containers** — without doing a full installation on your machine.
+
+---
+
+## Why Docker over Direct Installation?
+
+| Direct Install | Docker |
+|---|---|
+| Platform-specific (Windows/Mac/Linux versions) | Platform agnostic — same steps everywhere |
+| Bloats your machine | Clean, isolated, easy to remove |
+| Hard to replicate on a server | Same setup works locally AND on production servers |
+
+---
+
+## Key Concepts
+
+### 1. Docker Image
+A **read-only template** used to create containers. Think of it like a blueprint or a recipe.
+
+```bash
+# Pull an image from Docker Hub (like downloading a blueprint)
+docker pull busybox
+```
+
+### 2. Docker Container
+A **running instance** of an image. Like a live kitchen running from the recipe.
+
+```bash
+# Run a container from the busybox image and execute 'ls' inside it
+docker run busybox ls
+```
+
+### 3. Docker Hub
+A public **registry/store** where Docker images are hosted. When you do `docker pull`, it fetches from here.
+
+---
+
+## Important Commands
+
+```bash
+# Check if Docker is installed correctly
+docker
+
+# Check Docker version
+docker --version
+
+# Pull an image
+docker pull busybox
+
+# Run a container and execute a command inside it
+docker run busybox ls
+
+# List all running containers
+docker container ps
+# or
+docker ps
+
+# Remove a container (use container ID or name)
+docker container rm <container_id>
+```
+
+---
+
+## How It Connects to This Course
+
+The instructor will run **Ollama** (a local LLM runner) as a Docker container instead of installing it natively. This means:
+- Same setup steps work on Mac, Linux, and Windows
+- You also learn how to deploy Ollama on a server later — same Docker knowledge applies
+
+---
+
+## Quick Mental Model
+
+```
+Docker Hub (online store)
+     ↓  docker pull
+Docker Image (blueprint on your machine)
+     ↓  docker run
+Docker Container (live, running process)
+     ↓  docker container rm
+Removed cleanly, no mess left behind
+```
+
+**Bottom line:** Docker lets you run tools like Ollama in a clean, portable box on your machine — no messy installations, works the same everywhere.
+
+---
+
+## 129. Running Ollama Models with Docker Runner (03:15)
+
+## Running Ollama in Docker – Summary & Notes
+
+## What is Ollama?
+
+**Ollama** is a tool that lets you run LLMs (Large Language Models) **locally on your machine**. It now has an official Docker image, so you can run it as a container instead of installing it natively.
+
+---
+
+## The Full Docker Command to Run Ollama
+
+```bash
+docker run -d \
+  -v ollama:/root/.ollama \
+  -p 11434:11434 \
+  --name ollama \
+  ollama/ollama
+```
+
+Let's break down each part:
+
+### `-d` → Detached Mode
+Runs the container **in the background** so your terminal isn't blocked.
+
+```bash
+# Without -d: terminal is locked, you see live logs
+docker run ollama/ollama
+
+# With -d: runs in background, returns a container ID
+docker run -d ollama/ollama
+```
+
+### `-v ollama:/root/.ollama` → Volume Mount
+**Persists data** (downloaded models) so they survive container restarts. Without this, every restart re-downloads everything.
+
+```bash
+# General syntax
+-v <volume_name>:<path_inside_container>
+
+# Think of it like a shared folder between your machine and the container
+```
+
+### `-p 11434:11434` → Port Mapping
+Exposes the container's internal port to your machine so you can actually talk to Ollama.
+
+```bash
+# General syntax
+-p <your_machine_port>:<container_port>
+
+# After this, you can reach Ollama at:
+# http://localhost:11434
+```
+
+### `--name ollama` → Container Name
+Gives the container a friendly name instead of a random ID.
+
+```bash
+# Without name: container gets random name like "happy_einstein"
+# With name: you can reference it easily
+docker stop ollama
+docker restart ollama
+```
+
+---
+
+## Step-by-Step Flow
+
+```
+1. Run the docker run command
+        ↓
+2. Docker pulls ollama/ollama image from hub.docker.com (~2GB)
+        ↓
+3. Image is extracted and container starts
+        ↓
+4. Ollama engine runs in background on port 11434
+        ↓
+5. Check Docker Desktop → see container running (e.g. ID: 561...)
+```
+
+---
+
+## Verify It's Running
+
+```bash
+# See all running containers
+docker ps
+
+# Expected output:
+# CONTAINER ID   IMAGE           PORTS                      NAMES
+# 561abc...      ollama/ollama   0.0.0.0:11434->11434/tcp   ollama
+```
+
+---
+
+## Important Disclaimer ⚠️
+
+Running LLMs locally is **hardware-intensive**. Ollama uses significant CPU and GPU. You need a reasonably powerful machine for smooth performance.
+
+---
+
+## What's Missing — Open Web UI
+
+Right now Ollama is just an **engine running in the background**. You can't chat with it directly. That's where **Open Web UI** comes in — it's a frontend/UI layer that sits on top of Ollama so you can interact with models visually (like ChatGPT's interface).
+
+```
+[Open Web UI]  ←→  [Ollama Container on port 11434]  ←→  [LLM Models]
+  (Frontend)              (Backend Engine)                (e.g. LLaMA, Mistral)
+```
+
+This will be covered in the next video.
+
+---
+
+## Quick Cheat Sheet
+
+| Concept | What it does |
+|---|---|
+| `docker run -d` | Run container in background |
+| `-v` | Mount volume to persist model data |
+| `-p 11434:11434` | Expose port so you can access Ollama |
+| `--name ollama` | Give container a readable name |
+| `ollama/ollama` | The official Ollama Docker image |
+| Open Web UI | UI layer to chat with Ollama models |
+
+---
+
+## 130. Configuring OpenWebUI with Ollama Backend (07:24)
+
+## Open Web UI Setup with Ollama – Summary & Notes
+
+## What is Open Web UI?
+
+**Open Web UI** is a ChatGPT-like frontend interface that sits on top of your locally running Ollama engine. It gives you a clean chat UI to interact with your local LLMs.
+
+
+```
+[You] → [Open Web UI :3000] → [Ollama Engine :11434] → [LLM Model e.g. Gemma]
+```
+
+- [OpenWebUI Docker](https://docs.openwebui.com/getting-started/)
+
+---
+
+## Step 1 – Run Open Web UI Container
+
+```bash
+docker run -d \
+  -p 3000:8080 \
+  -v open-webui:/app/backend/data \
+  --name open-webui \
+  ghcr.io/open-webui/open-webui:main
+```
+
+Then open your browser at:
+```
+http://localhost:3000
+```
+
+---
+
+## Step 2 – Create Admin Account
+
+On first launch you'll see a signup screen. Fill in:
+- Full name
+- Email
+- Password
+
+This creates your **local admin account** (no internet signup needed).
+
+---
+
+## Step 3 – Verify Ollama Connection
+
+Go to: **Admin Panel → Settings → Connections**
+
+You'll see:
+```
+Manage Ollama API connections → http://localhost:11434  ✅
+```
+
+Open Web UI **auto-detects** your running Ollama container. No manual config needed.
+
+---
+
+## Step 4 – Pull a Model
+
+Ollama runs the engine but ships with **no models by default**. You need to pull one.
+
+### Find a model at ollama.com/models
+
+| Model | Size | Good for |
+|---|---|---|
+| gemma:2b | ~2GB | Low-end machines |
+| gemma:7b | ~5GB | Mid-range machines |
+| llama3 | ~4.7GB | General use |
+| mistral | ~4.1GB | Fast responses |
+
+### Pull via Open Web UI
+
+**Admin Panel → Settings → Models → type model name → click Download**
+
+```
+gemma:2b   ← paste this tag and hit download
+```
+
+Or pull directly via terminal:
+```bash
+# Execute command inside the running Ollama container
+docker exec -it ollama ollama pull gemma:2b
+```
+
+---
+
+## Step 5 – Start Chatting
+
+Once the model downloads (100% ✅), go back to the chat screen:
+- Select model from dropdown (e.g. `gemma:2b`)
+- Type your message and hit Enter
+
+```
+You:     Hey there, who are you?
+Gemma:   I'm a large language model trained by Google...
+```
+
+---
+
+## Important: Hardware Warning ⚠️
+
+Running LLMs locally is **very CPU/GPU intensive**. The instructor's CPU spiked to **1429%** during inference and dropped back to **0%** when idle.
+
+```
+Idle state:      CPU ~0%
+During response: CPU ~1400%+ (all cores working)
+After response:  CPU drops back to ~0%
+```
+
+**Recommendation:** Use smaller models (2b parameters) on regular laptops. Larger models need dedicated GPUs.
+
+---
+
+## Full Architecture Picture
+
+```
+Browser (localhost:3000)
+        ↓
+Open Web UI Container (port 3000→8080)
+        ↓  talks to
+Ollama Container (port 11434)
+        ↓  loads
+Model File (e.g. gemma:2b, stored in Docker volume)
+        ↓  runs on
+Your CPU/GPU
+```
+
+---
+
+## Quick Command Cheat Sheet
+
+```bash
+# Check both containers are running
+docker ps
+
+# Pull a model directly via terminal
+docker exec -it ollama ollama pull gemma:2b
+
+# List all downloaded models
+docker exec -it ollama ollama list
+
+# Check container resource usage (CPU/RAM)
+docker stats
+```
+
+---
+
+## Key Takeaways
+
+| Concept | What it means |
+|---|---|
+| Open Web UI | ChatGPT-like UI for your local Ollama |
+| Ollama | The engine that runs LLM models |
+| Port 3000 | Where you access the UI in browser |
+| Port 11434 | Where Ollama engine listens |
+| Model tag (e.g. `gemma:2b`) | Identifier to pull a specific model |
+| Docker volume | Persists downloaded models across restarts |
+
+---
+
+## 131. FastAPI Environment Setup & Dependencies (04:01)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
