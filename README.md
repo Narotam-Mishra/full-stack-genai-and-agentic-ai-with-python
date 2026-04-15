@@ -25700,6 +25700,133 @@ x = 5
 
 ## 125. ChatML Schema: OpenAI's Structured Prompt Format (01:30)
 
+## ChatML Prompting — Summary & Notes
+
+This section formally names and explains the format you've already been using throughout the course.
+
+---
+
+### What is ChatML?
+
+**ChatML** (Chat Markup Language) is the prompt style used by **OpenAI, Gemini, and Claude**. It structures conversations as a **list of message objects**, where each object has two keys: `role` and `content`.
+
+---
+
+### The Three Roles
+
+| Role | Purpose | Example Content |
+|---|---|---|
+| `system` | Sets AI behavior/persona | "You are a helpful assistant" |
+| `user` | The human's message | "Write a function to add N numbers" |
+| `assistant` | The AI's response | "Sure! Here is the code..." |
+
+---
+
+### The ChatML Template
+
+```python
+messages = [
+    {"role": "system",    "content": "your system prompt goes here"},
+    {"role": "user",      "content": "user's question goes here"},
+    {"role": "assistant", "content": "AI's response goes here"}  # used in multi-turn
+]
+```
+
+---
+
+### Code Examples
+
+**Basic single-turn call (system + user only):**
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "You are a chai expert who explains things simply."},
+        {"role": "user",   "content": "What is the best way to brew masala chai?"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+**Multi-turn conversation (includes `assistant` role):**
+
+The `assistant` role is used to pass **previous responses back** into the next call, so the model remembers the conversation history:
+
+```python
+messages = [
+    {"role": "system",    "content": "You are a chai expert."},
+    {"role": "user",      "content": "What spices go in masala chai?"},
+    {"role": "assistant", "content": "Ginger, cardamom, cinnamon, cloves, and black pepper."},
+    {"role": "user",      "content": "Which one adds the most heat?"}  # follow-up
+]
+```
+
+Claude has no built-in memory between calls — you manually reconstruct the full conversation by appending each exchange to the `messages` list and resending it.
+
+---
+
+**Persona-based system prompt example:**
+```python
+messages = [
+    {
+        "role": "system",
+        "content": "You are an expert JavaScript developer. \
+                    Always explain with code examples. \
+                    Keep answers concise."
+    },
+    {
+        "role": "user",
+        "content": "Write a function to add N numbers in JavaScript."
+    }
+]
+```
+
+---
+
+### How ChatML Compares to ALPACA
+
+```
+# ChatML (what you use with OpenAI/Claude/Gemini)
+messages = [
+    {"role": "system", "content": "You are a math expert."},
+    {"role": "user",   "content": "Solve: 2x + 5 = 15"}
+]
+
+# ALPACA (what open-source/LLaMA models use)
+### Instruction:
+You are a math expert.
+
+### Input:
+Solve: 2x + 5 = 15
+
+### Response:
+
+```
+
+Same intent, completely different format — the model needs to be trained on the format it receives.
+
+---
+
+### Key Takeaways
+
+**ChatML is the industry standard** for all major commercial LLM APIs today. Everything you've built in this course uses ChatML.
+
+**`system` and `user` are the two roles you use most.** The `assistant` role only becomes necessary when building multi-turn chat applications where you need to pass conversation history back to the model.
+
+**Each message is just a Python dict** with two keys — `role` and `content`. Nothing more complex than that.
+
+**The `content` is always a string** for basic use cases. (For advanced use cases like vision models, it can be a list containing image + text objects, but that's a separate topic.)
+
+---
+
+## 126. INST Format: LLaMA-2 Instruction Specification (01:54)
 
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
