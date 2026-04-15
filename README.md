@@ -21458,7 +21458,7 @@ Think of a 2D graph. Each word gets plotted as a point. Words with similar meani
 - "Eiffel Tower" and "India Gate" → close (both 
 tourist monuments)
 
-![alt text](image.png)
+![alt text](./notes/words_as_points_in_space.png)
 
 The arrows show something powerful: the *direction* from Paris → Eiffel Tower is the **same direction** as India → India Gate. This means the model learned "country → famous monument" as a relationship — without being told explicitly!
 
@@ -25286,6 +25286,421 @@ print(chat_with_persona("Who are you?"))
 ## Sec 17 - Prompt Serialization & Instruction Formats
 
 ## 123. Introduction to Prompt Serialization Styles (2:00)
+
+## 🧠 What are Prompt Styles?
+
+👉 **Prompt styles = Different ways to format instructions for LLMs**
+
+You already learned:
+
+* Zero-shot prompting
+* Few-shot prompting
+* Chain-of-thought
+* Persona prompting
+
+⚠️ Those are **types of prompting (what you say)**
+✅ Prompt styles are **how you format what you say**
+
+---
+
+## ⚡ Core Idea
+
+LLMs don’t just need *instructions* — they also need them in a **specific structure**
+
+👉 Example (current standard style):
+
+```python id="v9k3fa"
+messages = [
+    {"role": "system", "content": "You are a helpful assistant"},
+    {"role": "user", "content": "Hello"}
+]
+```
+
+---
+
+## 📌 Key Components of Prompt Style
+
+## 1. Messages Array
+
+👉 You send a **list of messages**
+
+```python id="f5d1yt"
+messages = [ ... ]
+```
+
+---
+
+## 2. Role
+
+Defines **who is speaking**
+
+* `"system"` → instructions/background
+* `"user"` → user input
+* `"assistant"` → AI response (optional in history)
+
+---
+
+## 3. Content
+
+👉 The actual text/message
+
+```python id="3a7h1x"
+{"role": "user", "content": "Explain AI"}
+```
+
+---
+
+## 🧩 Example (Full Flow)
+
+```python id="0gq9y7"
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a math expert"},
+        {"role": "user", "content": "Solve 2 + 2"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🔍 Why Prompt Style Matters?
+
+Because LLM needs:
+
+* Context
+* Structure
+* Clear separation of roles
+
+👉 Without structure:
+
+* Output becomes inconsistent
+* Hard to control behavior
+
+👉 With structure:
+
+* Better accuracy
+* Better control
+* More predictable responses
+
+---
+
+## 📚 Types of Prompt Styles (Mentioned)
+
+This section introduces **different formatting styles**
+
+---
+
+## 1. ChatML Prompting (Most Common ✅)
+
+👉 Used by:
+
+* OpenAI
+* Gemini
+* Claude
+
+Format:
+
+```python id="9vx2qp"
+[
+  {"role": "system", "content": "..."},
+  {"role": "user", "content": "..."}
+]
+```
+
+✔️ This is what you're currently using
+
+---
+
+## 2. Instruct Prompting
+
+👉 Simple instruction-based style
+
+### Example:
+
+```text id="s0n5cd"
+Translate this sentence to Hindi: Hello world
+```
+
+✔️ No roles, just direct instruction
+
+---
+
+## 3. Alpaca Prompting
+
+👉 Used in fine-tuned models (like Alpaca)
+
+### Format:
+
+```text id="ztu9ru"
+### Instruction:
+Explain AI
+
+### Response:
+AI is...
+```
+
+✔️ Structured but simpler than ChatML
+
+---
+
+## ⚖️ Comparison
+
+| Style    | Structure | Use Case          |
+| -------- | --------- | ----------------- |
+| ChatML   | High      | Modern APIs       |
+| Instruct | Low       | Simple tasks      |
+| Alpaca   | Medium    | Fine-tuned models |
+
+---
+
+## 🧠 Key Takeaways
+
+* Prompt **type ≠ prompt style**
+* Style = **format of input**
+* Modern APIs mostly use:
+  👉 **ChatML (messages + roles)**
+
+---
+
+## 🚀 Best Practice (Very Important)
+
+👉 Always use structured prompts like:
+
+```python id="1zv8yy"
+messages = [
+    {"role": "system", "content": "Define behavior"},
+    {"role": "user", "content": "Ask question"}
+]
+```
+
+---
+
+## 🔥 Real Insight
+
+* Prompt types (few-shot, CoT) improve **thinking**
+* Prompt styles improve **communication format**
+
+👉 Both together = powerful AI apps
+
+---
+
+## 🧾 Final Summary
+
+* Prompt styles = **how you send prompts**
+* Current standard = **messages + roles**
+* Other styles exist (Alpaca, Instruct)
+* Structure improves:
+
+  * Control
+  * Accuracy
+  * Reliability
+
+---
+
+## Prompt Styles - Key Concepts & Summary (Contd...)
+
+This section is about **Prompt Styles** — specifically, *how* you format and pass instructions to an LLM (not just *what* you say). There are three styles covered: **ChatML**, **ALPACA**, and **Instruct prompting**.
+
+## Key Concepts
+
+### 1. Prompt Types vs Prompt Styles
+
+These are two different things:
+
+- **Prompt types** = *what kind of instruction* you give (zero-shot, few-shot, chain-of-thought, persona-based)
+- **Prompt styles** = *how you format and deliver* the instruction to the model
+
+---
+
+### 2. The Message Array Format (ChatML Style)
+
+This is the style used today by OpenAI, Gemini, and Claude. You pass an **array of message objects**, each with a `role` and `content` key.
+
+```python
+messages = [
+    {"role": "system", "content": "You are a helpful tea expert."},
+    {"role": "user",   "content": "What is the best chai recipe?"}
+]
+```
+
+- `system` → sets the model's behavior/persona
+- `user` → represents the human's input
+- `assistant` → represents the model's response (used in multi-turn chats)
+
+This format is called **ChatML** (Chat Markup Language).
+
+---
+
+### 3. ALPACA Prompting Style
+
+ALPACA is an older format, originally used to fine-tune smaller open-source models. It uses plain text with labeled sections.
+
+```
+### Instruction:
+Tell me how to brew masala chai.
+
+### Input:
+(optional extra context here)
+
+### Response:
+```
+
+The model is trained to complete after `### Response:`. There's no `role` concept — it's all just structured plain text.
+
+---
+
+### 4. Instruct Prompting Style
+
+Used by models like GPT-3's `text-davinci-003` or older instruct-tuned models. Even simpler — just a plain English directive followed by a completion.
+
+```
+Translate the following English text to French:
+
+"I love drinking chai in the morning."
+```
+
+No roles, no sections — just a direct instruction and the model fills in the rest.
+
+---
+
+### 5. Why This Matters
+
+Different LLMs are trained on different prompt styles. If you use the wrong format with a model, it may not follow your instructions properly. Here's a quick comparison:---
+
+## Quick Summary of Key Takeaways
+
+**ChatML is the standard today.** If you're using OpenAI, Claude, or Gemini APIs, you're using ChatML — the `messages` array with `role` and `content` keys.
+
+**ALPACA and Instruct are older styles** primarily associated with fine-tuning open-source models. You won't use them directly when calling modern LLM APIs, but you may encounter them when working with HuggingFace models or reading older research.
+
+**This is a bonus/awareness section.** The instructor is giving you context so you understand *why* the message format looks the way it does — and so you're not confused if you come across `### Instruction:` style prompts in tutorials or model cards.
+
+The core insight is: **the format you use to communicate with an LLM is itself a design decision** — and different models expect different formats based on how they were trained.
+
+---
+
+## 124. Alpaca Prompt Template for Instruction Tuning (02:49)
+
+## ALPACA Prompting — Summary & Notes
+
+This section does a deep dive into **ALPACA prompting style** with live examples using ChatGPT to convert prompts.
+
+---
+
+### What is ALPACA Prompting?
+
+ALPACA is a prompt format developed for **Meta's LLaMA-based models** (open-source). Instead of a `role`/`content` JSON structure, everything is written as **plain text with labeled sections using `###`**.
+
+The model is trained to *complete* the text starting right after `### Response:` — that's the key mechanism.
+
+---
+
+### The ALPACA Template
+
+```
+### Instruction:
+<your system prompt goes here>
+
+### Input:
+<the user's query goes here>
+
+### Response:
+
+```
+
+- `### Instruction:` → equivalent to the **system prompt** (who the AI is, what its job is)
+- `### Input:` → equivalent to the **user message** (what the user is asking)
+- `### Response:` → left **blank** — the model predicts/generates from here onwards
+
+---
+
+### Conversion Examples from the Transcript
+
+**Example 1 — Simple code request:**
+
+ChatML (OpenAI/Claude style):
+```python
+messages = [
+    {"role": "user", "content": "Write a code to add N numbers"}
+]
+```
+
+Same thing in ALPACA style:
+```
+### Instruction:
+Write a code to add N numbers
+
+### Response:
+
+```
+
+---
+
+**Example 2 — Chain of Thought with system prompt:**
+
+ChatML style:
+```python
+messages = [
+    {"role": "system", "content": "You are an AI expert assistant. Your task is to solve problems step by step."},
+    {"role": "user", "content": "Write a code to add N numbers in JavaScript"}
+]
+```
+
+Same thing in ALPACA style:
+```
+### Instruction:
+You are an AI expert assistant. Your task is to solve problems step by step.
+
+### Input:
+Write a code to add N numbers in JavaScript
+
+### Response:
+
+```
+
+Notice how the **system prompt content** goes into `### Instruction:` and the **user query** goes into `### Input:`.
+
+---
+
+### How the Model Uses This Format
+
+When you pass an ALPACA-formatted prompt to a model trained on this style, the model treats everything up to `### Response:` as context, and then **predicts the next tokens** to fill in the response — just like autocomplete, but for instructions.
+
+```
+### Instruction:         ← model reads this as "what I need to do"
+You are a math expert.
+
+### Input:               ← model reads this as "the specific task"
+Solve: 2x + 5 = 15
+
+### Response:            ← model starts generating HERE
+x = 5
+```
+
+---
+
+### Key Takeaways
+
+**ALPACA is not used with OpenAI/Claude/Gemini APIs.** Those use the ChatML (`messages` array) format. ALPACA is relevant when working with open-source models on HuggingFace, or local models like LLaMA, Mistral fine-tunes, etc.
+
+**The `### Response:` is always left empty** when you're sending the prompt — the model fills it in.
+
+**The `### Input:` section is optional.** If there's no separate user query (the instruction is self-contained), you can skip it and just use `### Instruction:` + `### Response:`.
+
+**This is good-to-know context**, not something you'll use daily with modern APIs — but important if you ever fine-tune a model or work with open-source LLMs that follow this convention.
+
+---
+
+## 125. ChatML Schema: OpenAI's Structured Prompt Format (01:30)
+
+
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
