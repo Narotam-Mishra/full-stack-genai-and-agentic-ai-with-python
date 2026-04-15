@@ -25574,6 +25574,8 @@ No roles, no sections — just a direct instruction and the model fills in the r
 
 Different LLMs are trained on different prompt styles. If you use the wrong format with a model, it may not follow your instructions properly. Here's a quick comparison:---
 
+![alt text](./notes/prompts_styles_comp_image.png)
+
 ## Quick Summary of Key Takeaways
 
 **ChatML is the standard today.** If you're using OpenAI, Claude, or Gemini APIs, you're using ChatML — the `messages` array with `role` and `content` keys.
@@ -25947,6 +25949,7 @@ Solve: 2x + 5 = 15 [/INST]
 
 **You will use ChatML 99% of the time** in real projects. ALPACA and INST are good-to-know context for when you read research papers, work with HuggingFace models, or encounter older fine-tuned models.
 
+---
 
 ### Final Comparison of All Three Prompt StylesThe entire **Prompt Styles section is now complete**. The core message the instructor is leaving you with: understand all three formats for context, but **master ChatML** — it's what you'll use every single day building with LangChain, LangGraph, and modern LLM APIs.
 
