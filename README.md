@@ -26586,6 +26586,578 @@ docker stats
 
 ## 131. FastAPI Environment Setup & Dependencies (04:01)
 
+## 🔹 Big Idea
+
+Till now:
+
+* You ran LLM locally using **Ollama**
+
+👉 Now next step:
+
+> Expose your local AI as a **REST API** using **FastAPI**
+
+So others can use it like:
+
+```http
+GET /ask?q=Hello
+```
+
+---
+
+## ⚡ 1. What is FastAPI?
+
+## 🔹 Definition
+
+> FastAPI = A modern Python framework to build APIs quickly
+
+---
+
+## 🔹 Why FastAPI?
+
+* ⚡ Very fast (async support)
+* 🧠 Easy to write
+* 📄 Auto documentation (Swagger UI)
+* 🔒 Type safety
+
+---
+
+## 🛠️ 2. Installation
+
+## 🔹 Install FastAPI
+
+```bash
+pip install fastapi[standard]
+```
+
+## 🔹 Save dependencies
+
+```bash
+pip freeze > requirements.txt
+```
+
+---
+
+## 📁 3. Project Setup
+
+```
+ollama-fastapi/
+ ├── server.py
+ └── requirements.txt
+```
+
+---
+
+## 🧠 4. Basic FastAPI Server
+
+## 🔹 Code Example
+
+```python
+from fastapi import FastAPI
+
+# Create app
+app = FastAPI()
+
+# Root route
+@app.get("/")
+def home():
+    return {"hello": "world"}
+```
+
+---
+
+## 🔹 Run Server
+
+```bash
+fastapi dev server.py
+```
+
+---
+
+## 🔹 Open in Browser
+
+```
+http://localhost:8000
+```
+
+👉 Output:
+
+```json
+{
+  "hello": "world"
+}
+```
+
+---
+
+## 🔁 5. Creating Multiple Routes
+
+## 🔹 Example
+
+```python
+@app.get("/contact-us")
+def contact():
+    return {"email": "piyushgarg.devmail.com"}
+```
+
+---
+
+## 🔹 Access
+
+```
+http://localhost:8000/contact-us
+```
+
+👉 Output:
+
+```json
+{
+  "email": "piyushgarg.devmail.com"
+}
+```
+
+---
+
+## 🧠 Key Concept: API Routes
+
+## 🔹 What is a Route?
+
+> A route = URL endpoint
+
+Example:
+
+* `/` → homepage
+* `/contact-us` → contact API
+
+---
+
+## 🔥 Important Concepts Explained
+
+---
+
+## ✅ 1. FastAPI App Instance
+
+```python
+app = FastAPI()
+```
+
+👉 This creates your API server
+
+---
+
+## ✅ 2. Decorators (`@app.get`)
+
+```python
+@app.get("/")
+```
+
+👉 Means:
+
+> When someone sends GET request to `/`, run this function
+
+---
+
+## ✅ 3. JSON Response
+
+```python
+return {"hello": "world"}
+```
+
+👉 FastAPI automatically converts this to JSON
+
+---
+
+## ✅ 4. Server Execution
+
+```bash
+fastapi dev server.py
+```
+
+👉 Starts:
+
+* Server on port 8000
+* Uses Uvicorn internally
+
+---
+
+## ⚡ 6. What You Achieved
+
+You built:
+✔️ A working backend server
+✔️ API endpoints
+✔️ JSON responses
+
+---
+
+## 🔗 7. Next Step (Important)
+
+👉 In next step, you will:
+
+* Connect FastAPI → Ollama
+* Create endpoint like:
+
+```http
+POST /ask
+```
+
+👉 That returns:
+
+```json
+{
+  "response": "AI answer"
+}
+```
+
+---
+
+## 💻 Mini Full Example
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def home():
+    return {"message": "API is running"}
+
+@app.get("/contact-us")
+def contact():
+    return {"email": "example@mail.com"}
+```
+
+---
+
+## 🧠 Final Summary (Super Simple)
+
+* FastAPI = Tool to build APIs in Python
+* You created:
+
+  * Server
+  * Routes
+  * JSON responses
+* Now you are ready to:
+  👉 Connect your **local AI (Ollama) to APIs**
+
+---
+
+## 🎯 Real-World Use Case
+
+After next step, you can build:
+
+* 🤖 ChatGPT clone backend
+* 🧠 AI SaaS APIs
+* 📱 Mobile app AI backend
+* 🌐 Public AI endpoints
+
+- [FastAPI](https://fastapi.tiangolo.com/)
+
+---
+
+## 132. Integrating Ollama with FastAPI & Python APIs (06:19)
+
+## 🚀 FastAPI + Ollama (Build Your Own AI REST API)
+
+## 🔹 Big Idea
+
+You already:
+
+* Ran LLM locally using **Ollama**
+* Built API using **FastAPI**
+
+👉 Now combining both:
+
+> Build your **own AI API** that talks to local models
+
+---
+
+## ⚡ 1. Goal of This Setup
+
+```text
+User → FastAPI → Ollama → Model → Response → User
+```
+
+👉 Instead of UI (Open WebUI), now:
+
+* You interact using **REST APIs**
+
+---
+
+## 🛠️ 2. Install Ollama Python SDK
+
+## 🔹 Install
+
+```bash
+pip install ollama
+```
+
+## 🔹 Save dependencies
+
+```bash
+pip freeze > requirements.txt
+```
+
+---
+
+## 🧠 3. Create Ollama Client
+
+## 🔹 Code
+
+```python
+from ollama import Client
+
+client = Client(
+    host="http://localhost:11434"
+)
+```
+
+---
+
+## 🔹 Important Concept
+
+* `11434` = default Ollama port
+* This connects FastAPI → Ollama container
+
+---
+
+## ⚡ 4. Create Chat API Route
+
+## 🔹 Full Example
+
+```python
+from fastapi import FastAPI, Body
+from ollama import Client
+
+app = FastAPI()
+
+client = Client(host="http://localhost:11434")
+
+@app.post("/chat")
+def chat(message: str = Body(..., description="User message")):
+    
+    response = client.chat(
+        model="gemma:2b",   # your downloaded model
+        messages=[
+            {
+                "role": "user",
+                "content": message
+            }
+        ]
+    )
+
+    return {
+        "response": response["message"]["content"]
+    }
+```
+
+---
+
+## 🧠 Key Concepts Explained
+
+---
+
+## ✅ 1. POST Route
+
+```python
+@app.post("/chat")
+```
+
+👉 Used when:
+
+* Sending data (message)
+* Not just fetching
+
+---
+
+## ✅ 2. Request Body
+
+```python
+message: str = Body(...)
+```
+
+👉 Means:
+
+* Input comes from request body
+* Required field
+
+---
+
+## ✅ 3. ChatML Format
+
+```python
+messages=[
+    {"role": "user", "content": message}
+]
+```
+
+👉 Same format used by:
+
+* OpenAI
+* Gemini
+
+---
+
+## ✅ 4. Model Selection
+
+```python
+model="gemma:2b"
+```
+
+👉 Must match:
+
+* Model downloaded in Ollama
+
+---
+
+## ✅ 5. Response Handling
+
+```python
+response["message"]["content"]
+```
+
+👉 Extract actual AI answer
+
+---
+
+## ▶️ 5. Run the Server
+
+```bash
+fastapi dev server.py
+```
+
+---
+
+## 🌐 6. Test Using Swagger UI
+
+## 🔹 Open:
+
+```
+http://localhost:8000/docs
+```
+
+👉 Auto-generated API docs 🎉
+
+---
+
+## 🔹 Example Request
+
+```json
+{
+  "message": "Why is the sky blue?"
+}
+```
+
+---
+
+## 🔹 Example Response
+
+```json
+{
+  "response": "The sky appears blue due to Rayleigh scattering..."
+}
+```
+
+---
+
+## 🔥 7. What’s Happening Internally
+
+Step-by-step:
+
+1. User sends request
+2. FastAPI receives it
+3. Calls Ollama:
+
+   ```python
+   client.chat(...)
+   ```
+4. Ollama:
+
+   * Runs model locally
+   * Generates response
+5. FastAPI returns result
+
+---
+
+## ⚡ 8. Important Observations
+
+## 🔹 Same as Cloud APIs
+
+This is similar to:
+
+* OpenAI API
+* Gemini API
+
+👉 Difference:
+
+* Runs **locally (free + private)**
+
+---
+
+## 🔹 Performance Note
+
+* Uses CPU/GPU heavily
+* Slower than cloud models
+
+---
+
+## 🧩 9. Full Flow Diagram
+
+```text
+POST /chat
+   ↓
+FastAPI
+   ↓
+Ollama Client
+   ↓
+Local Model (Gemma)
+   ↓
+Response
+```
+
+---
+
+## 💻 10. Real API Call Example
+
+Using curl:
+
+```bash
+curl -X POST "http://localhost:8000/chat" \
+-H "Content-Type: application/json" \
+-d '{"message": "Who are you?"}'
+```
+
+---
+
+## 🧠 Final Summary (Super Simple)
+
+* Installed Ollama SDK
+* Connected FastAPI → Ollama
+* Created `/chat` API
+* Sent user input → got AI response
+
+---
+
+## 🎯 What You Built
+
+✅ Your own AI backend
+✅ No API cost
+✅ Fully private
+✅ Works like ChatGPT API
+
+---
+
+## 🔥 Real-World Use Cases
+
+* 🤖 ChatGPT clone backend
+* 📱 Mobile AI apps
+* 🧠 Internal company AI tools
+* 🌐 SaaS AI APIs
+
+---
+
+## Sec 19 - Running LLMs via Hugging Face Hub
+
+## 133. Hugging Face Model Deployment - Section Intro (03:01)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
