@@ -16,3 +16,9 @@
     "role": "system" | "user" | "assistant"
     "content": "sttring"
 }
+
+## INST Prompting (Instruction Prompting)
+[INST] What is the time now? [/INST]
+
+- Used by Lama-2 model
+

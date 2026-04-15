@@ -25828,6 +25828,135 @@ Same intent, completely different format — the model needs to be trained on th
 
 ## 126. INST Format: LLaMA-2 Instruction Specification (01:54)
 
+## Instruct (INST) Prompting — Summary & Notes
+
+This is the final prompt style in the series — used by **LLaMA 2** and similar Meta models.
+
+---
+
+### What is INST Prompting?
+
+INST (Instruction) prompting uses **special bracket-based tokens** to wrap different parts of the conversation. Instead of JSON keys or `###` headers, it uses tags like `[INST]`, `<<SYS>>`, and `<s>` to separate system prompts, user input, and assistant responses.
+
+---
+
+### The INST Template
+
+```
+<s>[INST] <<SYS>>
+Your system prompt goes here.
+<</SYS>>
+
+User question goes here. [/INST]
+
+Assistant response goes here.
+
+</s>
+```
+
+- `<s>` → beginning of text (start of conversation)
+- `[INST] ... [/INST]` → wraps the user's instruction/input
+- `<<SYS>> ... <</SYS>>` → wraps the system prompt (sits inside `[INST]`)
+- Everything **after** `[/INST]` → the model generates the assistant response here
+
+---
+
+### Conversion Examples
+
+**Simple prompt:**
+```
+# ChatML style
+{"role": "user", "content": "What is the time now?"}
+
+# INST style equivalent
+<s>[INST] What is the time now? [/INST]
+```
+
+---
+
+**With system prompt:**
+```
+# ChatML style
+messages = [
+    {"role": "system", "content": "You are a helpful chai expert."},
+    {"role": "user",   "content": "What spices go in masala chai?"}
+]
+
+# INST style equivalent
+<s>[INST] <<SYS>>
+You are a helpful chai expert.
+<</SYS>>
+
+What spices go in masala chai? [/INST]
+```
+
+---
+
+**Multi-turn conversation in INST style:**
+```
+<s>[INST] <<SYS>>
+You are a helpful chai expert.
+<</SYS>>
+
+What spices go in masala chai? [/INST]
+
+Ginger, cardamom, cinnamon, cloves, and black pepper. </s>
+
+<s>[INST] Which one adds the most heat? [/INST]
+```
+
+Each new turn is wrapped in a fresh `<s>[INST] ... [/INST]` block.
+
+---
+
+### All Three Styles Side by Side
+
+Same prompt written in all three formats:
+
+```
+# ChatML (OpenAI / Claude / Gemini)
+messages = [
+    {"role": "system", "content": "You are a math expert."},
+    {"role": "user",   "content": "Solve: 2x + 5 = 15"}
+]
+
+# ALPACA (LLaMA fine-tunes, open-source models)
+### Instruction:
+You are a math expert.
+
+### Input:
+Solve: 2x + 5 = 15
+
+### Response:
+
+# INST (LLaMA 2)
+<s>[INST] <<SYS>>
+You are a math expert.
+<</SYS>>
+
+Solve: 2x + 5 = 15 [/INST]
+```
+
+---
+
+### Key Takeaways
+
+**INST is used by LLaMA 2** and some other open-source Meta models. Newer models like LLaMA 3 have actually moved to a ChatML-like format, so INST is becoming less common even in the open-source world.
+
+**The core idea is still the same** across all three styles — you need a way to tell the model: here is the system context, here is the user input, now generate a response. The syntax is just different.
+
+**You will use ChatML 99% of the time** in real projects. ALPACA and INST are good-to-know context for when you read research papers, work with HuggingFace models, or encounter older fine-tuned models.
+
+
+### Final Comparison of All Three Prompt StylesThe entire **Prompt Styles section is now complete**. The core message the instructor is leaving you with: understand all three formats for context, but **master ChatML** — it's what you'll use every single day building with LangChain, LangGraph, and modern LLM APIs.
+
+![alt text](./notes/prompt_styles_image.png)
+
+---
+
+## Sec 18 - Local LLM Deployment & API Integration
+
+## 127. Ollama Overview: Local LLM Runtime Engine (02:24)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
