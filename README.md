@@ -27559,6 +27559,599 @@ print(result[0]["generated_text"])
 
 ## 138. Agentic AI Fundamentals (01:01)
 
+## 🧠 1. What is Agentic AI? (Simple Words)
+
+👉 **Agentic AI = AI that can think, plan, and act on its own**
+
+Unlike normal LLMs:
+
+* ❌ Just answer questions
+* ✅ Agents can **take actions + solve tasks step-by-step**
+
+---
+
+## ⚖️ 2. Traditional LLM vs Agentic AI
+
+### 🟢 Traditional LLM (What you used before)
+
+```python
+response = llm("What is 2 + 2?")
+print(response)
+```
+
+👉 Behavior:
+
+* Input → Output
+* No memory, no planning
+
+---
+
+### 🔵 Agentic AI
+
+```python
+User: "Book me a flight"
+
+Agent:
+1. Understand request
+2. Search flights
+3. Compare prices
+4. Book ticket
+5. Return result
+```
+
+👉 Behavior:
+
+* Think 🤔
+* Plan 🧠
+* Act ⚡
+
+---
+
+## 🚀 3. Why Agentic AI is Important
+
+👉 Used by companies for:
+
+* Automation
+* Decision making
+* Real-world tasks
+
+Examples:
+
+* AI assistants
+* Auto-coding tools
+* Customer support bots
+* Autonomous workflows
+
+---
+
+## 🧩 4. Core Idea Behind Agents
+
+👉 An **Agent = LLM + Tools + Memory + Planning**
+
+---
+
+### 🔹 1. LLM (Brain)
+
+* Understands language
+* Generates responses
+
+---
+
+### 🔹 2. Tools (Actions)
+
+* APIs
+* Database queries
+* Web search
+
+---
+
+### 🔹 3. Memory
+
+* Remembers previous steps
+
+---
+
+### 🔹 4. Planning
+
+* Breaks problem into steps
+
+---
+
+## 💻 5. Simple Agent Example (Basic Idea)
+
+```python
+def agent(user_query):
+    # Step 1: Understand
+    print("Understanding the query...")
+
+    # Step 2: Plan
+    steps = ["Search info", "Process data", "Generate answer"]
+
+    for step in steps:
+        print("Executing:", step)
+
+    # Step 3: Output
+    return "Here is your final result"
+
+print(agent("Tell me weather in Bangalore"))
+```
+
+👉 This simulates:
+
+* Thinking
+* Planning
+* Acting
+
+---
+
+## 🔄 6. From LLM → Agent (Key Transformation)
+
+| Feature             | LLM | Agent |
+| ------------------- | --- | ----- |
+| Answer only         | ✅   | ✅     |
+| Multi-step thinking | ❌   | ✅     |
+| Tool usage          | ❌   | ✅     |
+| Memory              | ❌   | ✅     |
+| Autonomy            | ❌   | ✅     |
+
+---
+
+## 🧠 7. Important Concepts
+
+---
+
+## 🔹 Concept 1: Planning
+
+👉 Breaking problem into steps
+
+Example:
+
+```python
+steps = [
+    "Find restaurants",
+    "Filter by rating",
+    "Show results"
+]
+```
+
+---
+
+## 🔹 Concept 2: Tool Usage
+
+👉 Calling external APIs
+
+```python
+def get_weather(city):
+    return "28°C Sunny"
+```
+
+---
+
+## 🔹 Concept 3: Looping (Agent Behavior)
+
+```python
+while not task_done:
+    think()
+    act()
+```
+
+👉 Agents keep working until task is complete
+
+---
+
+## ⚠️ 8. Important Points
+
+✔ Agent ≠ just LLM
+✔ Agent = system built around LLM
+
+✔ Key difference:
+
+* LLM → reactive
+* Agent → proactive
+
+✔ Agents are used in:
+
+* Automation workflows
+* AI products
+* Business systems
+
+---
+
+## 🔥 9. Real-Life Example
+
+### ❌ Normal LLM:
+
+User: “Plan my trip”
+→ Gives suggestions only
+
+---
+
+### ✅ Agent:
+
+User: “Plan my trip”
+→ Agent will:
+
+1. Search flights
+2. Check hotels
+3. Optimize budget
+4. Create itinerary
+
+---
+
+## 🧠 Final Understanding
+
+* Agentic AI is the **next evolution of LLMs**
+* It moves from:
+
+  * ❌ answering →
+  * ✅ doing tasks
+
+👉 Think of it like:
+
+* LLM = brain
+* Agent = full human (brain + actions)
+
+---
+
+## 🚀 What’s Coming Next (in your course)
+
+You’ll likely learn:
+
+* How to build agents
+* Tool calling
+* Multi-step reasoning
+* Autonomous workflows
+
+---
+
+## Agentic AI Fundamentals (Contd...)
+
+**What this section is about**
+
+This is an introductory video kicking off a new section on **Agentic AI** — one of the most important and in-demand topics in AI right now. The goal is to understand what makes an AI system an "agent", how it differs from simply calling an LLM API, and how to build one step by step.
+
+---
+
+**Key Concepts Explained**
+
+**1. What you already know — Traditional LLM API Calling**
+
+So far, the pattern has been simple and one-directional:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# You ask → LLM answers → done
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+print(response.choices[0].message.content)
+# Output: "Paris"
+```
+
+This is a **single-turn, passive** interaction. The LLM just responds and stops. It has no memory of what happened before, takes no actions, and makes no decisions on its own.
+
+---
+
+**2. What is Agentic AI?**
+
+An **agent** is an LLM that has been given the ability to:
+
+| Capability | What it means |
+|---|---|| **Think** | Break a big goal into smaller steps |
+| **Act** | Call tools, search the web, run code, read files |
+| **Observe** | Look at the result of its action |
+| **Loop** | Repeat think → act → observe until the goal is done |
+
+The key difference is that a regular LLM **responds once**, while an agent **keeps going** until it completes a task.
+
+---
+
+**3. Traditional LLM vs Agentic AI — side by side**
+
+```
+Traditional LLM:
+User: "What's the weather in Bangalore?"
+LLM:  "I don't have real-time data, sorry."
+Done.
+
+Agentic AI:
+User:  "What's the weather in Bangalore?"
+Agent: [thinks] "I need to check the weather. I have a weather tool."
+Agent: [calls weather API tool]
+Agent: [observes result] "28°C, partly cloudy"
+Agent: "The weather in Bangalore right now is 28°C and partly cloudy."
+Done — with real, useful output.
+```
+
+---
+
+**4. Simple mental model of an Agent**
+
+```python
+# Pseudocode — how an agent loop works
+def agent(goal):
+    while task_not_complete:
+        thought = llm.think(goal, history)       # what should I do next?
+        action = llm.choose_tool(thought)        # pick a tool to use
+        result = execute_tool(action)            # actually run the tool
+        history.append(thought, action, result)  # remember what happened
+        
+        if llm.is_done(result):
+            return final_answer
+```
+
+This loop — **think → act → observe → repeat** — is the core of every agent, no matter how complex.
+
+---
+
+**5. Why Agentic AI matters right now**
+
+- Businesses are moving from "chatbots that answer questions" to "AI agents that get things done"
+- Real-world use cases: customer support agents, coding agents, research agents, sales agents (like the Isabella project at PwC)
+- Companies like Google, Microsoft, Salesforce are all building agentic products right now
+- An agent can handle **multi-step, real-world tasks** that a plain LLM call simply cannot
+
+---
+
+**Important pointers to remember:**
+
+- The jump from LLM → Agent is about adding **tools + a loop** — the LLM brain stays the same
+- An agent is only as good as the tools you give it — tool design is a core skill
+- **Memory** (what happened before) and **planning** (what to do next) are what separate a basic agent from a powerful one
+- Frameworks like **LangChain** and **LangGraph** (which you already use at PwC) are built specifically to make building these loops easier
+- Agentic AI is not just a trend — it's the direction the entire industry is moving toward
+
+**What's coming next:** A deep dive into exactly what makes an LLM an agent — the step-by-step process of converting a plain LLM into a fully working AI agent.
+
+---
+
+## 139. What exactly are AI Agents? (10:08)
+
+## 🧠 What are AI Agents? (Simple Explanation)
+
+### 👉 Core Idea
+
+* An **AI Agent = LLM (brain) + tools/actions (body)**
+* Without tools, an LLM is just a **text generator**
+* With tools, it becomes something that can **do real work**
+
+---
+
+## 🏗️ Traditional System (Before AI Agents)
+
+### How apps normally work:
+
+```
+User → Server → Services → Database
+```
+
+### Example services:
+
+* Payment Service
+* Order Service
+* Auth Service
+* Shipping Service
+
+Each service:
+
+* Handles a specific task
+* Talks to databases (MongoDB, PostgreSQL)
+
+---
+
+## 👨‍💻 Role of Human Agents (Customer Support)
+
+Before AI:
+
+* Humans act as **agents**
+* They:
+
+  * Understand user queries
+  * Access systems
+  * Perform actions
+
+### Example:
+
+User: “Cancel my order”
+
+Human agent:
+
+1. Checks order
+2. Calls order service
+3. Cancels it
+
+---
+
+## 🤖 Problem with LLMs Alone
+
+LLMs like GPT or Gemini:
+
+* Only take **text input**
+* Only give **text output**
+
+### They cannot:
+
+* Access database ❌
+* Call APIs ❌
+* Modify systems ❌
+
+👉 So they are:
+
+> “Smart but powerless”
+
+---
+
+## 🧠 Key Insight
+
+### LLM = Brain
+
+* Can think
+* Can understand language
+
+### But…
+
+* No hands (actions)
+* No legs (execution)
+
+---
+
+## 🔥 What is an AI Agent?
+
+### Definition:
+
+> An AI Agent is an LLM that can **take actions using tools**
+
+---
+
+## 🧩 How Agents Work
+
+We add a **layer (code)** between LLM and systems:
+
+```
+User → LLM → Tool/API → System → Response
+```
+
+---
+
+## ⚙️ Example Flow (Agent in Action)
+
+User:
+👉 “Cancel my order”
+
+### Agent does:
+
+1. Understand intent (NLP)
+2. Decide action → "cancel_order"
+3. Call API
+4. Return result
+
+---
+
+## 💡 Simple Code Example (Conceptual)
+
+### Without Agent (LLM only)
+
+```python
+response = llm("Cancel my order")
+print(response)
+```
+
+➡️ Output:
+
+```
+"To cancel your order, go to settings..."
+```
+
+❌ No real action happens
+
+---
+
+### With Agent (LLM + Tools)
+
+```python
+def cancel_order(order_id):
+    return f"Order {order_id} cancelled"
+
+user_input = "Cancel my order 123"
+
+if "cancel" in user_input:
+    result = cancel_order(123)
+
+print(result)
+```
+
+➡️ Output:
+
+```
+Order 123 cancelled
+```
+
+✅ Real action happens
+
+---
+
+## 🧠 Agent Architecture (Important)
+
+### 1. LLM (Brain)
+
+* Understands user intent
+
+### 2. Tools (Body)
+
+* APIs
+* Database access
+* Functions
+
+### 3. Controller (Logic Layer)
+
+* Decides:
+
+  * Which tool to call
+  * When to call
+
+---
+
+## 🧬 Brain vs Agent Analogy
+
+### Only Brain:
+
+* Can think
+* Cannot act
+
+### Brain + Body:
+
+* Can:
+
+  * Walk
+  * Work
+  * Interact
+
+👉 Same with AI:
+
+* LLM alone → useless for real-world tasks
+* LLM + tools → powerful agent
+
+---
+
+## 🚀 Why Agents are Important
+
+* Automate customer support
+* Replace manual workflows
+* Integrate AI with real systems
+
+---
+
+## 🔑 Key Takeaways
+
+### ✅ LLM Alone:
+
+* Text in → Text out
+* No real-world impact
+
+### ✅ Agent:
+
+* Understands + Acts
+* Can:
+
+  * Call APIs
+  * Query DB
+  * Perform operations
+
+---
+
+## 🧠 One-Line Summary
+
+> **AI Agent = LLM + ability to take actions in the real world**
+
+---
+
+## 140. Coding Your First AI Agent (22:37)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
