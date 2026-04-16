@@ -27158,7 +27158,406 @@ curl -X POST "http://localhost:8000/chat" \
 
 ## 133. Hugging Face Model Deployment - Section Intro (03:01)
 
-- [Hugging Face](https://huggingface.co/)
+**What is Hugging Face?**
+
+Hugging Face is essentially the GitHub for AI/ML models. Just like GitHub hosts code, Hugging Face hosts trained models — especially LLMs and other deep learning models. It's the central hub for the open-source AI community to share, discover, and collaborate on models, datasets, and demos.
+
+### [Hugging Face](https://huggingface.co/)
+
+**Three core features explained:**
+
+**1. Models** — You can browse, download, or upload pre-trained models. Whether you've fine-tuned an existing model or built one from scratch, you can push it here for the community to use. These are open-source models — things like image generation models, text generators, classifiers, etc.
+
+**2. Spaces** — Think of it as a live playground. Hugging Face hosts these demos on their own GPU infrastructure, so you can interact with a model in your browser without installing anything. In the transcript, the instructor demonstrated `Flux`, an image-to-image model — uploaded an image, typed a prompt ("convert the paper to orange"), and the model transformed it in real time.
+
+**3. Datasets** — You can upload and share datasets for training or fine-tuning models, making it a one-stop shop for the entire ML workflow.
+
+**Key use cases:**
+- Pull a model and run it locally on your machine
+- Test a model instantly in Spaces without any setup
+- Fine-tune an existing model and push the improved version back
+- Share datasets with the community
+
+**Simple code example — pulling a model from Hugging Face:**
+
+```python
+from transformers import pipeline
+
+# Pull a pre-trained sentiment analysis model from Hugging Face
+classifier = pipeline("sentiment-analysis")
+
+result = classifier("Hugging Face is amazing!")
+print(result)
+# Output: [{'label': 'POSITIVE', 'score': 0.9998}]
+```
+
+**Simple code example — downloading a specific model by name:**
+
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# Pull a specific model from Hugging Face Hub
+model_name = "gpt2"  # This is the model's ID on HuggingFace
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+
+inputs = tokenizer("Once upon a time", return_tensors="pt")
+outputs = model.generate(**inputs, max_new_tokens=30)
+
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+```
+
+Here's a quick visual overview of the three pillars:
+
+![alt text](./notes/hugging_face_pillers.png)
+
+**Key takeaways to remember:**
+- Hugging Face = GitHub, but for AI models (not code)
+- Models are community-uploaded, open-source, and reusable
+- Spaces lets you test any model right in the browser, no setup needed
+- Datasets section completes the full ML pipeline — data → train → share
+- Next steps in the series: creating an account, pulling a model, and running it locally
+
+---
+
+## 135. Accessing Instruct-Tuned Models (Google's Gemma) (02:36)
+
+**What this video is about**
+
+Not all models on Hugging Face are freely accessible. Some are **gated models** — meaning you need to request and accept a license before you can use them. This video shows how to unlock access to Google's **Gemma 3** model, which is one such gated model.
+
+---
+
+**Key Concepts Explained**
+
+**1. Open Models vs Gated Models**
+
+| Type | Description | Example |
+|---|---|---|
+| Open | Anyone can use directly, no approval needed | Qwen, Mistral |
+| Gated | Requires license acceptance before access | Gemma (Google), Llama (Meta) |
+
+**2. How to get access to a gated model — step by step**
+- Go to the model's page on Hugging Face (e.g. `google/gemma-3`)
+- You'll see an "Access" section with a license agreement
+- Click **Accept** to acknowledge the terms
+- You'll get a confirmation: "You have been granted access"
+- Now you can use the model in code just like any open model
+
+**3. Using the model via the Transformers library**
+
+Once access is granted, Hugging Face shows you ready-to-run code. Here's the basic pattern:
+
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
+# Your Hugging Face token is needed for gated models
+# Get it from: huggingface.co/settings/tokens
+model_id = "google/gemma-3-1b-it"
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,  # uses less memory
+    device_map="auto"            # auto picks CPU or GPU
+)
+
+inputs = tokenizer("Explain black holes in simple words", return_tensors="pt")
+outputs = model.generate(**inputs, max_new_tokens=100)
+
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+```
+
+**4. Authenticating with your Hugging Face token**
+
+Since Gemma is gated, your code also needs to prove *you* have access. You do this with your HF token:
+
+```python
+from huggingface_hub import login
+
+# Run this once before loading a gated model
+login(token="hf_your_token_here")
+```
+
+Or set it as an environment variable (safer for production):
+
+```bash
+export HUGGINGFACE_TOKEN=hf_your_token_here
+```
+
+```python
+import os
+from huggingface_hub import login
+
+login(token=os.environ["HUGGINGFACE_TOKEN"])
+```
+
+---
+
+**Important pointers to remember:**
+
+- Gated models require a **one-time manual approval** on the Hugging Face website — code alone won't unlock them
+- After approval, you still need your **HF access token** in your code to authenticate
+- Models from big organizations like **Google (Gemma)** and **Meta (Llama)** are typically gated
+- `device_map="auto"` is a handy flag — it automatically uses your GPU if available, otherwise falls back to CPU
+- `torch_dtype=torch.bfloat16` halves memory usage compared to the default float32 — important for large models
+
+**What's coming next:** Downloading a model locally and running it on your own machine using the Transformers package.
+
+---
+
+## 136. Installing and using Hugging Face CLI Tools (02:37)
+
+**What this video is about**
+
+Before you can download and run gated models (like Gemma) locally, you need to **authenticate your machine with Hugging Face**. This is done through the **Hugging Face CLI** — a command-line tool that logs your machine into your HF account using a token.
+
+---
+
+**Key Concepts Explained**
+
+**1. What is the Hugging Face CLI?**
+
+It's a command-line tool that lets you interact with Hugging Face directly from your terminal — login, download models, upload files, etc. Think of it like how you use `git` CLI to interact with GitHub.
+
+**2. Installing the CLI**
+
+Two ways depending on your OS:
+
+```bash
+# On Mac (using Homebrew) — what the instructor used
+brew install huggingface-cli
+
+# On any OS using pip
+pip install -U huggingface_hub
+```
+
+**3. Logging in via CLI**
+
+After installing, run this once to authenticate your machine:
+
+```bash
+huggingface-cli login
+```
+
+It will prompt you to paste your **access token**. Once done, your machine is logged in and can pull gated models.
+
+**4. How to generate your Access Token**
+
+Step by step on the Hugging Face website:
+- Go to your profile → **Settings** → **Access Tokens**
+- Click **Create a new token**
+- Give it a name (e.g. `test-token`)
+- Choose permission: **Write** (gives full access) or **Read** (download only)
+- Click **Create**, then **copy the token**
+- Paste it into the CLI prompt
+
+```
+Token: hf_xxxxxxxxxxxxxxxxxxxxxxxxxx
+✅ Login successful — test-token is now active
+```
+
+**5. Why is this needed?**
+
+For gated models (like Gemma), HF needs to verify that *you personally* have accepted the license. The token is proof of your identity. Without it, even if you accepted on the website, your code can't download the model.
+
+**6. Using the token directly in Python (alternative to CLI login)**
+
+```python
+from huggingface_hub import login
+
+# Option 1: hardcode (fine for local testing)
+login(token="hf_your_token_here")
+
+# Option 2: from environment variable (recommended for safety)
+import os
+login(token=os.getenv("HF_TOKEN"))
+```
+
+Or set it up once so all your scripts just work:
+
+```bash
+# Add this to your ~/.zshrc or ~/.bashrc
+export HF_TOKEN="hf_your_token_here"
+```
+
+```python
+# Then in any Python file, transformers picks it up automatically
+from transformers import AutoModelForCausalLM
+model = AutoModelForCausalLM.from_pretrained("google/gemma-3-1b-it")
+# No explicit login() needed if HF_TOKEN env var is set
+```
+
+---
+
+**Important pointers to remember:**
+
+- CLI login is a **one-time setup** per machine — you don't repeat it for every project
+- Your token is stored in `~/.cache/huggingface/token` after login — keep it safe, treat it like a password
+- **Write permission** token = can upload + download; **Read permission** = download only. For just running models locally, read is enough
+- Never hardcode tokens in code you'll push to GitHub — use environment variables instead
+- The CLI login and Python `login()` both achieve the same thing — CLI login is more convenient for local dev
+
+**What's coming next:** Setting up the Transformers Python package and actually running Gemma locally on your machine.
+
+---
+
+## 137. Model Downloading & Execution from HF Hub (02:48)
+
+**What this video is about**
+
+This video shows how to actually **run a Hugging Face model locally on your machine** using the `transformers` Python package. The key tool used is called a **pipeline** — a simple, high-level way to load and use any model in just a few lines of code.
+
+---
+
+**Key Concepts Explained**
+
+**1. Installing the required packages**
+
+Two packages are needed:
+
+```bash
+pip install transformers   # Hugging Face model loader
+pip install torch          # PyTorch — the engine that runs the model
+```
+
+Save your dependencies:
+```bash
+pip freeze > requirements.txt
+```
+
+---
+
+**2. What is a Pipeline?**
+
+A `pipeline` is a convenience wrapper from the `transformers` library. It hides all the complex steps — tokenizing input, running the model, decoding output — behind one simple function call. You just tell it the task and the model, and it handles the rest.
+
+```python
+from transformers import pipeline
+
+# Create a pipeline for text generation
+pipe = pipeline("text-generation", model="google/gemma-3-1b-it")
+
+# Run it
+output = pipe("Explain gravity in simple words")
+print(output)
+```
+
+---
+
+**3. What is ChatML format?**
+
+When using chat/instruction models, you don't just pass a plain string. You pass **messages** in a structured format with roles — this is called **ChatML format**. It tells the model who is speaking.
+
+```python
+messages = [
+    {
+        "role": "user",
+        "content": "What is photosynthesis?"
+    }
+]
+
+output = pipe(messages)
+print(output[0]["generated_text"])
+```
+
+Roles you'll commonly see:
+
+| Role | Meaning |
+|---|---|
+| `user` | The human asking the question |
+| `assistant` | The model's response |
+| `system` | Background instructions for the model |
+
+---
+
+**4. Multimodal input — text + image**
+
+The instructor's example passed both an image and a text question to the model (vision + language):
+
+```python
+from transformers import pipeline
+
+pipe = pipeline("image-text-to-text", model="google/gemma-3-4b-it")
+
+messages = [
+    {
+        "role": "user",
+        "content": [
+            {"type": "image", "url": "https://example.com/candy.jpg"},
+            {"type": "text",  "text": "What animal is on the candy?"}
+        ]
+    }
+]
+
+output = pipe(messages, max_new_tokens=100)
+print(output[0]["generated_text"][-1]["content"])
+```
+
+---
+
+**5. How model downloading works**
+
+The first time you run the code, the model is automatically downloaded from Hugging Face and cached on your machine:
+
+```
+Downloading model: google/gemma-3-4b-it
+├── config.json          ✅ cached
+├── tokenizer.json       ✅ cached
+└── model.safetensors    ⬇ downloading... (~4 GB)
+```
+
+From the second run onwards, it loads directly from cache — no download needed.
+
+Cache location on your machine:
+```bash
+~/.cache/huggingface/hub/
+```
+
+---
+
+**Full working example (text only, simpler version):**
+
+```python
+from transformers import pipeline
+
+# Load the pipeline once (downloads on first run)
+pipe = pipeline(
+    "text-generation",
+    model="google/gemma-3-1b-it",   # smaller, faster model
+    max_new_tokens=200
+)
+
+# ChatML format message
+messages = [
+    {"role": "user", "content": "What is the capital of France?"}
+]
+
+# Run the model
+result = pipe(messages)
+print(result[0]["generated_text"])
+```
+
+---
+
+**Important pointers to remember:**
+
+- `pipeline` is the easiest entry point — it's great for quick experiments and learning
+- Always install both `transformers` AND `torch` — transformers won't run without a backend engine like PyTorch
+- Models are downloaded **once** and cached locally — subsequent runs are fast
+- Large models (4GB+) will heat up your machine and use significant RAM/VRAM — start with smaller models like `gemma-3-1b` during development
+- ChatML format (`role` + `content`) is the standard way to talk to instruction-tuned models — get comfortable with it as it's used everywhere (OpenAI, Gemma, Llama all use it)
+- For gated models like Gemma, make sure you've done `huggingface-cli login` beforehand — otherwise the download will fail with an auth error
+
+**What's coming next:** Running the downloaded model properly and seeing actual output from it on your local machine.
+
+---
+
+## Sec 20 - Building AI Agents and Agentic Workflows
+
+## 138. Agentic AI Fundamentals (01:01)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
