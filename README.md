@@ -28152,6 +28152,178 @@ Order 123 cancelled
 
 ## 140. Coding Your First AI Agent (22:37)
 
+## Building Your First AI Agent – Summary & Notes
+
+## What's Being Built?
+
+A **Weather Agent** — an AI that can answer real-time weather questions by autonomously calling an external API, something a plain LLM cannot do on its own.
+
+---
+
+## The Core Problem
+
+When you ask a plain LLM "What's the current weather in Goa?", it fails — because LLMs are trained on static data and have **no access to real-time information**. They'll either hallucinate or admit they don't know.
+
+**Solution:** Give the LLM a *tool* (a Python function) it can call to fetch live data.
+
+---
+
+## Key Concepts
+
+### 1. Tools / Function Calling
+A **tool** is just a regular Python function that your agent can invoke when needed. You describe it to the LLM and the LLM decides *when* to call it.
+
+```python
+import requests
+
+def get_weather(city: str) -> str:
+    url = f"https://wttr.in/{city.lower()}?format=3"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return f"The weather in {city} is: {response.text}"
+    return "Something went wrong."
+```
+
+---
+
+### 2. The ReAct / Chain-of-Thought Loop
+The agent doesn't just call the LLM once. It loops through these steps:
+
+| Step | What happens |
+|------|-------------|
+| **Plan** | LLM figures out what the user wants |
+| **Tool Call** | LLM decides which tool to use and with what input |
+| **Observe** | The tool runs and its output is fed back to the LLM |
+| **Output** | LLM generates the final human-readable answer |
+
+```
+User: "What's the weather in Delhi?"
+  → Plan: User wants Delhi weather
+  → Tool Call: get_weather("Delhi")
+  → Observe: "Delhi: Cloudy, 27°C"
+  → Output: "The current weather in Delhi is 27°C and cloudy."
+```
+
+---
+
+### 3. System Prompt Engineering
+The LLM is guided via a system prompt that tells it:
+- What tools are available and what they do
+- To follow the Plan → Tool → Observe → Output format
+- To only run **one step at a time**
+- To wait for the Observe result before continuing
+
+```python
+system_prompt = """
+You are an expert AI assistant. You work in steps:
+- plan: think about what the user needs
+- tool: call a tool if needed
+- observe: wait for tool output
+- output: give the final answer
+
+Available tools:
+- get_weather(city: str) -> returns weather info for a city
+
+Only run one step at a time. After a tool call, wait for observe.
+"""
+```
+
+---
+
+### 4. Message History
+The conversation (including tool results) is maintained as a list passed to the LLM on every call. This is how the LLM "remembers" what happened.
+
+```python
+message_history = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user",   "content": "What's the weather in Goa?"}
+]
+
+# After tool runs, append the observation:
+message_history.append({
+    "role": "developer",
+    "content": json.dumps({
+        "step": "observe",
+        "tool": "get_weather",
+        "input": "Goa",
+        "output": "Goa: Partly cloudy, 30°C"
+    })
+})
+```
+
+---
+
+### 5. Tool Registry (Available Tools Map)
+You register tools in a dictionary so the agent can look them up by name and call them dynamically.
+
+```python
+available_tools = {
+    "get_weather": get_weather   # maps name → actual function
+}
+
+# Agent calls it like this:
+tool_name = "get_weather"        # LLM told us this
+tool_input = "Delhi"             # LLM told us this
+tool_response = available_tools[tool_name](tool_input)
+```
+
+---
+
+### 6. The Agent Loop
+The whole thing runs in a `while True` loop so users can keep asking questions.
+
+```python
+while True:
+    user_query = input("Ask me anything: ")
+    message_history.append({"role": "user", "content": user_query})
+
+    while True:  # inner loop: keep stepping until "output"
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=message_history
+        )
+        parsed = parse_response(response)  # extract step type
+
+        if parsed["step"] == "output":
+            print("🤖", parsed["content"])
+            break
+
+        elif parsed["step"] == "tool":
+            tool_name  = parsed["tool"]
+            tool_input = parsed["input"]
+            tool_response = available_tools[tool_name](tool_input)
+
+            # Feed observation back into history
+            message_history.append({
+                "role": "developer",
+                "content": json.dumps({
+                    "step": "observe",
+                    "tool": tool_name,
+                    "input": tool_input,
+                    "output": tool_response
+                })
+            })
+```
+
+---
+
+## The Big Takeaway
+
+> **LLM + Tools = Agent**
+
+The LLM is the brain (reasoning, planning, deciding). Tools are the hands (doing real things like API calls, DB queries, file reads). You can add as many tools as you want — the LLM figures out which one to use based on the user's question.
+
+```
+Agent = LLM (reasoning) + Tools (acting) + Loop (autonomy)
+```
+
+This is the foundation of every agent framework you'll encounter — LangGraph, LangChain Agents, OpenAI Assistants, etc. They all implement this same core loop under the hood.
+
+---
+
+## 141. Enforcing Structured Outputs with Pydantic (07:34)
+
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
