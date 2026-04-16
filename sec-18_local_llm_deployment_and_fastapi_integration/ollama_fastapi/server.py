@@ -15,8 +15,8 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/contact-us")
-def contact():
+@app.get("/contact")
+def contact_us():
     return {"email": "ben_here@gmail.com"}
 
 @app.post("/chat")

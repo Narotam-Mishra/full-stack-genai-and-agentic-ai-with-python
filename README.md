@@ -27158,6 +27158,8 @@ curl -X POST "http://localhost:8000/chat" \
 
 ## 133. Hugging Face Model Deployment - Section Intro (03:01)
 
+- [Hugging Face](https://huggingface.co/)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
