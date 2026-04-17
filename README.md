@@ -27212,7 +27212,7 @@ Here's a quick visual overview of the three pillars:
 
 ![alt text](./notes/hugging_face_pillers.png)
 
-**Key takeaways to remember:**
+**Key takeaways to remember :-**
 - Hugging Face = GitHub, but for AI models (not code)
 - Models are community-uploaded, open-source, and reusable
 - Spaces lets you test any model right in the browser, no setup needed
