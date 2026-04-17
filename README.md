@@ -28445,6 +28445,141 @@ This pattern is exactly what you'd want in the Isabella pipeline where LLM outpu
 
 ## 142. Building a CLI Coding Agent (Claude Code) from Scratch (09:50)
 
+## Building a CLI Coding Assistant with an AI Agent
+
+This tutorial shows how to extend a Python AI agent with a single tool — `run_command` — to make it autonomously execute shell commands and build full applications on your behalf.
+
+---
+
+### The Core Idea
+
+Linux/shell commands can do almost everything on a filesystem:
+
+```bash
+mkdir todo_app          # create a folder
+touch index.html        # create a file
+echo "hello" > index.html   # write content to a file
+```
+
+The insight here: **if the agent can run these commands, it can build entire apps by itself.**
+
+---
+
+### The Key Tool: `run_command`
+
+You add one new tool to the existing agent:
+
+```python
+import os
+
+def run_command(command: str) -> str:
+    """
+    Takes a Linux/shell command as a string,
+    executes it on the user's system,
+    and returns the output.
+    """
+    result = os.system(command)
+    return result
+```
+
+That's genuinely all it takes. `os.system()` is a built-in Python function that passes any string directly to your shell.
+
+You then register it in the agent's available tools and describe it in the system prompt:
+
+```
+run_command: Takes a system Linux command as a string, 
+executes it on the user's system, and returns the output.
+```
+
+---
+
+### What happens when you run the agent
+
+You give it a prompt like:
+
+```
+Create a todo app for me using HTML, CSS and JavaScript 
+in a folder called todo_app with all CRUD operations.
+```
+
+The agent then autonomously plans and executes steps like:
+
+```bash
+mkdir todo_app
+touch todo_app/index.html
+touch todo_app/style.css
+touch todo_app/script.js
+echo "<html>...</html>" > todo_app/index.html
+# ... and so on
+```
+
+It keeps calling `run_command` in a loop until the task is done — exactly like Claude Code or Cursor does under the hood.
+
+---
+
+### Self-modifying agent (bonus concept)
+
+The tutorial also shows something wild: you can ask the agent to **add tools to itself**. For example:
+
+```
+In the folder named weather_agent, there is an agent.py file 
+with two tools. Can you add more tools for all file handling?
+— create_file, read_file, list_directory, delete_file, update_file
+```
+
+The agent writes Python code into its own source file. That's the agent coding itself.
+
+---
+
+### Why `run_command` alone isn't ideal
+
+While powerful, a single raw `run_command` tool is too loose — you have no control or safety checks. The better production approach is **structured, purpose-built tools**:
+
+```python
+def create_file(path: str, content: str) -> str:
+    with open(path, 'w') as f:
+        f.write(content)
+    return f"Created {path}"
+
+def read_file(path: str) -> str:
+    with open(path, 'r') as f:
+        return f.read()
+
+def list_directory(path: str) -> list:
+    return os.listdir(path)
+
+def delete_file(path: str) -> str:
+    os.remove(path)
+    return f"Deleted {path}"
+
+def update_file(path: str, content: str) -> str:
+    with open(path, 'w') as f:
+        f.write(content)
+    return f"Updated {path}"
+```
+
+Each tool has a clear name, clear purpose, and can be validated individually — much safer than passing arbitrary strings to `os.system()`.
+
+---
+
+### Key takeaways
+
+| Concept | What it means |
+|---|---|
+| `os.system(cmd)` | Runs any shell command from Python |
+| Tool as a wrapper | The agent doesn't "know" how to run commands — you give it a tool that does |
+| Agentic loop | Agent plans → calls `run_command` → observes result → plans next step → repeats |
+| Structured tools | Prefer specific tools (create_file, read_file) over one general `run_command` |
+| Self-modification | An agent can edit its own source file — powerful but needs guardrails |
+
+The next section in the series moves on to **RAG (Retrieval-Augmented Generation)**, which is how you give agents access to your own documents and data.
+
+---
+
+## Sec 21 - Building Chat with PDF Project using RAG (Retrieval-Augmented Generations)
+
+## 143. Intro to RAG & Langchain - Section Overview (0:45)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
