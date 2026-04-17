@@ -6,8 +6,7 @@ from dotenv import load_dotenv
 import json
 import requests
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import Optional
+
 
 # Load .env explicitly with override=True to avoid shell var conflicts
 env_path = Path(__file__).parent / ".env"
@@ -48,7 +47,20 @@ SYSTEM_PROMPT = """
     Available Tools:
     - get_weather(city: str): Takes city name as an input string and returns the weather info about the city.
 
-    Example:
+    Example 1:
+    START: Hey, can you solve 2 + 3 * 5 / 10
+    PLAN: { "step": "PLAN": "content": "Seems like user is interested in Math's problem"}
+    PLAN: { "step": "PLAN": "content": "looking at the problem, we should solve this using BODMAS method" }
+    PLAN: { "step": "PLAN": "content": "Yes, The BODMAS is correct thing to be done here"}
+    PLAN: { "step": "PLAN": "content": "first we multiply 3 * 5 which is 15"}
+    PLAN: { "step": "PLAN": "content": "Now the new equation is 2 + 15 / 10"}
+    PLAN: { "step": "PLAN": "content": "we must preform divison that is 15/10 = 1.5"}
+    PLAN: { "step": "PLAN": "content": "Now the new equation is 2 + 1.5"}
+    PLAN: { "step": "PLAN": "content": "Now finally lets perform add 3.5"}
+    PLAN: { "step": "PLAN": "content": "Great, we have solved and finally left with 3.5 as answer"}
+    OUTPUT: { "step": "OUTPUT": "content": "3.5"}
+
+    Example 2:
     START: What is weather of Delhi?
     PLAN: { "step": "PLAN": "content": "Seems like user is interested in getting weather of Delhi in India"}
     PLAN: { "step": "PLAN": "content": "let see if we have any available tool from the list of available tools" }
@@ -62,12 +74,6 @@ SYSTEM_PROMPT = """
 
 print("\n\n\n") 
 
-class MyOutputFormat(BaseModel):
-    step: str = Field(..., description="The ID of the step. Example: PLAN, OUTPUT, TOOL, etc")
-    content: Optional[str] = Field(None, description="The optional string content for the step")
-    tool: Optional[str] = Field(None, description="The ID of the tool to call")
-    input: Optional[str] = Field(None, description="The input params for the tool")
-
 message_history = [
     {  "role": "system", "content": SYSTEM_PROMPT },
 ]
@@ -77,28 +83,32 @@ while True:
     message_history.append({ "role": "user", "content": user_query })
 
     while True:
-        response = client.chat.completions.parse(
+        response = client.chat.completions.create(
             model="gpt-4o",
-            response_format=MyOutputFormat,
+            response_format={"type": "json_object"},
             messages=message_history
         )
 
         raw_result = response.choices[0].message.content
         message_history.append({"role": "assistant", "content": raw_result})
 
-        parsed_result = response.choices[0].message.parsed
+        parsed_result = json.loads(raw_result)
 
-        if parsed_result.step == "START":
-            print("🔥 starting:", parsed_result.content)
-            continue
+        # normalize to always work with a list of steps
+        steps = parsed_result if isinstance(parsed_result, list) else [parsed_result]
 
-        if parsed_result.step == "TOOL":
-            tool_to_call = parsed_result.tool
-            tool_input = parsed_result.input
-            tool_response = available_tools[tool_to_call](tool_input)
-            print(f"🔨tool call: {tool_to_call} {tool_input} = {tool_response}")
-        
-            message_history.append({ "role": "developer", "content": json.dumps(
+        output_reached = False
+        for step in steps:
+            if step.get("step") == "START":
+                print("🔥 starting:", step.get("content"))
+
+            elif step.get("step") == "TOOL":
+                tool_to_call = step.get("tool")
+                tool_input = step.get("input")
+                tool_response = available_tools[tool_to_call](tool_input)
+                print(f"🔨tool call: {tool_to_call} {tool_input} = {tool_response}")
+
+                message_history.append({ "role": "developer", "content": json.dumps(
                     {
                         "step": "OBSERVE",
                         "tool": tool_to_call,
@@ -106,15 +116,17 @@ while True:
                         "output": tool_response
                     }
                 )})
-            continue
+                continue
 
-        if parsed_result.step == "PLAN":
-            print("🧠 planning:", parsed_result.content)
-            continue
+            elif step.get("step") == "PLAN":
+                print("🧠 planning:", step.get("content"))
 
-        if parsed_result.step == "OUTPUT":
-            print("🤖 output:", parsed_result.content)
+            elif step.get("step") == "OUTPUT":
+                print("🤖 output:", step.get("content"))
+                output_reached = True
+
+        if output_reached:
             break
-            
-        
+
+
     print("\n\n\n")
