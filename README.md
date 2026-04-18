@@ -29884,6 +29884,1437 @@ This phase is:
 
 ## 147. RAG Pipeline - Retrieval Mechanishm in Depth (05:36)
 
+## Simple Summary
+
+The **Retrieval Phase** is when users actually ask questions. The system:
+1. Converts the user's query into vector embeddings (using the same model as indexing)
+2. Performs a **vector similarity search** in the vector database to find only the relevant chunks (not all 50,000)
+3. Takes those 2-3 relevant chunks and sends them to an LLM (like GPT) along with the user's question
+4. The LLM answers based ONLY on those relevant chunks, and can cite sources (page numbers, filenames)
+
+This solves the **cost** and **context window** problems from the naive approach.
+
+---
+
+## Important Pointers
+
+| Concept | Explanation |
+|---------|-------------|
+| **Retrieval Phase** | Happens when users chat/queries come in |
+| **Query Embedding** | Convert user's question to vector using same embedding model |
+| **Vector Similarity Search** | Find vectors in database that are "close" to the query vector |
+| **Relevant Chunks Only** | Returns 2-3 relevant chunks, not all 50,000 |
+| **Context Assembly** | Combine relevant chunks + user query for LLM |
+| **Source Citation** | LLM can cite page numbers/filenames from metadata |
+| **Two-Phase Pipeline** | Indexing (prepare) → Retrieval (answer) |
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. The Complete RAG Pipeline (Indexing + Retrieval)
+
+```python
+# FULL RAG PIPELINE - Two Phases
+
+# ============ PHASE 1: INDEXING (run once) ============
+def indexing_phase(documents):
+    chunks = chunk_documents(documents)
+    vector_db = create_vector_database()
+    
+    for chunk in chunks:
+        embedding = create_embedding(chunk["text"])
+        vector_db.store(
+            vector=embedding,
+            metadata={
+                "text": chunk["text"],
+                "page": chunk["page"],
+                "filename": chunk["filename"]
+            }
+        )
+    return vector_db
+
+# ============ PHASE 2: RETRIEVAL (run for each query) ============
+def retrieval_phase(vector_db, user_query):
+    # Step 1: Convert query to embedding
+    query_embedding = create_embedding(user_query)
+    
+    # Step 2: Vector similarity search
+    relevant_chunks = vector_db.similarity_search(query_embedding, top_k=3)
+    
+    # Step 3: Send to LLM with context
+    context = "\n".join([chunk["text"] for chunk in relevant_chunks])
+    answer = call_llm(context, user_query)
+    
+    # Step 4: Return answer with sources
+    return {
+        "answer": answer,
+        "sources": [chunk["filename"] for chunk in relevant_chunks]
+    }
+```
+
+### 2. Converting User Query to Embedding
+
+```python
+from openai import OpenAI
+client = OpenAI()
+
+def embed_query(user_query):
+    """Convert user's question to vector embedding"""
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=user_query
+    )
+    return response.data[0].embedding
+
+# Example
+user_query = "What happened in case number 32?"
+query_vector = embed_query(user_query)
+print(f"Query converted to vector of {len(query_vector)} dimensions")
+print(f"First 5 numbers: {query_vector[:5]}")
+```
+
+### 3. Vector Similarity Search
+
+```python
+import numpy as np
+
+def cosine_similarity(vec_a, vec_b):
+    """Measure how similar two vectors are (1 = identical, 0 = unrelated)"""
+    dot_product = np.dot(vec_a, vec_b)
+    norm_a = np.linalg.norm(vec_a)
+    norm_b = np.linalg.norm(vec_b)
+    return dot_product / (norm_a * norm_b)
+
+class VectorDatabase:
+    def __init__(self):
+        self.items = []  # each item: {vector, metadata}
+    
+    def add(self, vector, metadata):
+        self.items.append({"vector": vector, "metadata": metadata})
+    
+    def similarity_search(self, query_vector, top_k=3):
+        """Find the most similar vectors to the query"""
+        # Calculate similarity with every stored vector
+        similarities = []
+        for item in self.items:
+            score = cosine_similarity(query_vector, item["vector"])
+            similarities.append((score, item["metadata"]))
+        
+        # Sort by similarity (highest first) and return top_k
+        similarities.sort(reverse=True, key=lambda x: x[0])
+        return [meta for _, meta in similarities[:top_k]]
+
+# Example usage
+vector_db = VectorDatabase()
+
+# Index phase: Store chunks
+vector_db.add(
+    vector=[0.9, 0.1, 0.2],  # simplified vector
+    metadata={"text": "Case 32: Smith won the lawsuit", "page": 5, "file": "cases.pdf"}
+)
+vector_db.add(
+    vector=[0.1, 0.8, 0.1],
+    metadata={"text": "Company policy about reports", "page": 2, "file": "policy.pdf"}
+)
+vector_db.add(
+    vector=[0.8, 0.2, 0.3],
+    metadata={"text": "Smith vs Jones verdict details", "page": 7, "file": "cases.pdf"}
+)
+
+# Retrieval phase: Search
+query_vector = [0.85, 0.15, 0.25]  # from user query "What about Smith's case?"
+results = vector_db.similarity_search(query_vector, top_k=2)
+
+for result in results:
+    print(f"Found: {result['text'][:50]}... from {result['file']}, page {result['page']}")
+```
+
+### 4. Complete Retrieval Phase Code
+
+```python
+def complete_retrieval_phase(vector_db, user_query, llm_model="gpt-3.5-turbo"):
+    """
+    Complete retrieval phase:
+    1. Embed query
+    2. Search vector DB
+    3. Build context
+    4. Call LLM
+    5. Return answer with sources
+    """
+    
+    # Step 1: Embed the user's query
+    print("Step 1: Converting query to embedding...")
+    query_embedding = create_embedding(user_query)  # using OpenAI
+    
+    # Step 2: Vector similarity search
+    print("Step 2: Searching vector database...")
+    relevant_chunks = vector_db.similarity_search(query_embedding, top_k=3)
+    
+    if not relevant_chunks:
+        return "I couldn't find any relevant information in the documents."
+    
+    # Step 3: Build context from relevant chunks
+    print(f"Step 3: Found {len(relevant_chunks)} relevant chunks")
+    context_parts = []
+    sources = []
+    
+    for i, chunk in enumerate(relevant_chunks):
+        context_parts.append(f"[Source {i+1}] {chunk['text']}")
+        sources.append(f"{chunk['filename']} (page {chunk['page']})")
+    
+    context = "\n\n".join(context_parts)
+    
+    # Step 4: Call LLM with context + query
+    print("Step 4: Sending to LLM...")
+    response = client.chat.completions.create(
+        model=llm_model,
+        messages=[
+            {"role": "system", "content": f"""
+                You are a helpful assistant. Answer the user's question 
+                using ONLY the following context. If the answer is not 
+                in the context, say "I don't have that information."
+                
+                CONTEXT:
+                {context}
+            """},
+            {"role": "user", "content": user_query}
+        ]
+    )
+    
+    # Step 5: Return answer with sources
+    return {
+        "answer": response.choices[0].message.content,
+        "sources": list(set(sources)),  # unique sources
+        "num_chunks_used": len(relevant_chunks)
+    }
+
+# Example usage
+result = complete_retrieval_phase(vector_db, "What happened in case number 32?")
+print(f"Answer: {result['answer']}")
+print(f"Sources: {result['sources']}")
+```
+
+### 5. Comparing Naive RAG vs Scalable RAG
+
+```python
+# NAIVE RAG (from previous video)
+def naive_rag(user_query, all_documents):
+    # Sends EVERYTHING to LLM
+    context = "\n".join(all_documents)  # ALL 50,000 chunks
+    response = call_llm(context, user_query)
+    return response
+    # Problems: Expensive, hits context limit
+
+# SCALABLE RAG (retrieval phase)
+def scalable_rag(user_query, vector_db):
+    # Sends ONLY relevant chunks
+    query_vector = create_embedding(user_query)
+    relevant_chunks = vector_db.similarity_search(query_vector, top_k=3)
+    context = "\n".join([chunk["text"] for chunk in relevant_chunks])
+    response = call_llm(context, user_query)
+    return response
+    # Benefits: Cheap, can handle millions of documents
+
+# COST COMPARISON
+naive_cost = 50000 * 0.0001  # 50,000 chunks × cost per chunk
+scalable_cost = 3 * 0.0001    # 3 chunks × cost per chunk
+
+print(f"Naive RAG cost per query: ${naive_cost:.2f}")
+print(f"Scalable RAG cost per query: ${scalable_cost:.4f}")
+print(f"Savings: {naive_cost / scalable_cost:.0f}x cheaper!")
+```
+
+### 6. Source Citation (Page Numbers, Filenames)
+
+```python
+def answer_with_citations(vector_db, user_query):
+    # Retrieve chunks WITH metadata
+    query_embedding = create_embedding(user_query)
+    relevant_chunks = vector_db.similarity_search(query_embedding, top_k=3)
+    
+    # Build context that includes source information
+    context_with_sources = []
+    for i, chunk in enumerate(relevant_chunks):
+        context_with_sources.append(
+            f"[SOURCE {i+1} - File: {chunk['filename']}, Page: {chunk['page']}]\n"
+            f"{chunk['text']}"
+        )
+    
+    context = "\n\n".join(context_with_sources)
+    
+    # Ask LLM to cite sources
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": f"""
+                Answer using ONLY the context below. 
+                When you use information from a source, cite it like [SOURCE 1].
+                
+                CONTEXT:
+                {context}
+            """},
+            {"role": "user", "content": user_query}
+        ]
+    )
+    
+    return response.choices[0].message.content
+
+# Example output:
+# "According to case documents [SOURCE 1], Smith won the lawsuit. 
+#  The ruling was made on page 5 of cases.pdf."
+```
+
+### 7. Visual Diagram of Complete RAG Pipeline
+
+```python
+"""
+COMPLETE RAG PIPELINE VISUALIZATION
+
+INDEXING PHASE (offline, once):
+─────────────────────────────────────────────────────────────
+PDF Files (50,000) 
+    ↓ [Chunking]
+Chunks (250,000 pieces)
+    ↓ [Embedding Model]
+Vectors (250,000 vectors)
+    ↓ [Store]
+Vector Database (Pinecone/ChromaDB)
+    ↓
+✅ READY FOR QUERIES
+
+
+RETRIEVAL PHASE (per user query):
+─────────────────────────────────────────────────────────────
+User: "What about case 32?"
+    ↓ [Embed Query]
+Query Vector: [0.12, -0.34, 0.56, ...]
+    ↓ [Similarity Search]
+Vector DB returns top 3 chunks:
+    • Chunk A (similarity: 0.95)
+    • Chunk B (similarity: 0.87)  
+    • Chunk C (similarity: 0.72)
+    ↓ [Extract Text + Metadata]
+Context = "Case 32: Smith vs Jones..." + metadata
+    ↓ [Send to LLM]
+LLM generates answer using ONLY these 3 chunks
+    ↓
+Response: "Smith won the case (from cases.pdf, page 5)"
+"""
+```
+
+### 8. Simple Working Example (No API Keys Required)
+
+```python
+# Complete working example using fake embeddings (for understanding)
+
+class SimpleRAG:
+    def __init__(self):
+        self.vector_db = []
+    
+    # INDEXING PHASE
+    def index_documents(self, documents):
+        for doc in documents:
+            # Simple chunking (by sentence)
+            sentences = doc["text"].split(". ")
+            for i, sentence in enumerate(sentences):
+                # Fake embedding (word count based)
+                embedding = [len(sentence) % 10, len(sentence.split()) % 10]
+                self.vector_db.append({
+                    "vector": embedding,
+                    "text": sentence,
+                    "filename": doc["filename"],
+                    "page": doc.get("page", 1)
+                })
+        print(f"Indexed {len(self.vector_db)} chunks")
+    
+    # RETRIEVAL PHASE
+    def ask(self, query, top_k=2):
+        # Fake query embedding
+        query_embedding = [len(query) % 10, len(query.split()) % 10]
+        
+        # Similarity search (simple difference)
+        similarities = []
+        for item in self.vector_db:
+            diff = abs(query_embedding[0] - item["vector"][0]) + \
+                   abs(query_embedding[1] - item["vector"][1])
+            similarities.append((diff, item))
+        
+        similarities.sort(key=lambda x: x[0])  # smallest diff = most similar
+        top_chunks = [item for _, item in similarities[:top_k]]
+        
+        # Build response
+        context = "\n".join([c["text"] for c in top_chunks])
+        sources = [f"{c['filename']} (page {c['page']})" for c in top_chunks]
+        
+        return {
+            "answer": f"Based on the documents: {context[:100]}...",
+            "sources": sources
+        }
+
+# Usage
+rag = SimpleRAG()
+rag.index_documents([
+    {"text": "Case 32: Smith vs Jones. Smith won the case.", "filename": "cases.pdf", "page": 5},
+    {"text": "Company policy: Submit reports by Friday.", "filename": "policy.pdf", "page": 2},
+    {"text": "The court awarded $50,000 to Smith.", "filename": "cases.pdf", "page": 6}
+])
+
+result = rag.ask("What happened in case 32?")
+print(f"Answer: {result['answer']}")
+print(f"Sources: {result['sources']}")
+```
+
+---
+
+## One-Line Takeaways
+
+- **Retrieval Phase** = Convert query → search vector DB → send only relevant chunks to LLM
+- **Vector Similarity Search** = Finds chunks whose embeddings are "closest" to the query embedding
+- **Only 2-3 chunks** are sent to LLM, not all 50,000 → solves cost + context window problems
+- **Metadata** (page numbers, filenames) enables source citation
+- **RAG = Indexing (prepare) + Retrieval (answer)** – two completely separate phases
+
+---
+
+## Complete Pipeline Summary
+
+| Phase | Input | Output | When |
+|-------|-------|--------|------|
+| **Indexing** | 50,000 PDFs | Vector Database | Once, offline |
+| **Retrieval** | User question | Answer + Sources | Every user query |
+
+**Why RAG wins:** Instead of "search everything → answer" (impossible), RAG does "search → find relevant → answer only on relevant" (efficient and scalable).
+
+## 🔍 RAG Retrieval Phase (High-Level Diagram)
+
+![Image](https://images.openai.com/static-rsc-4/SSkLFvYSOtON8ZgwsaSVgb81Ny3tn_jzz0yqqNgoxTwiwETv2BzlcE8w7Al4QTlaSNoamaFsqgQ6NvtU4VZKrGXIxsJ--c8XD9r4H3mulKF-7Ynq0iKj1pJ2IGrgay_8Fzrmf1i7j6tcj7TttLFFWTsWD9vfJSST2YBiHe-t5ddSB-qU7ImLyJZHd_jwRVQV?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/bKmmRlRvUOFy3_q-bQxTR_iaOCV-eH1FxaKnPv70eC3cJNxn-l1lyQq29NEKReWxjz6Txj1jFGgd-47oPne1J7qgh05HhPbFKxK6EeiKZvXH3y9xvGugAdN-oZj6RriHsY90KgAS2p7yHRcCg-165e_EatKxT_beOgpcXTQppBLnUMtpHK9xZu9nQTxEgZXC?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/adLkISPcEULXhJ0a86Tq1MFeFVRY6yjZOvTvPt6qYk7m-y5gwWx54rf-sqrhr15GjD0U6bb-47_8aN5utQgmlcVTfCmWJ3ugUfDD2pqwFEeMYdIevnEneBzPU6LET0ajKnmDaax4AcIz7n7OkKxt6VUOLv1uX_xkaC7RKdSobSMsWZaOuybca0GU4fjIFFG5?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/uMRAkf68x62xMags_4Q09sjuSffM5lbGmoh2l8uGdSA5xNmrnri1hDzAQofVpga_SezMu7wI9MQ1bKK6Aw-K0e_UUjzro5A9N8hilUUpPs0F1OPV_v8vjGn1ILNNBjzdrKTYQXmbVm2K0T0KSuEAlcW0bGMvWJZ7CbG2Wfo27KaVn_ZBHtHJPnq9YmfHCds4?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/RDKQxzo4t-hjNmJts2yEJFPKC_LnP7y4AGQAi0OPTzZ-coDCI7m5c3oGqrGRmTPjwA3VrPQVnQ6iQql9uuVmnEyr4ejYmvvbJ0X4wICz41mIBb6iorZH2JHdJMBYxME_ptblW7H3-IzgRZswrutVxKrJY39xr6tdz7ImkT9SUtCY3q6EoVpERLfhNPDpQEZC?purpose=fullsize)
+
+---
+
+## 🧠 Step-by-Step Flow (Simple)
+
+```text
+User Query
+   ↓
+Convert Query → Embedding
+   ↓
+Vector Database (Similarity Search)
+   ↓
+Top Relevant Chunks Retrieved
+   ↓
+Pass Chunks + Query → LLM
+   ↓
+Final Answer (with context)
+```
+
+---
+
+## 🧩 Explanation of Each Step
+
+---
+
+## 1. 👤 User Query
+
+```text
+"Tell me about case number 32"
+```
+
+👉 This is just plain text
+
+---
+
+## 2. 🧠 Convert Query → Embedding
+
+```python
+embedding = model.embed("Tell me about case number 32")
+```
+
+👉 Converts meaning into numbers (vector)
+
+---
+
+## 3. 🔎 Vector Similarity Search
+
+```python
+results = vector_db.search(embedding, top_k=3)
+```
+
+👉 Finds **most similar chunks** from stored data
+
+---
+
+## 4. 📄 Retrieve Relevant Chunks
+
+Example output:
+
+```text
+Chunk 1: "Case 32 is between X and Y..."
+Chunk 2: "Status of case 32 is pending..."
+```
+
+👉 Only relevant data (not all documents!)
+
+---
+
+## 5. 🤖 Send to LLM
+
+```python
+context = combine_chunks(results)
+
+response = llm.generate(
+    query="Tell me about case 32",
+    context=context
+)
+```
+
+👉 LLM now has **context + question**
+
+---
+
+## 6. ✅ Final Answer
+
+```text
+"Case 32 is between X and Y and currently pending.
+(Source: Page 5, Document A)"
+```
+
+---
+
+## 🔁 Full Retrieval Pipeline (Code Style)
+
+```python
+# Step 1: user query
+query = "What is case 32?"
+
+# Step 2: embedding
+query_vector = embed_model.embed_query(query)
+
+# Step 3: search
+relevant_chunks = vector_db.similarity_search(query_vector, k=3)
+
+# Step 4: prepare context
+context = "\n".join([chunk.page_content for chunk in relevant_chunks])
+
+# Step 5: LLM call
+answer = llm.invoke(f"""
+Context:
+{context}
+
+Question:
+{query}
+""")
+
+print(answer)
+```
+
+---
+
+## ⚠️ Important Insights
+
+### 🔴 Only relevant data is sent to LLM
+
+* Saves cost
+* Faster
+* More accurate
+
+---
+
+### 🔴 Same embedding model must be used
+
+* Indexing phase
+* Retrieval phase
+
+---
+
+### 🔴 Vector DB is the “memory”
+
+* LLM alone doesn’t know your data
+
+---
+
+## 🧠 One-Line Understanding
+
+👉 *“Retrieval phase = Find relevant data using embeddings and give it to the LLM to answer accurately.”*
+
+---
+
+## 148. Local Vector DB Setup with Docker Compose  (04:43)
+
+## Simple Summary
+
+Before coding the RAG system, you need to set up a **vector database** to store embeddings. The instructor chooses **Qdrant** (his favorite because it's lightweight, fast, and easy to set up). He shows how to run Qdrant locally using **Docker** and `docker-compose.yml`. The database runs on port `6333` in the background (detached mode). This is the infrastructure setup for the **indexing phase** (coming in the next video).
+
+---
+
+## Important Pointers
+
+| Concept | Explanation |
+|---------|-------------|
+| **Vector Databases Available** | Pinecone (managed, not open source), Weaviate (open source), Chroma DB, PG Vector, Qdrant (open source) |
+| **Qdrant** | Instructor's favorite – lightweight, fast, easy to set up |
+| **Docker** | Required to run Qdrant locally |
+| **Docker Compose** | YAML file to define and run multi-container Docker apps |
+| **Port 6333** | Default port that Qdrant uses |
+| **Detached Mode (-d)** | Runs container in background so terminal is free |
+| **Knowledge Transferability** | RAG concepts are same across all vector databases |
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. Popular Vector Databases Comparison
+
+```python
+# Different vector databases you can use for RAG
+
+vector_databases = {
+    "Pinecone": {
+        "open_source": False,
+        "managed": True,
+        "ease_of_use": "Easy",
+        "best_for": "Production, no infra management"
+    },
+    "Qdrant": {
+        "open_source": True,
+        "managed": False,  # Can self-host
+        "ease_of_use": "Very Easy",
+        "best_for": "Lightweight, fast, local development"
+    },
+    "Chroma DB": {
+        "open_source": True,
+        "managed": False,
+        "ease_of_use": "Easy",
+        "best_for": "Python-first, embedded"
+    },
+    "Weaviate": {
+        "open_source": True,
+        "managed": False,
+        "ease_of_use": "Moderate",
+        "best_for": "Feature-rich, GraphQL"
+    },
+    "PG Vector": {
+        "open_source": True,
+        "managed": False,
+        "ease_of_use": "Moderate",
+        "best_for": "PostgreSQL users"
+    }
+}
+
+# Why Qdrant is chosen
+print("Qdrant Advantages:")
+print("- Lightweight (low memory usage)")
+print("- Very fast similarity search")
+print("- Easy Docker setup")
+print("- Open source")
+```
+
+### 2. Docker Compose File for Qdrant
+
+```yaml
+# docker-compose.yml
+# This file defines how to run Qdrant vector database
+
+services:
+  vector-database:           # Name of the service
+    image: qdrant/qdrant     # Docker image to use
+    ports:
+      - "6333:6333"          # Map host port 6333 to container port 6333
+```
+
+### 3. Step-by-Step Setup Commands
+
+```bash
+# Step 1: Create project folder
+mkdir rag
+cd rag
+
+# Step 2: Create docker-compose.yml file (using terminal)
+cat > docker-compose.yml << EOF
+services:
+  vector-database:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"
+EOF
+
+# Step 3: Start Qdrant (attached mode - terminal gets locked)
+docker compose up
+
+# Step 4: Start Qdrant in detached mode (runs in background)
+docker compose up -d
+
+# Step 5: Check if Qdrant is running
+docker ps
+
+# Step 6: Stop Qdrant when done
+docker compose down
+
+# Step 7: View logs
+docker compose logs
+```
+
+### 4. Verifying Qdrant is Running
+
+```python
+# Python code to check if Qdrant is accessible
+import requests
+
+def check_qdrant_status():
+    """Verify Qdrant vector database is running"""
+    try:
+        response = requests.get("http://localhost:6333")
+        if response.status_code == 200:
+            print("✅ Qdrant is running!")
+            print(f"Response: {response.json()}")
+            return True
+        else:
+            print(f"❌ Qdrant returned status: {response.status_code}")
+            return False
+    except requests.exceptions.ConnectionError:
+        print("❌ Cannot connect to Qdrant. Is it running?")
+        print("   Run: docker compose up -d")
+        return False
+
+# Check status
+check_qdrant_status()
+```
+
+### 5. Complete Infrastructure Setup Script
+
+```python
+"""
+Complete setup script for RAG infrastructure
+Run this step-by-step in your terminal
+"""
+
+setup_steps = """
+═══════════════════════════════════════════════════════════
+  RAG INFRASTRUCTURE SETUP GUIDE
+═══════════════════════════════════════════════════════════
+
+📋 PREREQUISITES:
+  - Docker installed on your machine
+  - Docker running (Docker Desktop or Docker Engine)
+
+📁 STEP 1: Create project directory
+───────────────────────────────────────────────────────────
+  mkdir rag_project
+  cd rag_project
+
+📝 STEP 2: Create docker-compose.yml
+───────────────────────────────────────────────────────────
+  # Create file with this content:
+  services:
+    vector-database:
+      image: qdrant/qdrant
+      ports:
+        - "6333:6333"
+
+🚀 STEP 3: Start Qdrant
+───────────────────────────────────────────────────────────
+  docker compose up -d
+
+✅ STEP 4: Verify it's working
+───────────────────────────────────────────────────────────
+  curl http://localhost:6333
+  
+  # Expected output: {"title":"qdrant - vector search engine",...}
+
+🛑 STEP 5: Stop Qdrant (when done)
+───────────────────────────────────────────────────────────
+  docker compose down
+
+═══════════════════════════════════════════════════════════
+"""
+
+print(setup_steps)
+```
+
+### 6. Understanding Docker Detached Mode
+
+```python
+# Docker run modes comparison
+
+"""
+ATTACHED MODE (without -d):
+─────────────────────────────────
+$ docker compose up
+[+] Running 1/1
+ ✓ Container rag-vector-database-1  Created
+Attaching to rag-vector-database-1
+[logs start streaming...]
+^C  # Press Ctrl+C to stop
+[+] Stopping 1/1
+
+- Terminal is LOCKED while container runs
+- Logs are visible in real-time
+- Good for debugging
+
+DETACHED MODE (with -d):
+─────────────────────────────────
+$ docker compose up -d
+[+] Running 1/1
+ ✓ Container rag-vector-database-1  Started
+
+$  # Terminal is FREE immediately
+- Container runs in BACKGROUND
+- Can continue using terminal
+- Good for production/local dev
+"""
+
+# Check detached containers
+import subprocess
+
+def list_docker_containers():
+    result = subprocess.run(
+        ["docker", "ps"],
+        capture_output=True,
+        text=True
+    )
+    print(result.stdout)
+
+# list_docker_containers()
+```
+
+### 7. What Happens When You Run Docker Compose Up
+
+```python
+"""
+Docker Compose Execution Flow:
+
+1. docker-compose.yml is read
+   ↓
+2. Image 'qdrant/qdrant' is checked locally
+   ↓
+3. If not found, pulled from Docker Hub
+   ↓
+4. Container is created from the image
+   ↓
+5. Port 6333 is forwarded (host:container)
+   ↓
+6. Container starts running
+   ↓
+7. Qdrant server is now accessible at localhost:6333
+"""
+
+# Visual representation of port mapping
+port_mapping = """
+Host Machine (your computer)
+    Port 6333  ←─── mapping ───→  Container (Qdrant)
+    (localhost:6333)                 Port 6333
+    
+Any app on your computer can now connect to:
+    http://localhost:6333
+"""
+
+print(port_mapping)
+```
+
+### 8. Troubleshooting Common Issues
+
+```python
+# Common Docker/Qdrant issues and solutions
+
+troubleshooting = {
+    "Docker not installed": {
+        "error": "docker: command not found",
+        "solution": "Download Docker Desktop from docker.com"
+    },
+    "Docker not running": {
+        "error": "Cannot connect to the Docker daemon",
+        "solution": "Start Docker Desktop application"
+    },
+    "Port already in use": {
+        "error": "port is already allocated",
+        "solution": "Change port in docker-compose.yml or stop conflicting service"
+    },
+    "Permission denied": {
+        "error": "permission denied while trying to connect",
+        "solution": "Use 'sudo' or add user to docker group"
+    },
+    "Image pull failed": {
+        "error": "pull access denied",
+        "solution": "Check internet connection, image name is correct"
+    }
+}
+
+def diagnose_docker():
+    """Quick diagnosis script"""
+    import subprocess
+    
+    # Check Docker version
+    try:
+        version = subprocess.run(["docker", "--version"], capture_output=True, text=True)
+        if version.returncode == 0:
+            print(f"✅ Docker: {version.stdout.strip()}")
+        else:
+            print("❌ Docker not found. Please install Docker.")
+            return False
+    except FileNotFoundError:
+        print("❌ Docker not installed")
+        return False
+    
+    # Check if Docker daemon is running
+    try:
+        ps = subprocess.run(["docker", "ps"], capture_output=True, text=True)
+        if ps.returncode == 0:
+            print("✅ Docker daemon is running")
+            return True
+        else:
+            print("❌ Docker daemon is not running")
+            return False
+    except Exception:
+        print("❌ Cannot connect to Docker daemon")
+        return False
+
+# Run diagnosis
+# diagnose_docker()
+```
+
+### 9. Complete Setup Code (Copy-Paste Ready)
+
+```python
+"""
+COMPLETE SETUP - Run this in your terminal
+============================================
+"""
+
+setup_commands = """
+# 1. Create project folder and enter it
+mkdir rag_tutorial && cd rag_tutorial
+
+# 2. Create docker-compose.yml
+echo 'services:
+  vector-database:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"' > docker-compose.yml
+
+# 3. Start Qdrant in background
+docker compose up -d
+
+# 4. Wait a few seconds for Qdrant to initialize
+sleep 5
+
+# 5. Test if Qdrant is working
+curl http://localhost:6333
+
+# 6. Check container status
+docker ps
+
+# You should see:
+# CONTAINER ID   IMAGE           COMMAND       PORTS                    NAMES
+# xxxxxxxx       qdrant/qdrant   "./entrypoint.sh"   0.0.0.0:6333->6333/tcp   rag_tutorial-vector-database-1
+"""
+
+print(setup_commands)
+```
+
+### 10. Project Structure After Setup
+
+```python
+"""
+Project Structure After Setup:
+
+rag_project/
+│
+├── docker-compose.yml      # Docker configuration for Qdrant
+│
+├── rag_index.py            # (to be created) Indexing phase code
+│
+├── rag_query.py            # (to be created) Retrieval phase code
+│
+└── data/                   # (to be created) Your PDF files
+    ├── doc1.pdf
+    ├── doc2.pdf
+    └── ...
+
+Running Services:
+┌─────────────────────────────────────────┐
+│  Docker Container: qdrant/qdrant        │
+│  ┌─────────────────────────────────┐    │
+│  │  Qdrant Vector Database          │    │
+│  │  - Stores embeddings             │    │
+│  │  - Performs similarity search    │    │
+│  │  - Accessible at :6333           │    │
+│  └─────────────────────────────────┘    │
+└─────────────────────────────────────────┘
+         ↑
+         │ HTTP API
+         ↓
+    Your Python RAG Code
+"""
+```
+
+---
+
+## One-Line Takeaways
+
+- **Vector Database** = Special database that stores embeddings and does similarity search
+- **Qdrant** = Open-source, lightweight, fast vector database – great for learning RAG
+- **Docker** = Required to run Qdrant locally (container technology)
+- **Port 6333** = Where Qdrant listens for API requests
+- **`docker compose up -d`** = Starts Qdrant in background (detached mode)
+
+---
+
+## Quick Reference Commands
+
+| Command | Purpose |
+|---------|---------|
+| `docker compose up -d` | Start Qdrant in background |
+| `docker compose down` | Stop Qdrant |
+| `docker compose logs` | View Qdrant logs |
+| `docker ps` | List running containers |
+| `curl http://localhost:6333` | Check if Qdrant is responding |
+
+---
+
+## 149. LangChain Installation & Setup (03:08)
+
+## Simple Summary
+
+**LangChain** is a Python library that provides ready-to-use utility tools for AI development. Instead of writing everything from scratch (document loaders, text splitters, embedding creators, vector database connectors), LangChain gives you pre-built functions. For RAG, you can use LangChain's **document loaders** (like PDF loader), **text splitters** (for chunking), and **vector store integrations** (for Qdrant). This saves massive development time.
+
+---
+
+## Important Pointers
+
+| Concept | Explanation |
+|---------|-------------|
+| **LangChain** | Library with pre-built utilities for AI/LLM tasks |
+| **Why LangChain?** | Avoids writing repetitive code from scratch |
+| **Document Loaders** | Read documents from PDFs, websites, databases, etc. |
+| **Text Splitters** | Chunk documents into smaller pieces |
+| **Embedding Models** | Pre-built integrations with OpenAI, HuggingFace, etc. |
+| **Vector Store Connectors** | Connect to Pinecone, Qdrant, ChromaDB easily |
+| **Installation** | `pip install langchain langchain-community pypdf` |
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. What Problem Does LangChain Solve?
+
+```python
+# WITHOUT LangChain (writing everything from scratch)
+
+# You would need to write:
+def load_pdf_manually(filepath):
+    # 50+ lines of code to read PDF
+    pass
+
+def chunk_text_manually(text):
+    # 30+ lines of code for smart chunking
+    pass
+
+def create_embeddings_manually(chunks):
+    # 40+ lines of code for API calls + error handling
+    pass
+
+def connect_to_qdrant_manually():
+    # 50+ lines of code for DB connection
+    pass
+
+# Total: ~200+ lines of custom code
+```
+
+```python
+# WITH LangChain (using pre-built utilities)
+
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_qdrant import QdrantVectorStore
+
+# Just 10 lines of code for the same functionality!
+loader = PyPDFLoader("document.pdf")
+documents = loader.load()
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500)
+chunks = text_splitter.split_documents(documents)
+embeddings = OpenAIEmbeddings()
+vector_store = QdrantVectorStore.from_documents(chunks, embeddings, url="http://localhost:6333")
+```
+
+### 2. LangChain Architecture
+
+```python
+"""
+LangChain Components for RAG:
+
+┌─────────────────────────────────────────────────────────────┐
+│                      LANGCHAIN                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  📄 DOCUMENT LOADERS         🔪 TEXT SPLITTERS             │
+│  ├── PyPDFLoader             ├── RecursiveCharacterSplitter │
+│  ├── TextLoader              ├── TokenTextSplitter         │
+│  ├── CSVLoader               ├── MarkdownHeaderSplitter    │
+│  ├── WebBaseLoader           └── ...                       │
+│  └── ...                                                   │
+│                                                             │
+│  🧠 EMBEDDINGS                💾 VECTOR STORES              │
+│  ├── OpenAIEmbeddings        ├── Qdrant                    │
+│  ├── HuggingFaceEmbeddings   ├── Pinecone                  │
+│  ├── CohereEmbeddings        ├── Chroma                    │
+│  └── ...                     └── ...                       │
+│                                                             │
+│  🤖 LLM MODELS                🔗 CHAINS                     │
+│  ├── ChatOpenAI              ├── RetrievalQA               │
+│  ├── ChatAnthropic           ├── ConversationalRetrieval   │
+│  └── ...                     └── ...                       │
+└─────────────────────────────────────────────────────────────┘
+"""
+```
+
+### 3. Installing LangChain and Dependencies
+
+```bash
+# Basic LangChain installation
+pip install langchain
+
+# Community integrations (PDF loaders, etc.)
+pip install langchain-community
+
+# PDF specific library
+pip install pypdf
+
+# OpenAI integration
+pip install langchain-openai
+
+# Qdrant integration
+pip install langchain-qdrant
+
+# Install all at once
+pip install langchain langchain-community langchain-openai langchain-qdrant pypdf
+```
+
+### 4. Using LangChain Document Loaders
+
+```python
+# Example: Loading a PDF file with LangChain
+
+from langchain_community.document_loaders import PyPDFLoader
+
+# Load a single PDF
+loader = PyPDFLoader("data/case_32.pdf")
+documents = loader.load()
+
+# Each document has page_content and metadata
+for doc in documents:
+    print(f"Page {doc.metadata['page']}: {doc.page_content[:100]}...")
+
+print(f"Loaded {len(documents)} pages")
+
+# Loading multiple PDFs
+from langchain_community.document_loaders import DirectoryLoader
+
+loader = DirectoryLoader(
+    "data/",
+    glob="**/*.pdf",  # pattern to match
+    loader_cls=PyPDFLoader
+)
+all_documents = loader.load()
+print(f"Loaded {len(all_documents)} pages from all PDFs")
+```
+
+### 5. Using LangChain Text Splitters (Chunking)
+
+```python
+from langchain.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    TokenTextSplitter,
+    CharacterTextSplitter
+)
+
+# Method 1: Recursive Character Splitter (MOST POPULAR)
+# Splits by paragraphs, then sentences, then words
+recursive_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,        # 500 characters per chunk
+    chunk_overlap=50,      # 50 characters overlap between chunks
+    separators=["\n\n", "\n", " ", ""]  # priority order
+)
+
+chunks = recursive_splitter.split_documents(documents)
+print(f"Created {len(chunks)} chunks")
+
+# Method 2: Token Splitter (counts tokens for LLM context)
+token_splitter = TokenTextSplitter(
+    chunk_size=100,    # 100 tokens per chunk
+    chunk_overlap=10
+)
+
+# Method 3: Simple Character Splitter
+char_splitter = CharacterTextSplitter(
+    separator="\n",
+    chunk_size=500,
+    chunk_overlap=50
+)
+
+# Example output
+for i, chunk in enumerate(chunks[:3]):
+    print(f"Chunk {i}: {chunk.page_content[:50]}...")
+```
+
+### 6. Using LangChain Embeddings
+
+```python
+from langchain_openai import OpenAIEmbeddings
+import os
+
+# Set your OpenAI API key
+os.environ["OPENAI_API_KEY"] = "your-api-key-here"
+
+# Create embeddings instance
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",  # can also use "text-embedding-ada-002"
+)
+
+# Embed a single text
+single_embedding = embeddings.embed_query("What is case number 32?")
+print(f"Embedding dimension: {len(single_embedding)}")
+print(f"First 5 values: {single_embedding[:5]}")
+
+# Embed multiple texts in batch (more efficient)
+texts = ["Case 32: Smith vs Jones", "Company policy report"]
+batch_embeddings = embeddings.embed_documents(texts)
+print(f"Created {len(batch_embeddings)} embeddings")
+```
+
+### 7. Complete LangChain RAG Indexing Pipeline
+
+```python
+"""
+Complete indexing pipeline using LangChain
+"""
+
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
+
+# Step 1: Load documents
+print("Step 1: Loading PDFs...")
+loader = PyPDFLoader("data/case_32.pdf")
+documents = loader.load()
+print(f"Loaded {len(documents)} pages")
+
+# Step 2: Split into chunks
+print("Step 2: Chunking documents...")
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50,
+)
+chunks = text_splitter.split_documents(documents)
+print(f"Created {len(chunks)} chunks")
+
+# Step 3: Create embeddings
+print("Step 3: Creating embeddings...")
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+# Step 4: Store in Qdrant vector database
+print("Step 4: Storing in Qdrant...")
+qdrant_client = QdrantClient(host="localhost", port=6333)
+
+vector_store = QdrantVectorStore.from_documents(
+    documents=chunks,
+    embedding=embeddings,
+    client=qdrant_client,
+    collection_name="my_rag_collection"
+)
+
+print("✅ Indexing complete!")
+```
+
+### 8. Available Document Loaders in LangChain
+
+```python
+# LangChain has 100+ document loaders for different sources
+
+from langchain_community.document_loaders import (
+    PyPDFLoader,           # PDF files
+    TextLoader,            # .txt files
+    CSVLoader,             # CSV files
+    UnstructuredWordLoader,# .docx files
+    WebBaseLoader,         # Web pages
+    SitemapLoader,         # Sitemap URLs
+    YoutubeLoader,         # YouTube transcripts
+    NotionDirectoryLoader, # Notion exports
+    SlackLoader,           # Slack messages
+    GitHubLoader,          # GitHub repos
+    WikipediaLoader,       # Wikipedia articles
+)
+
+# Example: Load from a website
+from langchain_community.document_loaders import WebBaseLoader
+
+loader = WebBaseLoader("https://example.com/article")
+web_documents = loader.load()
+
+# Example: Load from a text file
+loader = TextLoader("data/notes.txt")
+text_documents = loader.load()
+```
+
+### 9. LangChain vs Manual Coding Comparison
+
+```python
+"""
+COMPARISON: Manual vs LangChain
+"""
+
+# MANUAL APPROACH (What you'd write without LangChain)
+class ManualRAG:
+    def load_pdf(self, path):
+        # 50 lines: import pypdf, handle errors, extract text, etc.
+        pass
+    
+    def chunk_text(self, text):
+        # 30 lines: custom logic for splitting
+        pass
+    
+    def create_embeddings(self, chunks):
+        # 40 lines: API calls, batching, rate limiting, retries
+        pass
+    
+    def store_in_qdrant(self, chunks, embeddings):
+        # 50 lines: connection, collection creation, upsert logic
+        pass
+    
+    def search(self, query):
+        # 30 lines: query embedding, similarity search
+        pass
+
+# LANGCHAIN APPROACH (10-20 lines total)
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_qdrant import QdrantVectorStore
+
+def langchain_rag():
+    # Load
+    docs = PyPDFLoader("file.pdf").load()
+    
+    # Chunk
+    chunks = RecursiveCharacterTextSplitter(chunk_size=500).split_documents(docs)
+    
+    # Embed & Store (one line!)
+    vector_store = QdrantVectorStore.from_documents(
+        chunks, OpenAIEmbeddings(), url="http://localhost:6333"
+    )
+    
+    return vector_store
+
+print("LangChain saves 150+ lines of code!")
+```
+
+### 10. Verifying LangChain Installation
+
+```python
+# Check if LangChain is installed correctly
+
+def verify_langchain():
+    try:
+        import langchain
+        print(f"✅ LangChain version: {langchain.__version__}")
+    except ImportError:
+        print("❌ LangChain not installed. Run: pip install langchain")
+        return False
+    
+    try:
+        from langchain_community.document_loaders import PyPDFLoader
+        print("✅ LangChain Community installed")
+    except ImportError:
+        print("❌ langchain-community missing. Run: pip install langchain-community")
+    
+    try:
+        from langchain_openai import OpenAIEmbeddings
+        print("✅ LangChain OpenAI installed")
+    except ImportError:
+        print("❌ langchain-openai missing. Run: pip install langchain-openai")
+    
+    try:
+        import pypdf
+        print("✅ PyPDF installed")
+    except ImportError:
+        print("❌ pypdf missing. Run: pip install pypdf")
+    
+    return True
+
+verify_langchain()
+```
+
+### 11. Project Structure After Setup
+
+```python
+"""
+Project Structure After LangChain Installation:
+
+rag_project/
+│
+├── docker-compose.yml      # Qdrant database
+│
+├── requirements.txt        # Python dependencies
+│   ├── langchain
+│   ├── langchain-community
+│   ├── langchain-openai
+│   ├── langchain-qdrant
+│   ├── pypdf
+│   └── qdrant-client
+│
+├── data/                   # Your PDF files
+│   └── case_32.pdf
+│
+├── index.py               # Indexing phase (uses LangChain)
+│
+└── query.py               # Retrieval phase (uses LangChain)
+
+To generate requirements.txt:
+    pip freeze > requirements.txt
+
+To install from requirements.txt:
+    pip install -r requirements.txt
+"""
+```
+
+---
+
+## One-Line Takeaways
+
+- **LangChain** = Pre-built utility library for AI/LLM tasks – saves writing repetitive code
+- **Document Loaders** = Read data from PDFs, websites, databases with one line of code
+- **Text Splitters** = Smart chunking with configurable size and overlap
+- **Embeddings** = Pre-configured integration with OpenAI, HuggingFace, etc.
+- **Vector Stores** = One-line connection to Qdrant, Pinecone, ChromaDB
+- **Installation** = `pip install langchain langchain-community langchain-openai pypdf`
+
+---
+
+## Quick Reference: Common LangChain Imports
+
+| Purpose | Import Statement |
+|---------|------------------|
+| PDF Loading | `from langchain_community.document_loaders import PyPDFLoader` |
+| Text Chunking | `from langchain.text_splitter import RecursiveCharacterTextSplitter` |
+| OpenAI Embeddings | `from langchain_openai import OpenAIEmbeddings` |
+| Qdrant Store | `from langchain_qdrant import QdrantVectorStore` |
+| Chat Models | `from langchain_openai import ChatOpenAI` |
+| QA Chains | `from langchain.chains import RetrievalQA` |
+
+---
+
+## 150. LangChain Document Loaders for PDF (03:38)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
