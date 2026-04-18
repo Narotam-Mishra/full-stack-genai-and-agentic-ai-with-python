@@ -28578,7 +28578,1311 @@ The next section in the series moves on to **RAG (Retrieval-Augmented Generation
 
 ## Sec 21 - Building Chat with PDF Project using RAG (Retrieval-Augmented Generations)
 
-## 143. Intro to RAG & Langchain - Section Overview (0:45)
+## 143. Intro to RAG & Langchain - Section Overview (00:45)
+
+## 🧠 Simple Concepts & Summary
+
+* You’re starting a new section on **RAG**
+* RAG is one of the **most important real-world AI techniques**
+* It helps AI:
+
+  * Use **external data (PDFs, documents, databases)**
+  * Give **accurate and up-to-date answers**
+
+👉 This section will teach:
+
+* What RAG is
+* How it works
+* How to use it on large documents
+* How to build **scalable production systems**
+
+---
+
+## 🔑 What is RAG?
+
+👉 Full form:
+
+**RAG = Retrieval Augmented Generation**
+
+### In simple terms:
+
+> Instead of relying only on training data, AI first **retrieves information**, then **generates an answer**
+
+---
+
+## 🤖 Problem Without RAG
+
+Normal LLM:
+
+```text
+User → LLM → Answer
+```
+
+❌ Problems:
+
+* No real-time data
+* Hallucinations (wrong answers)
+* Cannot read your private docs
+
+---
+
+## ✅ With RAG
+
+```text
+User → Retrieve Data → LLM → Answer
+```
+
+👉 Now AI:
+
+* Searches relevant data
+* Uses it to generate accurate answers
+
+---
+
+## 🔁 Step-by-Step Flow of RAG
+
+```text
+1. User asks question
+2. System searches relevant documents
+3. Extracts useful chunks
+4. Sends them to LLM
+5. LLM generates final answer
+```
+
+---
+
+## 📦 Example (Very Important)
+
+### Without RAG:
+
+```text
+Q: What is my company policy?
+LLM: Sorry, I don't know
+```
+
+---
+
+### With RAG:
+
+```text
+Q: What is my company policy?
+
+→ System retrieves policy PDF
+→ Sends relevant section to LLM
+
+LLM: According to your policy document...
+```
+
+---
+
+## 🧱 Core Components of RAG
+
+## 1. Documents (Data Source)
+
+* PDFs
+* Text files
+* Databases
+
+---
+
+## 2. Embeddings (Search Engine)
+
+Convert text → vectors
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+embedding = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="What is RAG?"
+)
+```
+
+---
+
+## 3. Vector Database
+
+Stores embeddings for fast search
+
+Examples:
+
+* FAISS
+* Pinecone
+* Weaviate
+
+---
+
+## 4. Retriever
+
+Finds relevant chunks
+
+```python
+def retrieve(query):
+    # search similar vectors
+    return relevant_chunks
+```
+
+---
+
+## 5. Generator (LLM)
+
+Uses retrieved data to answer
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "Answer using context"},
+        {"role": "user", "content": query},
+        {"role": "assistant", "content": context}
+    ]
+)
+```
+
+---
+
+## 🧠 Why RAG is IMPORTANT (Industry Insight)
+
+👉 The instructor said:
+
+> “90% of companies use this”
+
+### Why?
+
+* Works with **private data**
+* Reduces hallucination
+* No need to retrain model
+* Scalable
+
+---
+
+## 🏢 Real-World Use Cases
+
+| Use Case         | Example                  |
+| ---------------- | ------------------------ |
+| Chat with PDFs   | Resume, contracts        |
+| Customer support | Company knowledge base   |
+| Internal tools   | HR policies              |
+| Legal/Finance    | Document search          |
+| AI assistants    | Company-specific answers |
+
+---
+
+## ⚙️ Advanced Topics (Coming Next)
+
+This section will cover:
+
+### 🔹 Large Documents
+
+* Chunking PDFs
+* Handling long context
+
+---
+
+### 🔹 Scalable Pipelines
+
+* Async processing
+* Fast retrieval
+
+---
+
+### 🔹 Production Systems
+
+* Real-time queries
+* Efficient storage
+
+---
+
+## 🧠 Key Concept
+
+👉 RAG = Memory for AI
+
+Without RAG:
+
+* AI = Smart but forgetful
+
+With RAG:
+
+* AI = Smart + informed
+
+---
+
+## 🔥 Final Takeaways
+
+### 1. LLM alone is not enough
+
+* Needs external data
+
+---
+
+### 2. RAG = Retrieval + Generation
+
+* First search → then answer
+
+---
+
+### 3. Most practical AI systems use RAG
+
+* Especially in companies
+
+---
+
+### 4. No retraining needed
+
+* Just plug your data
+
+---
+
+## 🚀 What You’ll Learn Next
+
+* How to load PDFs
+* How to create embeddings
+* How to build a vector DB
+* How to build full RAG pipeline
+
+---
+
+## 144. Defining the Core Problem in RAG Systems (04:12)
+
+## What Problem does RAG exactly solve?
+
+A business has many documents (PDFs, etc.). Employees want to ask questions about these documents using AI (like ChatGPT). But ChatGPT doesn't know their private data. Also, you can't give all documents to the AI at once (too big, too costly). **RAG solves this** by finding only the relevant parts of documents and giving just that to the AI.
+
+---
+
+## Important Pointers
+
+1. **LLMs lack private/domain-specific data** – They're trained on public internet data only.
+2. **Context window limitation** – You can't feed thousands of pages to an LLM at once.
+3. **Cost & performance** – Sending all documents for every query is expensive and slow.
+4. **RAG's job** – Retrieve relevant content from your data, then generate an answer using an LLM.
+5. **Source citation** – RAG can tell you *which file & page* the answer came from.
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. The Problem: LLM Doesn't Know Your Private Data
+
+```python
+# WITHOUT RAG - Wrong approach
+from openai import OpenAI
+client = OpenAI()
+
+user_query = "What is case number 32 about?"
+
+# This will fail because ChatGPT never saw your case files
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": user_query}]
+)
+# Output: "I don't have information about case number 32."
+```
+
+### 2. The Problem: Context Window is Limited
+
+```python
+# You CAN'T do this - pretending to load 1000 PDFs
+all_files_content = "..."  # This would be millions of tokens
+
+# GPT-3.5 has ~16k token limit, GPT-4 has ~128k
+# 1000 PDFs could be 10+ million tokens → impossible
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": all_files_content + user_query}]
+)
+# This will fail or cost a fortune
+```
+
+### 3. The Solution: RAG – Retrieve + Generate
+
+```python
+# Step 1: Retrieve relevant documents (simplified example)
+def retrieve_relevant_docs(query, all_documents):
+    # In reality: use embeddings + vector search
+    # Here: fake search by keyword
+    relevant = []
+    for doc in all_documents:
+        if "case 32" in doc.lower():
+            relevant.append(doc)
+    return relevant  # Returns only 1-2 relevant docs, not all 1000
+
+# Step 2: Generate answer with context
+documents = [
+    "Case 32: Smith vs Jones. Status: Closed. Decision: Smith wins.",
+    "Case 33: Another case...",
+    # ... 1000 documents
+]
+
+relevant_docs = retrieve_relevant_docs("case number 32", documents)
+context = "\n".join(relevant_docs)
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": f"Use this context: {context}"},
+        {"role": "user", "content": "What is case number 32 about?"}
+    ]
+)
+# Output: "Case 32 is Smith vs Jones. It is closed, and Smith won."
+```
+
+### 4. Real RAG Flow (Basic Implementation)
+
+```python
+# Step 1: Load PDFs
+from pypdf import PdfReader
+
+def load_pdf(file_path):
+    reader = PdfReader(file_path)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+# Step 2: Split into chunks (because one PDF page can be too big)
+def split_text(text, chunk_size=500):
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), chunk_size):
+        chunks.append(" ".join(words[i:i+chunk_size]))
+    return chunks
+
+# Step 3: Create embeddings (convert text to numbers)
+# Using a fake embedding function for demo
+def fake_embed(text):
+    # In reality: use OpenAI's embedding or sentence-transformers
+    return [hash(word) % 1000 for word in text.split()[:10]]
+
+# Step 4: Store chunks + embeddings in a vector database (simplified)
+vector_store = []
+for chunk in all_chunks:
+    vector_store.append({
+        "text": chunk,
+        "embedding": fake_embed(chunk)
+    })
+
+# Step 5: Retrieve similar chunks for a query
+def retrieve(query, top_k=2):
+    query_embedding = fake_embed(query)
+    # In reality: cosine similarity
+    # Here: just return first top_k for demo
+    return vector_store[:top_k]
+
+# Step 6: Generate answer
+query = "Tell me about case number 32"
+retrieved_chunks = retrieve(query)
+context = "\n".join([c["text"] for c in retrieved_chunks])
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": f"Context: {context}\nAnswer based only on context."},
+        {"role": "user", "content": query}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+### 5. Citation (Page Number, File Name)
+
+```python
+# Store metadata with each chunk
+chunks_with_metadata = []
+for page_num, chunk in enumerate(chunks):
+    chunks_with_metadata.append({
+        "text": chunk,
+        "page": page_num + 1,
+        "file": "case_32.pdf"
+    })
+
+# After retrieval, show source
+retrieved = chunks_with_metadata[0]
+print(f"Answer: {response}")
+print(f"Source: {retrieved['file']}, Page {retrieved['page']}")
+```
+
+---
+
+## Final Simple Analogy
+
+- **Without RAG** = Asking a friend who never read your company's documents → they say "I don't know"
+- **With RAG** = You quickly scan 1000 documents, pick the 2 relevant pages, give only those to your friend → they answer correctly and say "I found this on page 5 of case_32.pdf"
+
+---
+
+## One-Line Definition
+
+> **RAG = Search (Retrieve relevant documents) + Read (LLM generates answer from only those documents)**
+
+---
+
+## 🧠 Full RAG Architecture (Big Picture)
+
+![Image](https://images.openai.com/static-rsc-4/8O8T_8XDla3KoM1lFkoN51p1vSJE4QvntVPEdYv8E-tzq1OvPVwGXmo6LE_aSE3s5Pho3iqtNNwzVb8XIhB8807w2NOTTrbvVX4QiyQedyf0q1Dtn_mqgkEl5vlhZJwPuix9nrgZJzglZqIZSmhClO-WGzf-Jc6kE9FOD0ptoIEIux2gyIZdQF5kZTLYY-Mc?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/adLkISPcEULXhJ0a86Tq1MFeFVRY6yjZOvTvPt6qYk7m-y5gwWx54rf-sqrhr15GjD0U6bb-47_8aN5utQgmlcVTfCmWJ3ugUfDD2pqwFEeMYdIevnEneBzPU6LET0ajKnmDaax4AcIz7n7OkKxt6VUOLv1uX_xkaC7RKdSobSMsWZaOuybca0GU4fjIFFG5?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/fdAHZ4kXQAWdRkH7-8NmXAezbnFQOj58wEP9c7TJb1nitTRl7jjYqXwHNrDwDJtpkXg4yu7SA4aKctY8goXBD0NncwwuvGebBcGx8E4wKGyyB1a-EWOqtap4USV4_OPYXGaNUrD-Mj9ULJPtH59UJpKm_Y7Mxttujhua8d3WG4DhktXZLNWetzd-g6XmChR6?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/kXgqvo7il_i3ulIPFTYiDk3NvUhSkyFd6QbdLyBU6F_htZ-Ss8IbQyypBpJZX_kXV3yZS9sXgQsz_DoBLC0fOeovZFjb9KvBPy3tiWhj7-F3q-4XyXkpUmEnL9bXfhJIRM2zq31Jk89ZMeReoTQoif-ykbyhie1xOD3WjCC--Jw5LcnY71dczaSM5KDn1Vj1?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/fmBOqZ7VBy5cxSVeDn28Tghqy8ixMZ7AZdrKwSfwSDk5le2xB_Qqz-LhO9U80GZPsanFYflqBUZCoovSu3bcNTbw-WE1JmdIg9Bi_KCdgFGU7P_JW0Le8wYw7at1tIU-QkNtgoJrIuQjTq15Hb5NdGWpSZWk6OH_wHjaznc8iYMAjPsBTGu632K5vEjcqji1?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/EUONPuHyjvIioW0hRLI_ScCyUtS5aBZD8NUXsiudaWZZbhgnAXgTuwqBtv2Fu7zHO6GfxDFpoBZGCbYvmJXrs8t8WKlL1pmi0CsAowmNBUB6dR8Qk49D2dwJvDJ6LoifQ9o2qejIGMI_PaYgUgZHqjYPQ8v24nApcnGdMx24xEEu95zIpfuKqnNYY9noPbL3?purpose=fullsize)
+
+---
+
+## 🔍 Simplified Architecture (Step-by-Step)
+
+```
+                ┌────────────────────────────┐
+                │        INDEXING PHASE       │
+                └────────────────────────────┘
+
+   Documents (PDFs, DB, Files)
+                 │
+                 ▼
+         ┌──────────────┐
+         │  Chunking     │  → split into small parts
+         └──────────────┘
+                 │
+                 ▼
+         ┌──────────────┐
+         │ Embeddings    │  → convert text → vectors
+         └──────────────┘
+                 │
+                 ▼
+         ┌────────────────────┐
+         │   Vector Database   │
+         │ (store + metadata)  │
+         └────────────────────┘
+
+
+                ┌────────────────────────────┐
+                │       RETRIEVAL PHASE       │
+                └────────────────────────────┘
+
+            User Query
+                 │
+                 ▼
+         ┌──────────────┐
+         │ Embedding     │  → query → vector
+         └──────────────┘
+                 │
+                 ▼
+         ┌────────────────────┐
+         │ Vector Search       │
+         │ (similar chunks)    │
+         └────────────────────┘
+                 │
+                 ▼
+         ┌────────────────────────────┐
+         │  Retrieved Context (Top-K)  │
+         └────────────────────────────┘
+                 │
+                 ▼
+         ┌────────────────────────────┐
+         │        LLM (GPT, etc.)      │
+         │  + Prompt + Context         │
+         └────────────────────────────┘
+                 │
+                 ▼
+              Final Answer
+```
+
+---
+
+## ⚡ Key Flow in One Line
+
+👉 **RAG = Retrieve relevant data → Augment prompt → Generate answer**
+
+---
+
+## 🔥 Important Components Explained
+
+## 1. Indexing Phase (Offline)
+
+* Happens once (or periodically)
+* Prepares data
+
+✔ Chunk documents
+✔ Create embeddings
+✔ Store in vector DB
+
+---
+
+## 2. Retrieval Phase (Runtime)
+
+* Happens on every user query
+
+✔ Convert query → embedding
+✔ Search similar chunks
+✔ Send to LLM
+
+---
+
+## 3. Vector Database
+
+Examples:
+
+* Pinecone
+* Weaviate
+* FAISS
+
+Stores:
+
+```json
+{
+  "text": "chunk content",
+  "embedding": [...],
+  "metadata": { "page": 5 }
+}
+```
+
+---
+
+## 4. Top-K Retrieval
+
+👉 Only fetch most relevant chunks
+
+Example:
+
+```python
+top_k = 3
+```
+
+---
+
+## 5. Final Prompt to LLM
+
+```python
+prompt = f"""
+Answer using the context below:
+
+Context:
+{retrieved_chunks}
+
+Question:
+{user_query}
+"""
+```
+
+---
+
+## 🧩 Why This Architecture Works
+
+| Problem                       | Solution in RAG         |
+| ----------------------------- | ----------------------- |
+| LLM doesn’t know private data | Retrieval step          |
+| Too much data                 | Chunking + Top-K        |
+| Expensive                     | Only send relevant data |
+| Hallucination                 | Grounded answers        |
+
+---
+
+## 🚀 Real Example Flow
+
+User:
+
+```
+"What is case number 32?"
+```
+
+System:
+
+1. Convert query → embedding
+2. Search vector DB
+3. Get relevant chunks
+4. Send to LLM
+5. Generate answer
+
+---
+
+## 🧠 One-Line Summary
+
+👉 **RAG turns LLM into a smart search + reasoning system**
+
+---
+
+## 145. Naive Retrieval-Based Solution Approach  (04:49)
+
+## Simple Summary
+
+The speaker explains RAG (Retrieval Augmented Generation) and shows a **simple (but flawed) first solution**: put all your documents into the LLM's system prompt. This works for 1-2 files but breaks with many files due to **cost** and **context window limits**. Then they hint at a scalable solution for 50,000+ files (coming in the next part).
+
+---
+
+## Important Pointers
+
+| Concept | Explanation |
+|---------|-------------|
+| **RAG Full Form** | Retrieval Augmented Generation |
+| **Core Idea** | Combine LLMs with **external knowledge sources** (your private data) |
+| **Naive Solution** | Put all document text into the system prompt |
+| **Why Naive Solution Fails** | 1. High cost (many tokens per API call)<br>2. Context window limitation (even 1M tokens is not enough for 50,000 files) |
+| **When Naive Solution Works** | Only for 1-2 small files (e.g., 2-3 pages) |
+| **Scalability Goal** | Handle 50,000+ files efficiently |
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. What is RAG? (Definition)
+
+```python
+# RAG = Retrieval + Augmented + Generation
+# 
+# Retrieval: Find relevant documents from your knowledge base
+# Augmented: Add that retrieved info to the LLM prompt
+# Generation: LLM produces answer based on retrieved context
+
+# Pseudo-code for RAG
+def rag_answer(user_query):
+    # 1. RETRIEVAL
+    relevant_docs = search_my_documents(user_query)
+    
+    # 2. AUGMENTED (add to prompt)
+    augmented_prompt = f"Context: {relevant_docs}\nQuestion: {user_query}"
+    
+    # 3. GENERATION
+    answer = call_llm(augmented_prompt)
+    return answer
+```
+
+### 2. The Naive Solution (Knife Approach)
+
+```python
+# This works for 1-2 small files but NOT for scale
+
+from openai import OpenAI
+client = OpenAI()
+
+# Step 1: Convert all PDFs to text (for 2 small files - OK)
+file1_text = "Case 32: Smith vs Jones. The court ruled in favor of Smith."
+file2_text = "Company policy: All employees must submit reports by Friday."
+
+all_files_text = file1_text + "\n" + file2_text
+
+# Step 2: Put ALL text into system prompt
+system_prompt = f"""
+You are a smart AI assistant that helps users talk to their data.
+Here is all the available data:
+{all_files_text}
+Answer questions only based on this data.
+"""
+
+# Step 3: User asks questions
+user_query = "What happened in case 32?"
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_query}
+    ]
+)
+
+print(response.choices[0].message.content)
+# Output: "Case 32 is Smith vs Jones. The court ruled in favor of Smith."
+```
+
+### 3. Problem 1: Cost
+
+```python
+# Each API call costs money based on tokens
+# Tokens ~= words (roughly)
+
+# For 1 file (500 tokens)
+cost_per_1k_tokens = 0.001  # example pricing
+api_call_cost = (500 / 1000) * 0.001  # ~$0.0005
+
+# For 1000 files (500,000 tokens)
+api_call_cost = (500000 / 1000) * 0.001  # $0.50 PER QUERY!
+
+# If 1000 users ask 10 questions each = $5000
+# This is NOT scalable
+```
+
+### 4. Problem 2: Context Window Limitation
+
+```python
+# Context window example (simplified)
+
+class LLM:
+    def __init__(self, max_tokens):
+        self.max_tokens = max_tokens  # maximum context window
+    
+    def can_process(self, text):
+        return len(text.split()) <= self.max_tokens
+
+# GPT-4 Turbo: 128,000 tokens (about 96,000 words)
+gpt4 = LLM(max_tokens=128000)
+
+# One PDF file (10 pages) ~ 5,000 tokens
+# 50 PDF files ~ 250,000 tokens → EXCEEDS limit!
+
+# Even GPT-4 with 1M tokens (newer models)
+gpt4_big = LLM(max_tokens=1000000)
+
+# 50,000 files × 500 tokens each = 25,000,000 tokens
+# Still 25x bigger than 1M token limit!
+print(25000000 > 1000000)  # True → Won't fit
+```
+
+### 5. When the Naive Solution DOES Work
+
+```python
+# Scenario: ONE small file (e.g., a 3-page PDF)
+
+single_file = """
+Page 1: Meeting notes from Jan 5 - Discussed Q3 budget.
+Page 2: Meeting notes from Jan 6 - Approved new hiring.
+Page 3: Meeting notes from Jan 7 - Set quarterly goals.
+"""
+
+# Total tokens: ~300 tokens (very small)
+# Cost per query: < $0.001
+# This is perfectly fine!
+
+def simple_rag_single_file(user_query):
+    system_prompt = f"Data: {single_file}\nAnswer based only on this data."
+    # ... call LLM
+    # This WILL work well
+```
+
+### 6. Visual Comparison
+
+```python
+# NAIVE RAG (for small scale)
+# User Query → [ALL Documents in Prompt] → LLM → Answer
+# Pros: Simple, works for 1-2 files
+# Cons: Expensive, limited by context window
+
+# SCALABLE RAG (for large scale - preview)
+# User Query → Search → Relevant Docs Only → [Context] → LLM → Answer
+# Pros: Cheap, can handle 50,000+ files
+# Cons: More complex to build
+
+# The next tutorial will cover the scalable approach
+```
+
+---
+
+## Code Summary Table
+
+| Approach | Code Example | Works For | Problems |
+|----------|-------------|-----------|----------|
+| **Naive RAG** | Put all text in system prompt | 1-2 small files | Cost, context limit |
+| **Scalable RAG** | Search + only relevant context | 50,000+ files | More complex |
+
+---
+
+## One-Line Takeaways
+
+- **RAG** = Retrieval Augmented Generation = LLM + your private data
+- **Naive RAG** = Put everything in the prompt → works for tiny datasets only
+- **Main limitations** = Cost (per token) + Context window (max tokens per call)
+- **Scalable RAG** (next tutorial) = Search first, then ask LLM only about relevant documents
+
+---
+
+## 146. RAG Pipeline - Indexing Workflow Explained (05:22)
+
+## Simple Summary
+
+RAG has **two phases**:
+1. **Indexing Phase** – Prepare data BEFORE users ask questions (upload → chunk → embed → store)
+2. **Retrieval Phase** – Answer questions USING the indexed data (covered in next video)
+
+The indexing phase takes large documents, breaks them into small chunks, converts each chunk into numbers (vector embeddings), and stores everything in a **vector database** for fast searching later.
+
+---
+
+## Important Pointers
+
+| Concept | Explanation |
+|---------|-------------|
+| **Two Phases of RAG** | Indexing (prepare data) + Retrieval (answer queries) |
+| **Chunking** | Split large documents into smaller pieces (by page, paragraph, or fixed characters) |
+| **Vector Embeddings** | Convert text into numbers that capture meaning |
+| **Embedding Model** | A model (like OpenAI's `text-embedding-3-small`) that creates embeddings |
+| **Vector Database** | Special database (Pinecone, Weaviate, ChromaDB) that stores embeddings for fast similarity search |
+| **Metadata** | Extra info stored with each chunk (filename, page number, etc.) |
+
+---
+
+## Key Concepts with Code Examples
+
+### 1. The Two Phases of RAG
+
+```python
+# PHASE 1: INDEXING (run once, before users ask questions)
+def indexing_phase(documents):
+    chunks = chunk_documents(documents)
+    embeddings = create_embeddings(chunks)
+    store_in_vector_db(chunks, embeddings)
+    print("Indexing complete! Ready for queries.")
+
+# PHASE 2: RETRIEVAL (run for each user question)
+def retrieval_phase(user_query):
+    query_embedding = create_embedding(user_query)
+    relevant_chunks = search_vector_db(query_embedding)
+    answer = ask_llm_with_context(relevant_chunks, user_query)
+    return answer
+```
+
+### 2. Chunking – Splitting Documents
+
+```python
+# Example document
+document = """
+Page 1: Case 32: Smith vs Jones. The plaintiff claimed breach of contract.
+The court heard arguments on January 15th.
+
+Page 2: The ruling was in favor of Smith. Damages of $50,000 were awarded.
+The defendant has 30 days to appeal.
+
+Page 3: Legal fees are to be paid by the losing party. Case is now closed.
+"""
+
+# Method 1: Chunk by page
+def chunk_by_page(document, pages):
+    chunks = []
+    for page_num, page_text in pages.items():
+        chunks.append({
+            "text": page_text,
+            "page": page_num,
+            "chunk_type": "page"
+        })
+    return chunks
+
+# Method 2: Chunk by paragraph
+def chunk_by_paragraph(document):
+    paragraphs = document.split("\n\n")
+    chunks = []
+    for i, para in enumerate(paragraphs):
+        if para.strip():
+            chunks.append({
+                "text": para.strip(),
+                "paragraph_id": i,
+                "chunk_type": "paragraph"
+            })
+    return chunks
+
+# Method 3: Chunk by fixed character length (most common)
+def chunk_by_fixed_size(text, chunk_size=500, overlap=50):
+    chunks = []
+    start = 0
+    text_length = len(text)
+    
+    while start < text_length:
+        end = min(start + chunk_size, text_length)
+        chunk = text[start:end]
+        chunks.append(chunk)
+        start += (chunk_size - overlap)  # Overlap helps maintain context
+    
+    return chunks
+
+# Example usage
+fixed_chunks = chunk_by_fixed_size(document, chunk_size=200)
+print(f"Created {len(fixed_chunks)} chunks")
+for i, chunk in enumerate(fixed_chunks[:2]):
+    print(f"Chunk {i}: {chunk[:50]}...")
+```
+
+### 3. Vector Embeddings – Convert Text to Numbers
+
+```python
+# Using OpenAI's embedding model (real example)
+from openai import OpenAI
+client = OpenAI()
+
+def create_embedding(text):
+    """Convert text to a vector (list of numbers)"""
+    response = client.embeddings.create(
+        model="text-embedding-3-small",  # embedding model
+        input=text
+    )
+    # Returns a vector like [0.012, -0.345, 0.789, ...]
+    return response.data[0].embedding
+
+# Simple fake embedding for understanding (not for production)
+def fake_embedding(text, dimensions=5):
+    """Simplified embedding - just to show the concept"""
+    import hashlib
+    words = text.split()
+    vector = []
+    for i in range(dimensions):
+        # Create a pseudo-random number based on text + dimension index
+        hash_val = hashlib.md5(f"{text}{i}".encode()).hexdigest()
+        vector.append(int(hash_val[:4], 16) / 65535.0)  # normalize to 0-1
+    return vector
+
+# Example: Similar texts have similar embeddings
+text1 = "Smith won the court case"
+text2 = "The judge ruled in Smith's favor"  # similar meaning
+text3 = "Today is a sunny day"  # different meaning
+
+emb1 = fake_embedding(text1)
+emb2 = fake_embedding(text2)
+emb3 = fake_embedding(text3)
+
+print(f"Text1 embedding (first 3 numbers): {emb1[:3]}")
+print(f"Text2 embedding (first 3 numbers): {emb2[:3]}")  # similar to emb1
+print(f"Text3 embedding (first 3 numbers): {emb3[:3]}")  # different
+```
+
+### 4. Complete Indexing Phase Code
+
+```python
+import numpy as np
+from openai import OpenAI
+client = OpenAI()
+
+class SimpleVectorDatabase:
+    """A very simple vector database for learning"""
+    def __init__(self):
+        self.stored_data = []  # each item: {chunk, embedding, metadata}
+    
+    def add(self, chunk, embedding, metadata=None):
+        self.stored_data.append({
+            "chunk": chunk,
+            "embedding": embedding,
+            "metadata": metadata or {}
+        })
+    
+    def search(self, query_embedding, top_k=3):
+        # Calculate similarity (dot product / cosine similarity)
+        similarities = []
+        for item in self.stored_data:
+            similarity = np.dot(query_embedding, item["embedding"])
+            similarities.append((similarity, item))
+        
+        # Sort by similarity (highest first)
+        similarities.sort(reverse=True, key=lambda x: x[0])
+        return [item for _, item in similarities[:top_k]]
+
+def indexing_phase(documents):
+    """Complete indexing phase"""
+    vector_db = SimpleVectorDatabase()
+    
+    # Step 1: Chunking
+    print("Step 1: Chunking documents...")
+    chunks = []
+    for doc_id, doc_text in enumerate(documents):
+        # Split by paragraph
+        paragraphs = doc_text.split("\n\n")
+        for para_id, para in enumerate(paragraphs):
+            if para.strip():
+                chunks.append({
+                    "text": para.strip(),
+                    "metadata": {
+                        "doc_id": doc_id,
+                        "paragraph_id": para_id,
+                        "filename": f"doc_{doc_id}.txt"
+                    }
+                })
+    
+    # Step 2: Create embeddings for each chunk
+    print(f"Step 2: Creating embeddings for {len(chunks)} chunks...")
+    # Using fake embedding for demo (in real code, use OpenAI)
+    for chunk in chunks:
+        embedding = fake_embedding(chunk["text"], dimensions=10)
+        vector_db.add(chunk["text"], embedding, chunk["metadata"])
+    
+    print("Step 3: Indexing complete!")
+    print(f"Stored {len(vector_db.stored_data)} chunks in vector database")
+    
+    return vector_db
+
+# Example usage
+documents = [
+    """Case 32: Smith vs Jones.
+The plaintiff claimed breach of contract.
+The court ruled in favor of Smith.""",
+    
+    """Company policy report.
+All employees must submit weekly reports.
+Deadline is every Friday at 5 PM."""
+]
+
+vector_db = indexing_phase(documents)
+```
+
+### 5. Metadata – Storing Extra Information
+
+```python
+# Metadata is crucial for source citation
+chunk_with_metadata = {
+    "text": "The court ruled in favor of Smith.",
+    "embedding": [0.123, -0.456, 0.789],  # actual vector numbers
+    "metadata": {
+        "filename": "case_32_smith_vs_jones.pdf",
+        "page_number": 5,
+        "paragraph_index": 3,
+        "document_type": "court_case",
+        "upload_date": "2024-01-15"
+    }
+}
+
+# Later, when answering, you can show sources
+def format_answer_with_sources(answer, retrieved_chunks):
+    sources = []
+    for chunk in retrieved_chunks:
+        meta = chunk["metadata"]
+        sources.append(f"{meta['filename']}, page {meta['page_number']}")
+    
+    return {
+        "answer": answer,
+        "sources": list(set(sources))  # unique sources
+    }
+```
+
+### 6. Visual Summary of Indexing Phase
+
+```python
+"""
+INDEXING PHASE FLOW:
+
+Input: 50,000 files (100MB total)
+    ↓
+[CHUNKING]
+    ↓
+250,000 chunks (each ~500 characters)
+    ↓
+[EMBEDDING MODEL]
+    ↓
+250,000 vectors (each vector = list of 1536 numbers)
+    ↓
+[VECTOR DATABASE]
+    ↓
+Stored: chunk text + vector + metadata
+    ↓
+Ready for Retrieval Phase!
+"""
+
+# Size comparison
+original_size = 100 * 1024 * 1024  # 100 MB
+print(f"Original data: {original_size / (1024*1024):.0f} MB")
+
+# After chunking + embedding (vectors take more space)
+vector_size_per_chunk = 1536 * 4  # 1536 floats × 4 bytes = ~6KB
+total_vector_size = 250000 * 6 / (1024*1024)  # ~1.4 GB
+print(f"Vector database size: {total_vector_size:.1f} GB")
+print("This is normal! Vectors take more space but enable fast search.")
+```
+
+---
+
+## Complete Indexing Phase Example (Realistic)
+
+```python
+# Full realistic indexing pipeline (pseudo-code)
+
+def realistic_indexing(file_paths):
+    # 1. Load documents
+    all_chunks = []
+    for path in file_paths:
+        text = load_pdf(path)  # or load from database
+        chunks = split_into_chunks(text, chunk_size=500, overlap=50)
+        
+        for chunk in chunks:
+            all_chunks.append({
+                "text": chunk,
+                "source_file": path
+            })
+    
+    # 2. Create embeddings (in batches for efficiency)
+    batch_size = 100
+    for i in range(0, len(all_chunks), batch_size):
+        batch = all_chunks[i:i+batch_size]
+        texts = [item["text"] for item in batch]
+        
+        # Call OpenAI embeddings API
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=texts
+        )
+        
+        # 3. Store in vector database
+        for item, embedding_data in zip(batch, response.data):
+            vector_db.upsert(
+                id=f"{item['source_file']}_{i}",
+                values=embedding_data.embedding,
+                metadata={"text": item["text"], "source": item["source_file"]}
+            )
+    
+    print(f"Indexed {len(all_chunks)} chunks from {len(file_paths)} files")
+    return vector_db
+```
+
+---
+
+## One-Line Takeaways
+
+- **Indexing Phase** = Prepare data BEFORE users ask questions (chunk → embed → store)
+- **Chunking** = Break big documents into small, meaningful pieces
+- **Vector Embeddings** = Convert text to numbers that capture meaning
+- **Vector Database** = Store embeddings for lightning-fast similarity search
+- **Metadata** = Extra info (filename, page) for source citation
+
+---
+
+## 🧠 RAG Indexing Phase (High-Level Diagram)
+
+![Image](https://images.openai.com/static-rsc-4/kXgqvo7il_i3ulIPFTYiDk3NvUhSkyFd6QbdLyBU6F_htZ-Ss8IbQyypBpJZX_kXV3yZS9sXgQsz_DoBLC0fOeovZFjb9KvBPy3tiWhj7-F3q-4XyXkpUmEnL9bXfhJIRM2zq31Jk89ZMeReoTQoif-ykbyhie1xOD3WjCC--Jw5LcnY71dczaSM5KDn1Vj1?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/ROnH_TOA8fONRepent0LJXyJJidvjURoFaEXuvobjauI6WbpnAjipu-sXzE93HTuk762uMYEqvE4tLHcVMx9VbftMKPNavgBcBKvNds_rJ8T0g2NLiQYkui78P9PFxqeFqXP1NcYf_8F2YR-k9Z6lFYZ7NPWpGUWLoMtOzIhLYrL4QneCIsN0VnihW75beWL?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/IrhjXwRjUsq-fJPjPOVKEIAsX-ZLu-Zrgy_6oPgbjbmLiMMBbF_jBxCB6EWXftlMD9Te9EZCKYzvr6ggw3C0OJXmOGW7buZOe6ic5rMmfw52grq_nePWZBpiliNUz-ZzFjk_5ohTw4rkApvk32COq3VLamuZ3IlXgOIgOPi38str9bQiY1WG9E3xDNrvALFW?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/bvZBiwakqcgHRKC1ghfXoODYEqthDG63DFiMxDJvr4Qk6Zllr1QOp0Z4k94M5oEXgwkL3AU2lDytLnKjtLqAUkjfGyxUxGAvlcZcZKA9qsapu_fk6tMjbCfetfcSXDPhVRPo37_ZVM8UTvY2lBy1o9Qd7Bld6xmy_eijNDAl9UcnYLNb3_ikD3dg1akkQ87R?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/vGevPWemXkO8QRyuNlEz_TQ5Kn913nwwwHLiZQIWVnMVhBdQRH-yVEV4pA5lhspg-CTE9BsY5ZV9mSlKgNWRnqcPMBVv_D4TYl9yE_CzfKL-mZz1-DkT3aUB1DPmYQ4YcmVMYJ-hTd3oA7yVNrxlFNVKoomQfYdxzuBQVr6knC6xyE-NZqcmQMfJXQjX_geT?purpose=fullsize)
+
+![Image](https://images.openai.com/static-rsc-4/TZNMwsgqswvojSKWJRj4ujgRWOVxubmq-SsLUpUUdMSOPGTZosDUFEBGGUnsIMxQtOS2_EzEJs-N6YEoY1TVmVKXsUwoInPhPEQDkd8DtOKFtqR8lG4hHnWQrcWl_wTEf2qRB4HEigzM4OShRAULVPItnjA1Gy_0LTBpLpFIB6Gf4YEwiY4Q7vv3MSLv99eb?purpose=fullsize)
+
+---
+
+## 🔍 Simplified Flow (Easy to Understand)
+
+```id="ragindex1"
+        Raw Documents (PDFs, Files, DB)
+                     │
+                     ▼
+             ┌──────────────┐
+             │   Parsing     │
+             │ (extract text)│
+             └──────────────┘
+                     │
+                     ▼
+             ┌──────────────┐
+             │   Chunking    │
+             │ (split text)  │
+             └──────────────┘
+                     │
+                     ▼
+             ┌──────────────┐
+             │ Embeddings    │
+             │ (text → vector)│
+             └──────────────┘
+                     │
+                     ▼
+        ┌────────────────────────┐
+        │   Vector Database       │
+        │ (store vectors + data)  │
+        └────────────────────────┘
+```
+
+---
+
+## ⚡ Step-by-Step Explanation
+
+## 1. 📄 Document Ingestion
+
+* Input data:
+
+  * PDFs
+  * Word docs
+  * Databases
+  * APIs
+
+👉 Goal: Collect all raw data
+
+---
+
+## 2. 🧾 Parsing (Text Extraction)
+
+* Convert files → plain text
+
+```python
+text = extract_text_from_pdf("file.pdf")
+```
+
+---
+
+## 3. ✂️ Chunking
+
+* Break large text into smaller parts
+
+```python
+chunks = split_text(text, chunk_size=500)
+```
+
+👉 Why?
+
+* LLM context is limited
+* Smaller chunks = better retrieval
+
+---
+
+## 4. 🔢 Embedding Generation
+
+* Convert each chunk → vector
+
+```python
+embedding = model.embed(chunk)
+```
+
+👉 Same meaning → similar vectors
+
+---
+
+## 5. 🗄️ Storage (Vector DB)
+
+Store:
+
+* chunk text
+* embedding vector
+* metadata
+
+```python
+vector_db.add({
+    "text": chunk,
+    "embedding": embedding,
+    "metadata": {"page": 3}
+})
+```
+
+---
+
+## 🧩 What Gets Stored?
+
+```json
+{
+  "text": "Case 32 details...",
+  "embedding": [0.12, -0.44, ...],
+  "metadata": {
+    "source": "legal.pdf",
+    "page": 10
+  }
+}
+```
+
+---
+
+## 🚀 One-Line Summary
+
+👉 **Indexing Phase = Convert raw documents into searchable vector format**
+
+---
+
+## 💡 Key Insight
+
+This phase is:
+
+* ✅ Offline (done once)
+* ✅ Heavy processing
+* ✅ Foundation of RAG
+
+---
+
+## 147. RAG Pipeline - Retrieval Mechanishm in Depth (05:36)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
