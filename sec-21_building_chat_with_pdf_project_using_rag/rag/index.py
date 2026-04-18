@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path, override=True)
 
-pdf_path = Path(__file__).parent / "stanford-machine-learning.pdf"
+pdf_path = Path(__file__).parent / "Intro_to_ML_NPTEL.pdf"
 
 # load this pdf file intp program
 loader = PyPDFLoader(file_path=pdf_path)
