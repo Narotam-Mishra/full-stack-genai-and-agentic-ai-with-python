@@ -33283,6 +33283,531 @@ def verify_retrieval_setup():
 
 ## 154. Sync Vs Async in RAG Architecture (02:42)
 
+## 📌 Simple Summary
+
+The tutorial explains that while you've built a working RAG (Retrieval-Augmented Generation) system, it uses **synchronous code** (code that runs step-by-step and blocks everything else). In real-world production, this is inefficient—especially when dealing with many large PDF files. The solution is to use **asynchronous programming** so tasks run in the background without blocking the user.
+
+---
+
+## ✅ Important Pointers
+
+1. **Synchronous code** blocks the system until a task completes.
+2. **Real-world applications** (production) require handling many files efficiently.
+3. **Asynchronous code** allows tasks to run in the background without blocking.
+4. **FastAPI** will be used to build APIs with async support.
+5. Goal: Convert existing RAG code from sync to async.
+
+---
+
+## 📖 Key Concepts with Code Examples
+
+### 1. Synchronous Programming (What you have now)
+
+In synchronous code, each task waits for the previous one to finish. This blocks the system.
+
+```python
+import time
+
+def process_pdf(file_name):
+    print(f"Starting {file_name}...")
+    time.sleep(5)  # Simulating PDF processing time
+    print(f"Finished {file_name}")
+    return f"Indexed {file_name}"
+
+# Running synchronously - blocks until all done
+files = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
+
+for file in files:
+    result = process_pdf(file)
+    print(result)
+
+print("All done. System was blocked during processing.")
+```
+
+**Problem:** You can't do anything else while `process_pdf()` runs.
+
+---
+
+### 2. Asynchronous Programming (The solution)
+
+Async code lets you start a task and move on to other work while it runs in the background.
+
+```python
+import asyncio
+
+async def process_pdf(file_name):
+    print(f"Starting {file_name}...")
+    await asyncio.sleep(5)  # Non-blocking wait
+    print(f"Finished {file_name}")
+    return f"Indexed {file_name}"
+
+async def main():
+    files = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
+    
+    # Run all tasks concurrently
+    tasks = [process_pdf(file) for file in files]
+    results = await asyncio.gather(*tasks)
+    
+    for result in results:
+        print(result)
+
+# Run the async code
+asyncio.run(main())
+print("System was NOT blocked! Other work could be done.")
+```
+
+**Benefit:** Multiple PDFs process at the same time without blocking.
+
+---
+
+### 3. Converting to FastAPI (Production-ready)
+
+FastAPI supports async endpoints natively.
+
+```python
+from fastapi import FastAPI
+import asyncio
+
+app = FastAPI()
+
+# Simulated async PDF indexing
+async def index_pdf(file_name: str):
+    await asyncio.sleep(5)  # Simulate work
+    return f"Indexed {file_name}"
+
+# Async API endpoint
+@app.post("/index/")
+async def index_document(file_name: str):
+    # This runs without blocking other requests
+    result = await index_pdf(file_name)
+    return {"status": "success", "message": result}
+
+@app.get("/health/")
+async def health_check():
+    return {"status": "Server is responsive"}
+
+# To run: uvicorn main:app --reload
+```
+
+**Why this matters:** While `/index/` is processing a large PDF, `/health/` can still respond to requests.
+
+---
+
+### 4. Real-world Comparison
+
+```python
+# SYNC way (bad for many files)
+# Total time = sum of all file times (e.g., 1000 files × 10 sec = 10,000 sec)
+
+# ASYNC way (good for many files)
+import asyncio
+
+async def process_many_files():
+    files = [f"file_{i}.pdf" for i in range(1000)]
+    
+    # Run all 1000 files concurrently
+    tasks = [index_pdf(file) for file in files]
+    results = await asyncio.gather(*tasks)
+    
+    # Total time ≈ time of slowest file (e.g., ~10 sec!)
+    return results
+```
+
+---
+
+## 🎯 Summary Table
+
+| Aspect | Synchronous | Asynchronous |
+|--------|-------------|--------------|
+| **Execution** | One task at a time | Multiple tasks concurrently |
+| **Blocking** | Blocks the system | Non-blocking |
+| **Speed for 1000 PDFs** | Very slow (sum of all times) | Fast (≈ time of slowest PDF) |
+| **User experience** | Frozen during processing | Responsive during processing |
+| **Production ready?** | No | Yes |
+
+**Key takeaway:** *If your code works but blocks, make it async for production.*
+
+---
+
+## 155. Introduction to Queue System Design for Async setup (02:53)
+
+## 📝 Simple Summary
+
+Before diving into async coding, you need to understand **queues** - a fundamental data structure in system design. When many users send requests to your server, you don't want to block everyone while processing one request. Instead, you push requests into a **queue** (First In, First Out), and a separate **consumer/processor** picks up tasks one by one in the background. This keeps your server responsive and handles heavy workloads efficiently.
+
+---
+
+## ⚠️ The Problem Queues Solve
+
+**Without a queue:**
+- User 1 sends a request (e.g., "Explain Node.js")
+- Server gets busy processing it (takes 10 seconds)
+- User 2, User 3, etc., all wait or get blocked
+- The entire server freezes for everyone
+
+**With a queue:**
+- All requests go into a queue immediately
+- Server says "Got your request, please wait"
+- Background worker processes tasks one by one
+- Server stays responsive to new requests
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Queue works on **FIFO** principle (First In, First Out) |
+| 2 | Queue is a data structure, not a separate service |
+| 3 | Server pushes requests to queue, never blocks |
+| 4 | **Consumer/Processor** picks tasks from queue |
+| 5 | Processed results get stored in a database |
+| 6 | Users can check back later for their results |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: FIFO Queue (First In, First Out)
+
+**What it is:** Like a line at a grocery store - the first person in line gets served first.
+
+```python
+from collections import deque
+
+# Creating a FIFO queue
+request_queue = deque()
+
+# Users add requests to queue
+request_queue.append("User1: Explain Node.js")
+request_queue.append("User2: What is RAG?")
+request_queue.append("User3: Show me Python example")
+
+print(f"Queue: {list(request_queue)}")
+# Output: Queue: ['User1: Explain Node.js', 'User2: What is RAG?', 'User3: Show me Python example']
+
+# Processing in FIFO order
+first_request = request_queue.popleft()  # Takes first item
+print(f"Processing: {first_request}")
+# Output: Processing: User1: Explain Node.js
+
+print(f"Remaining queue: {list(request_queue)}")
+# Output: Remaining queue: ['User2: What is RAG?', 'User3: Show me Python example']
+
+# FIFO means: First in = First out
+# User1 came first, gets processed first
+```
+
+---
+
+### Concept 2: The Problem - Server Without Queue (Blocking)
+
+```python
+import time
+import asyncio
+
+# BAD APPROACH - No queue, server blocks
+class BadServer:
+    def process_request(self, user_id, query):
+        print(f"Server: Processing {user_id}'s query: '{query}'")
+        time.sleep(5)  # Hard work - server is BLOCKED here
+        print(f"Server: Finished {user_id}'s query")
+        return f"Answer to: {query}"
+
+# Simulating multiple users
+server = BadServer()
+
+# User 1 comes first
+result1 = server.process_request("User1", "Explain Node.js")
+# During those 5 seconds, User2 and User3 are BLOCKED!
+
+# Only after User1 finishes, User2 starts
+result2 = server.process_request("User2", "What is RAG?")
+result3 = server.process_request("User3", "Python example")
+
+# Total time: 15 seconds
+# Server was busy the entire time - no other users could be served
+```
+
+---
+
+### Concept 3: The Solution - Server With Queue (Non-Blocking)
+
+```python
+from collections import deque
+import time
+import threading
+import uuid
+
+# GOOD APPROACH - With queue
+class AsyncServerWithQueue:
+    def __init__(self):
+        self.queue = deque()  # The queue
+        self.results_db = {}  # Store results (like a database)
+        
+    def submit_request(self, user_id, query):
+        # Create a unique job ID
+        job_id = str(uuid.uuid4())[:8]
+        
+        # Push to queue (instant - no blocking!)
+        self.queue.append({
+            'job_id': job_id,
+            'user_id': user_id,
+            'query': query,
+            'status': 'queued'
+        })
+        
+        print(f"✅ Queue: Added {user_id}'s request. Job ID: {job_id}")
+        print(f"   Queue size: {len(self.queue)}")
+        
+        return job_id
+    
+    def get_result(self, job_id):
+        # Check if result is ready
+        if job_id in self.results_db:
+            return self.results_db[job_id]
+        return None
+    
+    # Background processor (runs separately)
+    def process_queue(self):
+        while True:
+            if self.queue:
+                # Take first task (FIFO)
+                task = self.queue.popleft()
+                print(f"🔄 Processing: {task['user_id']}'s query: '{task['query']}'")
+                
+                # Do the heavy work (doesn't block new requests)
+                time.sleep(3)  # Simulating hard work
+                
+                # Store result
+                self.results_db[task['job_id']] = {
+                    'status': 'completed',
+                    'answer': f"Answer to: {task['query']}",
+                    'user_id': task['user_id']
+                }
+                print(f"✅ Completed: {task['user_id']}'s request")
+            else:
+                time.sleep(0.5)  # Queue empty, wait a bit
+
+# DEMONSTRATION
+server = AsyncServerWithQueue()
+
+# Start background processor in a separate thread
+processor_thread = threading.Thread(target=server.process_queue, daemon=True)
+processor_thread.start()
+
+# Users submit requests (INSTANT - no blocking!)
+job1 = server.submit_request("User1", "Explain Node.js")
+job2 = server.submit_request("User2", "What is RAG?")
+job3 = server.submit_request("User3", "Show me Python example")
+
+print("\n📋 All requests submitted instantly! Server is free!\n")
+
+# Users can check results later
+time.sleep(2)  # Simulate user doing other work
+
+# Check results
+result1 = server.get_result(job1)
+result2 = server.get_result(job2)
+result3 = server.get_result(job3)
+
+print("\n📊 Checking results:")
+print(f"User1: {result1}")
+print(f"User2: {result2}")
+print(f"User3: {result3}")
+```
+
+---
+
+### Concept 4: Complete System Design Diagram in Code
+
+```python
+from collections import deque
+import asyncio
+import time
+import random
+
+class ProductionRAGSystem:
+    """
+    Complete async system with:
+    - FastAPI server (simulated)
+    - Queue for requests
+    - Background consumer
+    - Database for results
+    """
+    
+    def __init__(self):
+        self.request_queue = deque()  📥 # Queue holds pending requests
+        self.results_store = {}       🗄️ # Database for completed results
+        self.processing = False
+        
+    # 🚀 FASTAPI ENDPOINT (simulated)
+    async def submit_query(self, user_id, query):
+        """User submits query - returns immediately with job_id"""
+        job_id = f"job_{user_id}_{int(time.time())}"
+        
+        # Push to queue (instant!)
+        self.request_queue.append({
+            'job_id': job_id,
+            'user_id': user_id,
+            'query': query,
+            'submitted_at': time.time()
+        })
+        
+        print(f"📥 [{user_id}] Query queued. Job ID: {job_id}")
+        print(f"   Queue length: {len(self.request_queue)}")
+        
+        return {
+            'status': 'accepted',
+            'job_id': job_id,
+            'message': 'Your request is queued. Check back later for results.'
+        }
+    
+    # 🔍 CHECK STATUS ENDPOINT (simulated)
+    async def get_status(self, job_id):
+        """User checks if their job is done"""
+        if job_id in self.results_store:
+            return {
+                'status': 'completed',
+                'result': self.results_store[job_id]
+            }
+        else:
+            # Check if still in queue
+            for task in self.request_queue:
+                if task['job_id'] == job_id:
+                    return {'status': 'processing', 'position': 'in queue'}
+            return {'status': 'not_found'}
+    
+    # ⚙️ BACKGROUND CONSUMER (processor)
+    async def consumer_worker(self):
+        """Runs in background, processes one task at a time"""
+        print("🔧 Consumer worker started - waiting for tasks...")
+        
+        while True:
+            if self.request_queue:
+                # Take first task (FIFO)
+                task = self.request_queue.popleft()
+                
+                print(f"⚙️ Processing: {task['user_id']} - '{task['query']}'")
+                
+                # Do the heavy RAG work
+                await asyncio.sleep(2)  # Simulates PDF retrieval, LLM call
+                result = f"Answer for '{task['query']}' (processed in {time.time() - task['submitted_at']:.1f}s)"
+                
+                # Store in database
+                self.results_store[task['job_id']] = result
+                
+                print(f"✅ Completed: {task['user_id']}. Result stored.")
+                print(f"   Queue now: {len(self.request_queue)} tasks left")
+            else:
+                await asyncio.sleep(0.5)  # Queue empty, wait
+
+# 🎬 DEMONSTRATION
+async def main():
+    system = ProductionRAGSystem()
+    
+    # Start background consumer
+    asyncio.create_task(system.consumer_worker())
+    
+    # Simulate multiple users submitting queries
+    users = [
+        ("Alice", "What is Node.js?"),
+        ("Bob", "Explain RAG system"),
+        ("Charlie", "Python async tutorial"),
+        ("Diana", "Queue data structure"),
+    ]
+    
+    print("=" * 50)
+    print("🚀 USERS SUBMITTING REQUESTS")
+    print("=" * 50)
+    
+    # All users submit instantly (no waiting!)
+    jobs = []
+    for user, query in users:
+        result = await system.submit_query(user, query)
+        jobs.append(result['job_id'])
+        await asyncio.sleep(0.2)  # Small delay between submissions
+    
+    print("\n" + "=" * 50)
+    print("📊 CHECKING RESULTS (After 3 seconds)")
+    print("=" * 50)
+    
+    # Wait for processing
+    await asyncio.sleep(3)
+    
+    # Check each user's result
+    for job_id in jobs:
+        status = await system.get_status(job_id)
+        print(f"Job {job_id}: {status}")
+    
+    print("\n" + "=" * 50)
+    print("✨ Server stayed responsive the whole time!")
+    print("   All requests were queued and processed in FIFO order")
+    print("=" * 50)
+
+# Run the async system
+asyncio.run(main())
+```
+
+---
+
+## 🏗️ Architecture Diagram (Text Version)
+
+```
+┌─────────┐
+│  User 1 │ ──┐
+├─────────┤   │
+│  User 2 │ ──┼──► [FASTAPI SERVER] ──► [QUEUE] ──► [CONSUMER] ──► [DATABASE]
+├─────────┤   │         │                  │            │              │
+│  User 3 │ ──┘         │                  │            │              │
+└─────────┘           Instant            FIFO         Processes       Stores
+                      Response           Order        1 by 1          Results
+                      "Got it"                                       
+```
+
+---
+
+## 🎯 Key Takeaways
+
+| Without Queue ❌ | With Queue ✅ |
+|-----------------|---------------|
+| Server blocks on each request | Server never blocks |
+| Users wait synchronously | Users get instant "accepted" response |
+| One slow request ruins everything | Slow requests go to background |
+| Doesn't scale to many users | Scales to millions of requests |
+| Poor user experience | Great user experience |
+
+---
+
+## 💡 Real-World Examples of Queues
+
+| System | What's Queued? |
+|--------|----------------|
+| **Email** | Outgoing emails waiting to send |
+| **Printers** | Documents waiting to print |
+| **Restaurants** | Customer orders in line |
+| **Video processing** | YouTube uploads waiting to be processed |
+| **RAG System** | User queries waiting for LLM response |
+
+---
+
+## 🔑 Vocabulary Summary
+
+| Term | Meaning |
+|------|---------|
+| **Queue** | FIFO data structure (First In, First Out) |
+| **FIFO** | First In, First Out - like a line |
+| **Consumer** | Background worker that processes tasks |
+| **Processor** | Same as consumer - does the actual work |
+| **Job ID** | Unique identifier for each request |
+| **Results DB** | Where completed results are stored |
+
+**Bottom line:** Queues are the secret sauce that makes large systems work without blocking users. Your server just says "Got it, queued!" and moves on. A background worker handles the actual work.
+
+---
+
+## 156. Python RQ Setup Distributed Queues (02:15)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
