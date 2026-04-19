@@ -36593,14 +36593,14 @@ if __name__ == "__main__":
 
 Your async RAG system is now production-ready with parallel processing! 🚀
 
-`
+```
 Main Issue 
 
 20:33:42 default: rag_queue.queues.worker.process_query('explain conditional probabality') (9861a0f2-1dd0-4f2e-9ab9-195264d710f5)
 20:33:42 Worker 12c87277abfe412bb85ad6b1e8946a8e: job 9861a0f2-1dd0-4f2e-9ab9-195264d710f5: exception raised while executing (rag_queue.queues.worker.process_query)
-`
+```
 
-### [Fix](https://github.com/rq/rq/issues/2155)
+### [Above Issue Resolution](https://github.com/rq/rq/issues/2155)
 
 ---
 
