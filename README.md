@@ -34185,6 +34185,403 @@ job = queue.enqueue(my_rag_function, pdf_path)
 
 ## 157. Setting up Redis and Valkey with Docker (02:09)
 
+## 📝 Simple Summary
+
+Setting up RQ is very straightforward. You just need to:
+1. Install the `rq` package via pip
+2. Create a **producer** (code that adds jobs to the queue)
+3. Create a **consumer/worker** (code that processes jobs from the queue)
+4. Connect both to Redis/Valkey
+
+The tutorial creates a folder structure with `client/` (for connection setup) and `queues/` (for workers).
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Install RQ with `pip install rq` |
+| 2 | RQ has two components: **Producer** (queues messages) and **Consumer** (processes messages) |
+| 3 | Create folder structure: `client/` and `queues/` |
+| 4 | Client folder contains connection information |
+| 5 | Queues folder contains workers |
+| 6 | Need both `Redis` and `Queue` imports |
+| 7 | Queue needs a Redis connection with host and port (6379) |
+| 8 | Use `.enqueue()` method to add jobs to queue |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Installation
+
+```bash
+# Install RQ package
+pip install rq
+
+# Check installed packages
+pip freeze
+
+# Output should show:
+# rq==1.15.0 (or similar)
+# redis==5.0.0 (or similar)
+```
+
+---
+
+### Concept 2: Folder Structure
+
+```
+your_project/
+│
+├── client/
+│   └── rq_client.py      # Connection setup (producer)
+│
+├── queues/
+│   └── workers.py        # Background workers (consumer)
+│
+└── main.py               # FastAPI app (optional)
+```
+
+---
+
+### Concept 3: Setting Up the RQ Client (Producer)
+
+**File: `client/rq_client.py`**
+
+```python
+# Import required modules
+from redis import Redis
+from rq import Queue
+
+# Create Redis/Valkey connection
+redis_connection = Redis(
+    host='localhost',    # Redis/Valkey server address
+    port=6379,           # Default Redis/Valkey port
+    decode_responses=True  # Optional: returns strings instead of bytes
+)
+
+# Create a queue (this is your producer)
+queue = Queue(connection=redis_connection)
+
+# Now you can add jobs to the queue using .enqueue()
+# job = queue.enqueue(my_function, arg1, arg2)
+
+print("✅ RQ Client ready!")
+print(f"Queue name: {queue.name}")
+print(f"Redis connection: {redis_connection.connection_pool.connection_kwargs}")
+```
+
+---
+
+### Concept 4: Complete Producer Example
+
+**File: `client/rq_client.py` (Full example)**
+
+```python
+from redis import Redis
+from rq import Queue
+import time
+
+# Step 1: Create Redis/Valkey connection
+redis_conn = Redis(
+    host='localhost',
+    port=6379,
+    db=0  # Database number (0 is default)
+)
+
+# Step 2: Create queue
+task_queue = Queue('default', connection=redis_conn)
+
+# Step 3: Define a function to be queued
+def process_document(doc_name: str, user_id: str):
+    """This function will run in the background"""
+    print(f"Processing {doc_name} for user {user_id}")
+    time.sleep(5)  # Simulate hard work
+    return f"Document {doc_name} processed successfully!"
+
+# Step 4: Add job to queue (producer)
+job = task_queue.enqueue(
+    process_document,      # Function to call
+    'my_pdf.pdf',          # Argument 1
+    'user_123'             # Argument 2
+)
+
+print(f"✅ Job added to queue!")
+print(f"   Job ID: {job.id}")
+print(f"   Queue size: {len(task_queue)}")
+print(f"   Job status: {job.get_status()}")
+
+# Output:
+# ✅ Job added to queue!
+#    Job ID: abc123-def456-ghi789
+#    Queue size: 1
+#    Job status: queued
+```
+
+---
+
+### Concept 5: The Queue Methods
+
+```python
+from redis import Redis
+from rq import Queue
+
+redis_conn = Redis(host='localhost', port=6379)
+queue = Queue(connection=redis_conn)
+
+# Different ways to add jobs to queue:
+
+# Method 1: enqueue() - Most common
+job = queue.enqueue(my_function, arg1, arg2)
+
+# Method 2: enqueue() with named arguments
+job = queue.enqueue(my_function, arg1=value1, arg2=value2)
+
+# Method 3: enqueue() with delay
+from datetime import timedelta
+job = queue.enqueue(my_function, arg1, arg2, at_front=True)  # Priority
+
+# Method 4: enqueue_in() - Run after delay
+job = queue.enqueue_in(timedelta(seconds=30), my_function, arg1)
+
+# Method 5: enqueue_at() - Run at specific time
+from datetime import datetime, timedelta
+run_at = datetime.now() + timedelta(hours=1)
+job = queue.enqueue_at(run_at, my_function, arg1)
+
+# Check queue properties
+print(f"Queue name: {queue.name}")
+print(f"Queue length: {len(queue)}")
+print(f"Is queue empty: {queue.is_empty}")
+```
+
+---
+
+### Concept 6: Setting Up the Worker (Consumer)
+
+**File: `queues/worker.py`**
+
+```python
+# This file runs the worker that processes jobs
+# Run this in a separate terminal!
+
+from redis import Redis
+from rq import Worker, Queue
+
+# Same connection as producer
+redis_conn = Redis(host='localhost', port=6379)
+
+# Create queue(s) to listen to
+queue = Queue('default', connection=redis_conn)
+
+# Create worker
+worker = Worker([queue], connection=redis_conn)
+
+print("🚀 Worker started - waiting for jobs...")
+print(f"Listening on queue: {queue.name}")
+
+# Start working (this runs forever)
+worker.work()
+```
+
+**How to run the worker:**
+
+```bash
+# Terminal 1: Run the worker
+python queues/worker.py
+
+# Output:
+# 🚀 Worker started - waiting for jobs...
+# Listening on queue: default
+# *** Listening for jobs on default
+# Waiting for jobs...
+```
+
+---
+
+### Concept 7: Complete Working Example
+
+Let's put everything together:
+
+**File: `client/rq_client.py` (Producer)**
+
+```python
+from redis import Redis
+from rq import Queue
+import time
+
+# Connection
+redis_conn = Redis(host='localhost', port=6379)
+queue = Queue('rag_tasks', connection=redis_conn)
+
+# Function that does actual work
+def index_pdf(pdf_path: str, user_id: str):
+    """Heavy RAG work - runs in background"""
+    print(f"[WORKER] Starting to index {pdf_path} for {user_id}")
+    time.sleep(10)  # Simulates chunking, embedding, storing
+    print(f"[WORKER] Completed indexing {pdf_path}")
+    return f"Indexed {pdf_path} with 150 chunks"
+
+# Add multiple jobs to queue
+jobs = []
+for i in range(3):
+    job = queue.enqueue(
+        index_pdf,
+        f"document_{i}.pdf",
+        f"user_{i}"
+    )
+    jobs.append(job)
+    print(f"📥 Job {job.id} added for document_{i}.pdf")
+
+print(f"\n✅ Total jobs in queue: {len(queue)}")
+print(f"💡 Run the worker to process these jobs!")
+```
+
+**File: `queues/worker.py` (Consumer)**
+
+```python
+from redis import Redis
+from rq import Worker, Queue
+
+redis_conn = Redis(host='localhost', port=6379)
+queue = Queue('rag_tasks', connection=redis_conn)
+
+print("🔧 Starting RQ Worker...")
+worker = Worker([queue], connection=redis_conn)
+print(f"📡 Listening on queue: {queue.name}")
+worker.work()
+```
+
+**How to run:**
+
+```bash
+# Terminal 1: Start Redis/Valkey (if not running)
+docker-compose up -d
+
+# Terminal 2: Start worker
+cd your_project
+python queues/worker.py
+
+# Terminal 3: Run producer
+python client/rq_client.py
+
+# Output in Terminal 2 (worker):
+# 🔧 Starting RQ Worker...
+# 📡 Listening on queue: rag_tasks
+# *** Listening for jobs on rag_tasks
+# [WORKER] Starting to index document_0.pdf for user_0
+# [WORKER] Completed indexing document_0.pdf
+# [WORKER] Starting to index document_1.pdf for user_1
+# ...
+```
+
+---
+
+## 🏗️ Complete Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    YOUR APPLICATION                          │
+├─────────────────────────┬───────────────────────────────────┤
+│                         │                                   │
+│    PRODUCER (Client)    │      CONSUMER (Worker)            │
+│                         │                                   │
+│  from rq import Queue   │   from rq import Worker           │
+│  queue = Queue(conn)    │   worker = Worker(queue)          │
+│  queue.enqueue(fn)      │   worker.work()                   │
+│                         │                                   │
+└───────────┬─────────────┴───────────────┬───────────────────┘
+            │                               │
+            │    ┌─────────────────────┐    │
+            └───►│   REDIS / VALKEY     │◄───┘
+                 │     Port: 6379       │
+                 │  Stores job queue    │
+                 └─────────────────────┘
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic RQ Client Setup
+
+```python
+# client/rq_client.py
+from redis import Redis
+from rq import Queue
+
+# Setup
+redis_conn = Redis(host='localhost', port=6379)
+queue = Queue(connection=redis_conn)
+
+# Add job
+job = queue.enqueue(my_function, arg1, arg2)
+print(f"Job {job.id} queued")
+```
+
+### Template 2: Basic RQ Worker Setup
+
+```python
+# queues/worker.py
+from redis import Redis
+from rq import Worker, Queue
+
+redis_conn = Redis(host='localhost', port=6379)
+queue = Queue(connection=redis_conn)
+worker = Worker([queue], connection=redis_conn)
+
+worker.work()  # Start processing
+```
+
+### Template 3: Command Line Worker (No Python file needed)
+
+```bash
+# You can also start a worker directly from command line!
+rq worker default --url redis://localhost:6379
+
+# Or with multiple queues
+rq worker default,high,low --url redis://localhost:6379
+```
+
+---
+
+## 🔧 Common RQ Commands
+
+| Command | Purpose |
+|---------|---------|
+| `pip install rq` | Install RQ package |
+| `rq worker default` | Start worker for 'default' queue |
+| `rq info` | Show queue information |
+| `rq empty default` | Empty all jobs from queue |
+| `python -m rq worker` | Alternative way to start worker |
+
+---
+
+## 💡 Key Takeaways
+
+```python
+# The THREE things you need:
+
+# 1. Connection (same for producer and consumer)
+redis_conn = Redis(host='localhost', port=6379)
+
+# 2. Producer (adds jobs)
+queue = Queue(connection=redis_conn)
+queue.enqueue(my_function, arg1, arg2)
+
+# 3. Consumer (processes jobs)
+worker = Worker([queue], connection=redis_conn)
+worker.work()
+```
+
+**Bottom line:** RQ setup is simple - install the package, create a Redis/Valkey connection, create a Queue (producer), and run a Worker (consumer). The producer adds jobs with `.enqueue()`, the worker processes them in the background!
+
+---
+
+## 158. Worker Orchestration with Python RQ (04:00)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
