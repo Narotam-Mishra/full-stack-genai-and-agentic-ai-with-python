@@ -36594,6 +36594,8 @@ if __name__ == "__main__":
 Your async RAG system is now production-ready with parallel processing! 🚀
 
 `
+Main Issue 
+
 20:33:42 default: rag_queue.queues.worker.process_query('explain conditional probabality') (9861a0f2-1dd0-4f2e-9ab9-195264d710f5)
 20:33:42 Worker 12c87277abfe412bb85ad6b1e8946a8e: job 9861a0f2-1dd0-4f2e-9ab9-195264d710f5: exception raised while executing (rag_queue.queues.worker.process_query)
 `
@@ -36601,6 +36603,954 @@ Your async RAG system is now production-ready with parallel processing! 🚀
 ### [Fix](https://github.com/rq/rq/issues/2155)
 
 ---
+
+## Sec 22 - Multi Modal Agents
+
+## 163. What is Multi Modal Agents? (02:50)
+
+## 📝 Simple Summary
+
+**Multimodal AI** is different from regular "multi-model" AI. Multimodal AI refers to AI systems that can process **multiple types of data** (modalities) - not just text, but also **images, audio, and videos**. While models like GPT-3.5 Turbo can only handle text input and text output, newer models like GPT-4 and GPT-4 Mini can accept images as input (though they still output only text). This allows you to show an image to the AI and ask questions about what's in it.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Multimodal AI** = AI that processes multiple data types (text, images, audio, video) |
+| 2 | **Multi-model** (without 'A') = using multiple different AI models together |
+| 3 | GPT-3.5 Turbo = text-only input, text-only output |
+| 4 | GPT-4 / GPT-4 Mini = can accept images as input, but still outputs text |
+| 5 | Image input is passed as an array in the `content` field, not as plain text |
+| 6 | You can use image URLs or base64 encoded images |
+| 7 | Models can analyze, describe, and answer questions about images |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: What is Multimodal AI?
+
+**Multimodal AI** = AI that can understand and process different types of data:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MULTIMODAL AI                             │
+│                                                              │
+│   INPUT TYPES:                    OUTPUT TYPES:             │
+│   ┌─────────┐                     ┌─────────┐               │
+│   │  Text   │─────┐               │  Text   │               │
+│   └─────────┘     │               └─────────┘               │
+│   ┌─────────┐     │      ┌─────┐  ┌─────────┐               │
+│   │  Image  │─────┼─────►│ LLM │──│  Audio  │ (future)      │
+│   └─────────┘     │      └─────┘  └─────────┘               │
+│   ┌─────────┐     │               ┌─────────┐               │
+│   │  Audio  │─────┘               │  Video  │ (future)      │
+│   └─────────┘                      └─────────┘               │
+│   ┌─────────┐                                               │
+│   │  Video  │                                               │
+│   └─────────┘                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Concept 2: Text-Only Model vs Multimodal Model
+
+**Text-Only Model (GPT-3.5 Turbo):**
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# GPT-3.5 Turbo - TEXT ONLY
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "user", "content": "What is machine learning?"}
+    ]
+)
+# ✅ Works fine - text input only
+
+# ❌ This would FAIL with GPT-3.5 Turbo:
+# Can't pass images, audio, or video
+```
+
+**Multimodal Model (GPT-4 / GPT-4 Mini):**
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+# GPT-4 Mini - Can accept images!
+response = client.chat.completions.create(
+    model="gpt-4o-mini",  # Multimodal model
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://example.com/photo.jpg"
+                    }
+                }
+            ]
+        }
+    ]
+)
+# ✅ Works! Model can see and describe the image
+```
+
+---
+
+### Concept 3: How to Pass Images to Multimodal Models
+
+**Method 1: Using Image URL**
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Describe this image in detail"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://example.com/cat.jpg"
+                    }
+                }
+            ]
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+# Output: "This is a picture of an orange cat sitting on..."
+```
+
+**Method 2: Using Base64 Encoded Image (Local File)**
+
+```python
+import base64
+
+# Read local image and encode to base64
+with open("my_image.jpg", "rb") as image_file:
+    base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "What objects do you see in this image?"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+            ]
+        }
+    ]
+)
+```
+
+---
+
+### Concept 4: Complete Multimodal Example
+
+```python
+# multimodal_demo.py
+from openai import OpenAI
+import base64
+from PIL import Image
+import requests
+
+client = OpenAI()
+
+# ============================================
+# EXAMPLE 1: Analyze image from URL
+# ============================================
+def analyze_image_from_url(image_url: str, question: str):
+    """Ask questions about an image using its URL"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_url}
+                    }
+                ]
+            }
+        ],
+        max_tokens=500
+    )
+    return response.choices[0].message.content
+
+# Example usage
+result = analyze_image_from_url(
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/American_Eskimo_Dog.jpg/800px-American_Eskimo_Dog.jpg",
+    "What breed of dog is this? Describe its appearance."
+)
+print(result)
+
+
+# ============================================
+# EXAMPLE 2: Analyze local image (base64)
+# ============================================
+def analyze_local_image(image_path: str, question: str):
+    """Ask questions about a local image file"""
+    # Encode image to base64
+    with open(image_path, "rb") as f:
+        base64_image = base64.b64encode(f.read()).decode('utf-8')
+    
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# result = analyze_local_image("screenshot.png", "What text is visible in this screenshot?")
+
+
+# ============================================
+# EXAMPLE 3: Multiple images in one request
+# ============================================
+def compare_two_images(image_url_1: str, image_url_2: str, question: str):
+    """Compare two images in the same request"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_url_1}
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_url_2}
+                    }
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# result = compare_two_images(
+#     "https://example.com/before.jpg",
+#     "https://example.com/after.jpg",
+#     "What are the differences between these two images?"
+# )
+
+
+# ============================================
+# EXAMPLE 4: Extract text from image (OCR-like)
+# ============================================
+def extract_text_from_image(image_url: str):
+    """Extract and read text from an image"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Extract and return all the text visible in this image. Preserve the formatting as much as possible."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_url}
+                    }
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+```
+
+---
+
+### Concept 5: Model Comparison
+
+| Model | Text Input | Image Input | Audio Input | Video Input | Text Output |
+|-------|------------|-------------|-------------|-------------|-------------|
+| **GPT-3.5 Turbo** | ✅ Yes | ❌ No | ❌ No | ❌ No | ✅ Yes |
+| **GPT-4** | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **GPT-4 Mini** | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+| **GPT-4o** | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ✅ Yes |
+| **GPT-4o-mini** | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
+
+**Note:** GPT-4o (the "o" stands for "omni") is OpenAI's most advanced multimodal model that can also understand audio!
+
+---
+
+### Concept 6: Practical Use Cases
+
+```python
+# USE CASE 1: Product Recognition
+def identify_product(image_url: str):
+    """Identify product from image"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What product is this? Identify brand if visible."},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# USE CASE 2: Chart/Graph Analysis
+def analyze_chart(image_url: str):
+    """Analyze data from chart image"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Analyze this chart. What trends do you see? What are the key data points?"},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# USE CASE 3: Handwriting Recognition
+def read_handwriting(image_url: str):
+    """Convert handwritten text to digital text"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Transcribe the handwritten text in this image."},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# USE CASE 4: Medical Image Analysis (educational only)
+def describe_xray(image_url: str):
+    """Describe what's visible in an X-ray"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe what anatomical structures are visible in this X-ray image."},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+```
+
+---
+
+### Concept 7: Important Structure of Multimodal Messages
+
+```python
+# Regular text-only message:
+{
+    "role": "user",
+    "content": "This is plain text"  # ← String
+}
+
+# Multimodal message (with images):
+{
+    "role": "user",
+    "content": [  # ← Array instead of string!
+        {"type": "text", "text": "Your text question here"},
+        {"type": "image_url", "image_url": {"url": "https://..."}},
+        {"type": "image_url", "image_url": {"url": "https://..."}},  # Can add multiple!
+    ]
+}
+```
+
+**Key difference:** In multimodal AI, `content` becomes an **array** of objects, not a simple string!
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Multimodal AI** | AI that can process multiple data types (text, images, audio, video) |
+| **Modality** | A type of data (text, image, audio, video) |
+| **GPT-4o** | OpenAI's "omni" model - can understand text, images, and audio |
+| **Base64** | Way to encode binary data (like images) as text |
+| **Image URL** | Web address of an image that the model can fetch |
+
+---
+
+## 📝 Code Template for Multimodal AI
+
+```python
+# Basic template for multimodal image analysis
+from openai import OpenAI
+
+client = OpenAI()
+
+def ask_about_image(image_url: str, question: str) -> str:
+    """Ask any question about an image"""
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",  # Use multimodal model
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# Usage
+answer = ask_about_image(
+    "https://example.com/photo.jpg",
+    "What is happening in this image?"
+)
+print(answer)
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Multimodal AI** = AI that can see, hear, and read (not just text)
+2. **GPT-3.5 Turbo** = Text only (can't see images)
+3. **GPT-4 / GPT-4 Mini** = Can see images (multimodal input)
+4. **GPT-4o** = Most advanced - can also hear audio
+5. **Content becomes an array** when passing images, not a string
+6. Images can be passed as **URLs** or **base64 encoded** data
+
+**Bottom line:** Multimodal AI opens up a whole new world of possibilities - your AI can now "see" images, analyze charts, read handwriting, identify objects, and much more!
+
+- [GPT Models](https://developers.openai.com/api/docs/models/all)
+
+---
+
+## 164. Sending Multimedia to LLM (Images) (05:21)
+
+## 📝 Simple Summary
+
+You're building a small multimodal agent that can **analyze images** using GPT-4 Mini (which supports image input). The agent takes an image URL (from a public website like Pexels), sends it to OpenAI along with a text prompt asking for a caption, and gets back a description of what's in the image. This demonstrates how multimodal AI can "see" and describe images. You can also use local images by converting them to base64, but using public URLs is simpler.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Import `OpenAI` from `openai` and create a client |
+| 2 | API key is automatically read from environment variables |
+| 3 | Use `load_dotenv()` to load `.env` file |
+| 4 | Must use a **multimodal model** like `gpt-4o-mini` (not GPT-3.5 Turbo) |
+| 5 | Content becomes an **array** of objects, not a string |
+| 6 | Each content object has a `type` (text or image_url) |
+| 7 | Image can be passed as a **public URL** or **base64 encoded** string |
+| 8 | Response contains the AI's description/caption of the image |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Complete Multimodal Image Agent
+
+**File: `main.py`**
+
+```python
+import os
+from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Create OpenAI client (API key auto-read from env)
+client = OpenAI()
+
+# Public image URL (from Pexels or any public source)
+image_url = "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg"
+
+# Make request to multimodal model
+response = client.chat.completions.create(
+    model="gpt-4o-mini",  # Must be multimodal (supports images)
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Generate a caption for this image in about 50 words"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_url
+                    }
+                }
+            ]
+        }
+    ]
+)
+
+# Print the response
+caption = response.choices[0].message.content
+print(caption)
+```
+
+**Output Example:**
+```
+"A cheerful young man proudly holds up a sticky note with the word 'code' 
+written on it, emphasizing his passion for programming. The warm lighting 
+and genuine smile convey enthusiasm and dedication to the craft of software 
+development."
+```
+
+---
+
+### Concept 2: Setting Up Environment Variables
+
+**File: `.env`**
+
+```env
+OPENAI_API_KEY=sk-proj-your-actual-api-key-here
+```
+
+**Loading in Python:**
+```python
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Loads .env file
+
+# Now OpenAI client will automatically find the key
+client = OpenAI()  # Works without passing key explicitly
+
+# Alternative: Explicitly pass key
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+```
+
+---
+
+### Concept 3: Image from URL vs Local File
+
+**Method 1: Using Public URL (Easiest)**
+
+```python
+# Image must be publicly accessible
+image_url = "https://example.com/image.jpg"
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Describe this image"},
+                {"type": "image_url", "image_url": {"url": image_url}}
+            ]
+        }
+    ]
+)
+```
+
+**Method 2: Using Local File (Base64)**
+
+```python
+import base64
+
+# Read local image file
+with open("my_image.jpg", "rb") as image_file:
+    base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+# Pass as base64 encoded URL
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Describe this image"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+            ]
+        }
+    ]
+)
+```
+
+---
+
+### Concept 4: Different Types of Image Analysis
+
+```python
+# ============================================
+# EXAMPLE 1: Generate a caption
+# ============================================
+def generate_caption(image_url: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Generate a short, engaging caption for this image"},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# ============================================
+# EXAMPLE 2: Answer specific questions
+# ============================================
+def ask_about_image(image_url: str, question: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# Usage
+answer = ask_about_image(
+    "https://example.com/office.jpg",
+    "What objects are on the desk in this image?"
+)
+
+# ============================================
+# EXAMPLE 3: Extract text from image (OCR)
+# ============================================
+def extract_text_from_image(image_url: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Extract all text visible in this image"},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+
+# ============================================
+# EXAMPLE 4: Analyze emotions in image
+# ============================================
+def analyze_emotions(image_url: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What emotions are expressed by people in this image?"},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+```
+
+---
+
+### Concept 5: Structure of Multimodal Request
+
+```python
+# The key difference from text-only requests:
+
+# TEXT-ONLY (simple string)
+{
+    "role": "user",
+    "content": "What is AI?"  # ← Just a string
+}
+
+# MULTIMODAL (array of objects)
+{
+    "role": "user",
+    "content": [  # ← Array, not string!
+        {"type": "text", "text": "What is in this image?"},
+        {"type": "image_url", "image_url": {"url": "https://..."}}
+    ]
+}
+
+# MULTIPLE IMAGES (can add more objects)
+{
+    "role": "user",
+    "content": [
+        {"type": "text", "text": "Compare these two images"},
+        {"type": "image_url", "image_url": {"url": "https://image1.jpg"}},
+        {"type": "image_url", "image_url": {"url": "https://image2.jpg"}}
+    ]
+}
+```
+
+---
+
+### Concept 6: Complete Working Script
+
+**File: `image_agent.py`**
+
+```python
+#!/usr/bin/env python3
+"""
+Multimodal Image Agent - Analyzes images using GPT-4 Mini
+"""
+
+import os
+import base64
+from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+class ImageAgent:
+    def __init__(self):
+        """Initialize the OpenAI client"""
+        self.client = OpenAI()
+    
+    def analyze_from_url(self, image_url: str, prompt: str = "Describe this image") -> str:
+        """Analyze an image from a public URL"""
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    ]
+                }
+            ],
+            max_tokens=500
+        )
+        return response.choices[0].message.content
+    
+    def analyze_from_local(self, image_path: str, prompt: str = "Describe this image") -> str:
+        """Analyze a local image file"""
+        # Read and encode image
+        with open(image_path, "rb") as f:
+            base64_image = base64.b64encode(f.read()).decode('utf-8')
+        
+        # Determine image type
+        ext = os.path.splitext(image_path)[1].lower()
+        mime_type = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
+        }.get(ext, 'image/jpeg')
+        
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        return response.choices[0].message.content
+
+# Usage examples
+if __name__ == "__main__":
+    agent = ImageAgent()
+    
+    # Example 1: Analyze image from URL
+    print("=" * 50)
+    print("Analyzing image from URL...")
+    print("=" * 50)
+    
+    result = agent.analyze_from_url(
+        "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg",
+        "Generate a caption for this image in 30 words"
+    )
+    print(f"Result: {result}\n")
+    
+    # Example 2: Ask specific question
+    print("=" * 50)
+    print("Asking specific question...")
+    print("=" * 50)
+    
+    result = agent.analyze_from_url(
+        "https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg",
+        "What is the person holding? Describe their expression."
+    )
+    print(f"Result: {result}\n")
+```
+
+---
+
+### Concept 7: Running the Code
+
+```bash
+# Step 1: Create virtual environment (optional)
+python -m venv venv
+source venv/bin/activate  # On Mac/Linux
+# venv\Scripts\activate   # On Windows
+
+# Step 2: Install dependencies
+pip install openai python-dotenv
+
+# Step 3: Create .env file with your API key
+echo "OPENAI_API_KEY=sk-your-key-here" > .env
+
+# Step 4: Run the script
+python main.py
+
+# Output:
+# "A cheerful young man proudly holds up a sticky note with the word 'code' 
+# written on it, emphasizing his passion for programming..."
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Multimodal Request
+
+```python
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Your question here"},
+                {"type": "image_url", "image_url": {"url": "https://image.url"}}
+            ]
+        }
+    ]
+)
+print(response.choices[0].message.content)
+```
+
+### Template 2: Function for Reuse
+
+```python
+def describe_image(image_url: str) -> str:
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image in detail"},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]
+            }
+        ]
+    )
+    return response.choices[0].message.content
+```
+
+---
+
+## 🔑 Key Takeaways
+
+| Concept | Explanation |
+|---------|-------------|
+| **Multimodal Model** | Must use `gpt-4o-mini` or `gpt-4o` (not `gpt-3.5-turbo`) |
+| **Content as Array** | `content` becomes `[{type: "text", ...}, {type: "image_url", ...}]` |
+| **Image URL** | Public URL that the model can access |
+| **Base64** | Alternative for local images (encode the file) |
+| **API Key** | Stored in `.env` file, auto-read by OpenAI client |
+
+**Bottom line:** Building a multimodal agent is simple - use `gpt-4o-mini`, pass `content` as an array with text and image_url objects, and the AI will "see" and analyze the image. This opens up endless possibilities for image understanding, captioning, OCR, and visual question answering!
+
+- [Analyze the content of an image](https://developers.openai.com/api/docs/guides/images-vision?format=url)
+
+---
+
+## Sec 24 - Building Agentic Workflows with LangGraph
+
+## 165. Section Intro - Why LangGraph is a Game-Changer for AI Agents (0:43)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
