@@ -35723,8 +35723,884 @@ This pattern is essential for any app with AI, video processing, email sending, 
 
 ## 161. FastAPI Polling & Dequeuing Messgaes from Async Queues (02:23)
 
+## 📝 Simple Summary
+
+You're adding a new route `/job-status` (or `/result`) that accepts a `job_id` as a query parameter. This endpoint fetches the job from RQ and returns its result (the return value from your `process_query` function). Right now, jobs are being queued successfully, but they always return `null` because **no worker is running** to process them. You can submit multiple jobs, they go into the queue, but nothing is picking them up and processing them yet.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Create a new route: `GET /job-status` or `GET /result` |
+| 2 | Accept `job_id` as a query parameter |
+| 3 | Use `queue.fetch_job(job_id)` to retrieve the job |
+| 4 | Access result with `job.return_value` |
+| 5 | Without a running worker, jobs stay queued and return `null` |
+| 6 | Multiple jobs can be submitted and will wait in queue |
+| 7 | Worker process is needed to pick up and process jobs |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Creating the Result Endpoint
+
+**File: `server.py`**
+
+```python
+from fastapi import FastAPI, Query
+from redis import Redis
+from rq import Queue
+
+app = FastAPI()
+
+# Setup Redis connection
+redis_conn = Redis(host='localhost', port=6379)
+task_queue = Queue('rag_tasks', connection=redis_conn)
+
+# Previous route: Submit job (POST /chat)
+@app.post("/chat/")
+async def chat(query: str):
+    job = task_queue.enqueue(process_query, query)
+    return {"job_id": job.id, "status": "queued"}
+
+# NEW ROUTE: Get job result (GET /job-status)
+@app.get("/job-status/")
+async def get_job_status(
+    job_id: str = Query(..., description="The job ID to fetch result for")
+):
+    """
+    Fetch the result of a specific job using its job_id.
+    Returns null if job hasn't been processed yet.
+    """
+    # Fetch the job from Redis queue
+    job = task_queue.fetch_job(job_id)
+    
+    if job is None:
+        return {"error": "Job not found", "job_id": job_id}
+    
+    # Get the return value from the job
+    result = job.return_value
+    
+    return {
+        "job_id": job_id,
+        "status": job.get_status(),  # queued, started, finished, failed
+        "result": result,
+        "position": job.get_position() if job.is_queued else None
+    }
+```
+
+---
+
+### Concept 2: Understanding job.return_value
+
+```python
+# In your worker (queues/worker.py)
+def process_query(query: str) -> str:
+    """This returns a string answer"""
+    # ... RAG processing ...
+    return "This is the AI generated answer"
+
+# In your FastAPI route
+job = queue.fetch_job(job_id)
+result = job.return_value  # Gets "This is the AI generated answer"
+
+# Different job attributes you can access:
+print(f"Job ID: {job.id}")
+print(f"Status: {job.get_status()}")  # 'queued', 'started', 'finished', 'failed'
+print(f"Result: {job.return_value}")  # The function's return value
+print(f"Position: {job.get_position()}")  # Queue position (if queued)
+print(f"Created at: {job.created_at}")
+print(f"Started at: {job.started_at}")
+print(f"Ended at: {job.ended_at}")
+print(f"Function: {job.func_name}")
+print(f"Arguments: {job.args}")
+print(f"Error: {job.exc_info}")  # If failed
+```
+
+---
+
+### Concept 3: Complete Server with Both Endpoints
+
+**File: `server.py` (Complete)**
+
+```python
+from fastapi import FastAPI, Query, HTTPException
+from redis import Redis
+from rq import Queue
+from queues.worker import process_query
+from uuid import uuid4
+import json
+
+app = FastAPI(title="RAG Queue System")
+
+# Setup connections
+redis_conn = Redis(host='localhost', port=6379, decode_responses=True)
+task_queue = Queue('rag_tasks', connection=redis_conn)
+
+# In-memory store for job metadata (use Redis in production)
+job_store = {}
+
+@app.post("/chat/")
+async def submit_query(query: str):
+    """
+    Submit a query for processing.
+    Returns job_id immediately.
+    """
+    # Generate unique job ID
+    job_id = str(uuid4())
+    
+    # Enqueue the job
+    job = task_queue.enqueue(
+        process_query,
+        query,
+        job_id=job_id,
+        job_timeout=300
+    )
+    
+    # Store metadata
+    job_store[job_id] = {
+        "query": query,
+        "submitted_at": str(job.created_at)
+    }
+    
+    return {
+        "status": "accepted",
+        "job_id": job_id,
+        "message": "Query queued successfully",
+        "check_status_url": f"/job-status/?job_id={job_id}"
+    }
+
+@app.get("/job-status/")
+async def get_job_status(
+    job_id: str = Query(..., description="The job ID to check")
+):
+    """
+    Check the status and get result of a job.
+    """
+    # Fetch job from queue
+    job = task_queue.fetch_job(job_id)
+    
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    
+    # Prepare response based on job status
+    response = {
+        "job_id": job_id,
+        "status": job.get_status(),
+        "query": job_store.get(job_id, {}).get("query", "Unknown")
+    }
+    
+    if job.is_finished:
+        response["result"] = job.return_value
+        response["message"] = "Job completed successfully"
+    
+    elif job.is_queued:
+        response["position"] = job.get_position()
+        response["message"] = f"Job is queued at position {job.get_position()}"
+    
+    elif job.is_started:
+        response["message"] = "Job is currently being processed"
+        response["started_at"] = str(job.started_at)
+    
+    elif job.is_failed:
+        response["error"] = str(job.exc_info)
+        response["message"] = "Job failed"
+    
+    return response
+
+@app.get("/queue-info/")
+async def queue_info():
+    """
+    Get information about the queue.
+    """
+    return {
+        "queue_name": task_queue.name,
+        "queue_size": len(task_queue),
+        "jobs_in_queue": [job.id for job in task_queue.get_jobs()]
+    }
+
+@app.get("/")
+async def root():
+    return {
+        "message": "RAG Queue Server",
+        "endpoints": {
+            "submit": "POST /chat/?query=your_question",
+            "status": "GET /job-status/?job_id=xxx",
+            "queue_info": "GET /queue-info/"
+        }
+    }
+```
+
+---
+
+### Concept 4: Testing Without a Worker
+
+```python
+# test_no_worker.py
+import requests
+import time
+
+BASE_URL = "http://localhost:8000"
+
+# Submit multiple jobs
+queries = [
+    "What is asynchronous programming?",
+    "Explain Python RQ library",
+    "How does RAG work?",
+    "Debugging in JavaScript"
+]
+
+submitted_jobs = []
+
+print("📤 SUBMITTING JOBS (No worker running)")
+print("-" * 50)
+
+for query in queries:
+    response = requests.post(f"{BASE_URL}/chat/", params={"query": query})
+    job_data = response.json()
+    submitted_jobs.append(job_data["job_id"])
+    print(f"✅ Submitted: '{query[:40]}...' → Job ID: {job_data['job_id']}")
+
+print("\n" + "=" * 50)
+print("📊 CHECKING JOB STATUSES (No worker)")
+print("=" * 50)
+
+# Check each job status
+for job_id in submitted_jobs:
+    response = requests.get(f"{BASE_URL}/job-status/", params={"job_id": job_id})
+    status = response.json()
+    
+    print(f"\nJob: {job_id}")
+    print(f"  Status: {status['status']}")
+    print(f"  Result: {status.get('result', 'null')}")  # Will be null!
+    if 'position' in status:
+        print(f"  Queue Position: {status['position']}")
+
+print("\n" + "=" * 50)
+print("⚠️ All results are NULL because NO WORKER is running!")
+print("💡 Jobs are stuck in queue waiting for a worker")
+print("=" * 50)
+
+# Check queue info
+queue_info = requests.get(f"{BASE_URL}/queue-info/")
+print(f"\n📋 Queue Info: {queue_info.json()}")
+```
+
+**Output (without worker):**
+```
+📤 SUBMITTING JOBS (No worker running)
+--------------------------------------------------
+✅ Submitted: 'What is asynchronous programming?...' → Job ID: abc-123
+✅ Submitted: 'Explain Python RQ library...' → Job ID: def-456
+✅ Submitted: 'How does RAG work?...' → Job ID: ghi-789
+✅ Submitted: 'Debugging in JavaScript...' → Job ID: jkl-012
+
+==================================================
+📊 CHECKING JOB STATUSES (No worker)
+==================================================
+
+Job: abc-123
+  Status: queued
+  Result: null
+  Queue Position: 0
+
+Job: def-456
+  Status: queued
+  Result: null
+  Queue Position: 1
+
+Job: ghi-789
+  Status: queued
+  Result: null
+  Queue Position: 2
+
+Job: jkl-012
+  Status: queued
+  Result: null
+  Queue Position: 3
+
+==================================================
+⚠️ All results are NULL because NO WORKER is running!
+💡 Jobs are stuck in queue waiting for a worker
+==================================================
+
+📋 Queue Info: {'queue_name': 'rag_tasks', 'queue_size': 4, 'jobs_in_queue': ['abc-123', 'def-456', 'ghi-789', 'jkl-012']}
+```
+
+---
+
+### Concept 5: Visualizing the Problem
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         FASTAPI SERVER                           │
+│                        (Running ✓)                               │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   POST /chat/          GET /job-status/                         │
+│   ┌─────────┐          ┌─────────┐                              │
+│   │Submit   │          │Check    │                              │
+│   │Query    │          │Status   │                              │
+│   └────┬────┘          └────┬────┘                              │
+│        │                    │                                    │
+│        ▼                    ▼                                    │
+│   ┌─────────────────────────────────────┐                        │
+│   │           REDIS QUEUE               │                        │
+│   │  ┌─────────────────────────────┐    │                        │
+│   │  │ [Job 1] [Job 2] [Job 3]     │    │                        │
+│   │  │  ↓       ↓       ↓           │    │                        │
+│   │  │Waiting Waiting Waiting       │    │                        │
+│   │  └─────────────────────────────┘    │                        │
+│   └─────────────────────────────────────┘                        │
+│                    │                                              │
+│                    │ ⚠️ NO WORKER ATTACHED! ⚠️                   │
+│                    ▼                                              │
+│              ┌──────────┐                                        │
+│              │  EMPTY   │                                        │
+│              │──────────│                                        │
+│              │ No one   │                                        │
+│              │ picking  │                                        │
+│              │ up jobs  │                                        │
+│              └──────────┘                                        │
+│                                                                  │
+│   Result returned: null (because job never processed)           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Concept 6: What You'll Do Next (Start Worker)
+
+```bash
+# In a separate terminal, start the worker
+cd rag_queue
+python -m rq worker rag_tasks --url redis://localhost:6379
+
+# Output:
+# *** Listening for jobs on rag_tasks
+# Waiting for jobs...
+```
+
+**After worker starts:**
+```python
+# Now jobs will be processed!
+# Check status again - results will appear
+response = requests.get("http://localhost:8000/job-status/", 
+                        params={"job_id": "abc-123"})
+
+# Output will change from null to actual answer:
+{
+    "job_id": "abc-123",
+    "status": "finished",
+    "result": "Asynchronous programming allows tasks to run concurrently...",
+    "query": "What is asynchronous programming?"
+}
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Result Endpoint
+
+```python
+@app.get("/result/")
+async def get_result(job_id: str):
+    job = queue.fetch_job(job_id)
+    if job and job.is_finished:
+        return {"result": job.return_value}
+    return {"result": None, "status": job.get_status() if job else "not_found"}
+```
+
+### Template 2: Complete Status Endpoint with Error Handling
+
+```python
+@app.get("/job-status/")
+async def job_status(job_id: str = Query(...)):
+    job = queue.fetch_job(job_id)
+    
+    if not job:
+        raise HTTPException(404, "Job not found")
+    
+    return {
+        "job_id": job_id,
+        "status": job.get_status(),
+        "result": job.return_value if job.is_finished else None,
+        "position": job.get_position() if job.is_queued else None,
+        "error": str(job.exc_info) if job.is_failed else None
+    }
+```
+
+### Template 3: Batch Status Check
+
+```python
+@app.post("/batch-status/")
+async def batch_status(job_ids: list[str]):
+    results = []
+    for job_id in job_ids:
+        job = queue.fetch_job(job_id)
+        results.append({
+            "job_id": job_id,
+            "status": job.get_status() if job else "not_found",
+            "result": job.return_value if job and job.is_finished else None
+        })
+    return {"jobs": results}
+```
+
+---
+
+## 🔑 Key Takeaways
+
+| Concept | Explanation |
+|---------|-------------|
+| `queue.fetch_job(job_id)` | Retrieves job from Redis by ID |
+| `job.return_value` | Gets the function's return value (null if not finished) |
+| `job.get_status()` | Returns: 'queued', 'started', 'finished', 'failed' |
+| **Null result** | Means job hasn't been processed yet (no worker) |
+| **Worker needed** | Without worker, jobs stay queued forever |
+
+**Bottom line:** The result endpoint works perfectly - it can fetch jobs and return results. But currently all results are `null` because **no worker is running** to process the queued jobs. The next step is to start an RQ worker that will pick up jobs and process them in the background!
+
+---
 
 ## 162. Running and Scaling Worker Nodes for Background Processing (05:50)
+
+## 📝 Simple Summary
+
+To process queued jobs, you need to run **RQ workers** in separate terminal instances. The command is `rq worker`. However, there's a catch: workers run in different processes, so they don't automatically have access to environment variables (like OpenAI API key). You need to load `.env` inside your worker file. Also, Mac users may need an extra export command. The magic is that you can run **multiple workers** simultaneously to process jobs in **parallel** - dramatically speeding up your RAG system!
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Command to run worker: `rq worker` |
+| 2 | Workers run in separate processes, not same as server |
+| 3 | Must load `.env` inside worker file (different process = different environment) |
+| 4 | Mac users may need: `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` |
+| 5 | Multiple workers = parallel processing |
+| 6 | Each worker picks one job at a time from queue |
+| 7 | With 3 workers = 3 queries processed simultaneously |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: The Problem - Worker Can't Find API Key
+
+```python
+# Problem: Worker runs in different process, doesn't have .env loaded!
+
+# queues/worker.py (BEFORE - missing env load)
+from openai import OpenAI
+
+def process_query(query: str):
+    # This will FAIL! OPENAI_API_KEY not found
+    client = OpenAI()  # ❌ Error: API key missing
+    # ...
+```
+
+**Error when running worker:**
+```bash
+$ rq worker rag_tasks
+
+# Output:
+# Error: OpenAI API key not found. Please set OPENAI_API_KEY environment variable.
+```
+
+---
+
+### Concept 2: The Solution - Load .env in Worker
+
+**File: `queues/worker.py` (FIXED)**
+
+```python
+# Load environment variables FIRST!
+from dotenv import load_dotenv
+load_dotenv()  # This loads your .env file
+
+import os
+from openai import OpenAI
+from qdrant_client import QdrantClient
+
+# Now API key is available
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+qdrant_client = QdrantClient(host="localhost", port=6333)
+
+def process_query(query: str) -> str:
+    """Process RAG query - now works because env is loaded!"""
+    print(f"🔍 Processing: {query}")
+    # ... rest of RAG logic
+    return answer
+```
+
+---
+
+### Concept 3: Running a Single Worker
+
+```bash
+# Terminal 1: FastAPI Server (already running)
+python main.py
+# Server running on http://localhost:8000
+
+# Terminal 2: Start ONE worker
+cd rag_queue
+rq worker rag_tasks
+
+# Output:
+# *** Listening for jobs on rag_tasks...
+# Waiting for jobs...
+```
+
+**For Mac users (if you get errors):**
+```bash
+# Mac OS fix - required before running worker
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+
+# Then run worker
+rq worker rag_tasks
+```
+
+---
+
+### Concept 4: Running Multiple Workers (Parallel Processing)
+
+```bash
+# TERMINAL 2: Worker 1
+cd rag_queue
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES  # Mac only
+rq worker rag_tasks
+# Output: Worker 1 listening...
+
+# TERMINAL 3: Worker 2
+cd rag_queue
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+rq worker rag_tasks
+# Output: Worker 2 listening...
+
+# TERMINAL 4: Worker 3
+cd rag_queue
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+rq worker rag_tasks
+# Output: Worker 3 listening...
+```
+
+**Result:** 3 workers = 3 queries processed at the same time!
+
+---
+
+### Concept 5: Testing Parallel Processing
+
+```python
+# test_parallel.py
+import requests
+import time
+
+BASE_URL = "http://localhost:8000"
+
+# Submit 3 queries at once
+queries = [
+    "What are arrow functions in JavaScript?",
+    "Explain debugging techniques in JS",
+    "What is event loop in JavaScript?"
+]
+
+jobs = []
+for query in queries:
+    response = requests.post(f"{BASE_URL}/chat/", params={"query": query})
+    job_id = response.json()["job_id"]
+    jobs.append(job_id)
+    print(f"✅ Queued: {query[:40]}... → {job_id}")
+
+print("\n" + "=" * 50)
+print("🔄 Workers are processing in PARALLEL!")
+print("=" * 50)
+
+# Check status repeatedly
+while jobs:
+    for job_id in jobs[:]:
+        resp = requests.get(f"{BASE_URL}/job-status/", params={"job_id": job_id})
+        data = resp.json()
+        
+        if data.get("result"):
+            print(f"\n✅ COMPLETED: {data['query'][:40]}...")
+            print(f"   Answer: {data['result'][:100]}...")
+            jobs.remove(job_id)
+        else:
+            print(f"⏳ {data['query'][:30]}... Status: {data['status']}")
+    
+    if jobs:
+        time.sleep(2)
+        print("---")
+
+print("\n🎉 All queries processed in parallel!")
+```
+
+**Worker Terminal Output (showing parallel execution):**
+```bash
+# Worker 1 output:
+🔍 Processing: What are arrow functions in JavaScript?
+Searching chunks...
+Calling LLM...
+✅ Completed!
+
+# Worker 2 output (SIMULTANEOUSLY):
+🔍 Processing: Explain debugging techniques in JS
+Searching chunks...
+Calling LLM...
+✅ Completed!
+
+# Worker 3 output (SIMULTANEOUSLY):
+🔍 Processing: What is event loop in JavaScript?
+Searching chunks...
+Calling LLM...
+✅ Completed!
+```
+
+---
+
+### Concept 6: Complete Working Setup
+
+**Step-by-step to run everything:**
+
+```bash
+# ============================================
+# STEP 1: Start Redis/Valkey (Docker)
+# ============================================
+cd rag_queue
+docker-compose up -d
+
+# ============================================
+# STEP 2: Start FastAPI Server
+# ============================================
+# Terminal 1
+python main.py
+# Output: Server running on http://0.0.0.0:8000
+
+# ============================================
+# STEP 3: Start Workers (Multiple Terminals)
+# ============================================
+
+# Terminal 2 - Worker 1
+cd rag_queue
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES  # Mac only
+rq worker rag_tasks
+# Output: *** Listening for jobs on rag_tasks...
+
+# Terminal 3 - Worker 2
+cd rag_queue
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+rq worker rag_tasks
+
+# Terminal 4 - Worker 3 (optional)
+cd rag_queue
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+rq worker rag_tasks
+
+# ============================================
+# STEP 4: Submit Queries
+# ============================================
+# Terminal 5 - Send requests
+curl "http://localhost:8000/chat/?query=What%20is%20RAG?"
+
+# Response:
+# {"job_id": "abc-123", "status": "accepted"}
+
+# Check result
+curl "http://localhost:8000/job-status/?job_id=abc-123"
+
+# When processing: {"status": "processing", "result": null}
+# When done: {"status": "finished", "result": "RAG is..."}
+```
+
+---
+
+### Concept 7: Worker Output Visualization
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         FASTAPI SERVER                              │
+│                      (Receives requests)                            │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  REDIS QUEUE    │
+                    │  [J1][J2][J3]   │
+                    └────────┬────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│   WORKER 1    │    │   WORKER 2    │    │   WORKER 3    │
+│  (Terminal 2) │    │  (Terminal 3) │    │  (Terminal 4) │
+├───────────────┤    ├───────────────┤    ├───────────────┤
+│ Processing J1 │    │ Processing J2 │    │ Processing J3 │
+│ "Arrow func?" │    │ "Debugging?"  │    │ "Event loop?" │
+│               │    │               │    │               │
+│ 1. Embedding  │    │ 1. Embedding  │    │ 1. Embedding  │
+│ 2. Search DB  │    │ 2. Search DB  │    │ 2. Search DB  │
+│ 3. Call LLM   │    │ 3. Call LLM   │    │ 3. Call LLM   │
+│ 4. Store res  │    │ 4. Store res  │    │ 4. Store res  │
+└───────┬───────┘    └───────┬───────┘    └───────┬───────┘
+        │                    │                    │
+        └────────────────────┼────────────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │  RESULTS READY  │
+                    │  J1, J2, J3     │
+                    │  All done!      │
+                    └─────────────────┘
+```
+
+---
+
+## 🔧 Commands Cheat Sheet
+
+| Task | Command |
+|------|---------|
+| Start 1 worker | `rq worker rag_tasks` |
+| Start multiple workers | Open new terminals, run same command |
+| Mac fix (before worker) | `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` |
+| Start with specific queue | `rq worker my_queue_name` |
+| Start with multiple queues | `rq worker queue1 queue2 queue3` |
+| Show worker status | `rq info` |
+| Stop all workers | `Ctrl+C` in each terminal |
+| Check failed jobs | `rq worker --burst` (process all then exit) |
+
+---
+
+## 📝 Complete Worker File Template
+
+**File: `queues/worker.py` (Production Ready)**
+
+```python
+# Load environment FIRST - critical for workers!
+from dotenv import load_dotenv
+load_dotenv()
+
+import os
+import time
+from openai import OpenAI
+from qdrant_client import QdrantClient
+
+# Initialize clients (now env is loaded)
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+qdrant_client = QdrantClient(
+    host=os.getenv("QDRANT_HOST", "localhost"),
+    port=int(os.getenv("QDRANT_PORT", 6333))
+)
+
+def process_query(query: str) -> str:
+    """
+    Complete RAG pipeline.
+    This function runs inside RQ workers.
+    """
+    print(f"🔍 [Worker] Processing: {query}")
+    start_time = time.time()
+    
+    try:
+        # Step 1: Create embedding
+        print("   📝 Creating embedding...")
+        embedding = openai_client.embeddings.create(
+            model="text-embedding-3-small",
+            input=query
+        )
+        
+        # Step 2: Search vector DB
+        print("   🔎 Searching vector database...")
+        results = qdrant_client.search(
+            collection_name="rag_documents",
+            query_vector=embedding.data[0].embedding,
+            limit=5
+        )
+        
+        # Step 3: Build context
+        context = "\n\n".join([r.payload.get("text", "") for r in results])
+        
+        # Step 4: Call LLM
+        print("   🤖 Calling LLM...")
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": f"Context: {context}"},
+                {"role": "user", "content": query}
+            ]
+        )
+        
+        answer = response.choices[0].message.content
+        elapsed = time.time() - start_time
+        print(f"   ✅ Completed in {elapsed:.1f}s")
+        
+        return answer
+        
+    except Exception as e:
+        print(f"   ❌ Error: {e}")
+        raise  # RQ will mark job as failed
+
+# For testing directly
+if __name__ == "__main__":
+    result = process_query("What is RAG?")
+    print(f"\nResult: {result}")
+```
+
+---
+
+## 🎯 Performance Comparison
+
+| Setup | Processing Time (3 queries) |
+|-------|----------------------------|
+| No worker | ❌ Jobs never process |
+| 1 worker | ~30 seconds (sequential) |
+| 2 workers | ~15 seconds (parallel) |
+| 3 workers | ~10 seconds (parallel) |
+| N workers | ~time of slowest query |
+
+**Key insight:** More workers = faster throughput (but each worker needs its own resources/API rate limits)
+
+---
+
+## 💡 Key Takeaways
+
+```python
+# The magic of parallel workers:
+
+# 1 worker: Processes jobs ONE AT A TIME
+# [Job1] → [Job2] → [Job3]  (15 seconds total)
+
+# 3 workers: Processes THREE JOBS SIMULTANEOUSLY
+# [Job1] ─┐
+# [Job2] ─┼─→ ALL AT ONCE  (5 seconds total)
+# [Job3] ─┘
+
+# Command to run 3 workers:
+# Terminal 2: rq worker rag_tasks
+# Terminal 3: rq worker rag_tasks  
+# Terminal 4: rq worker rag_tasks
+```
+
+**Bottom line:** 
+1. Load `.env` inside worker file (critical!)
+2. Run `rq worker` in separate terminals
+3. Mac users need export command
+4. Multiple workers = parallel processing
+5. Users can submit jobs while workers run in background
+
+Your async RAG system is now production-ready with parallel processing! 🚀
+
+`
+20:33:42 default: rag_queue.queues.worker.process_query('explain conditional probabality') (9861a0f2-1dd0-4f2e-9ab9-195264d710f5)
+20:33:42 Worker 12c87277abfe412bb85ad6b1e8946a8e: job 9861a0f2-1dd0-4f2e-9ab9-195264d710f5: exception raised while executing (rag_queue.queues.worker.process_query)
+`
+
+### [Fix](https://github.com/rq/rq/issues/2155)
+
+---
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
