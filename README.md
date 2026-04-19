@@ -33808,6 +33808,383 @@ asyncio.run(main())
 
 ## 156. Python RQ Setup Distributed Queues (02:15)
 
+Here's a simple summary of the tutorial transcript about using **RQ (Redis Queue)** with **Valkey** for asynchronous job processing.
+
+## 📝 Simple Summary
+
+To implement queues in your RAG system, you'll use a Python package called **RQ** (Redis Queue). RQ uses **Redis** as its backend storage. However, Redis recently changed its license, so the tutorial uses **Valkey** - a drop-in replacement that works exactly the same way. You set up Valkey using Docker Compose (just like your vector database), and then RQ will handle all the queueing magic.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **RQ** = Python package for simple job queues |
+| 2 | RQ uses **Redis** as backend storage |
+| 3 | Redis license was recently revoked (changed) |
+| 4 | **Valkey** = Drop-in replacement for Redis |
+| 5 | Valkey works with ZERO code changes |
+| 6 | You need both: Vector DB (port 6333) + Valkey (port 6379) |
+| 7 | Docker Compose is used to run Valkey |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: What is RQ (Redis Queue)?
+
+**RQ** is a Python library that makes it super easy to add queues to your application. It uses Redis to store and manage jobs.
+
+```python
+# Without RQ (manual queue - lots of code)
+from collections import deque
+import threading
+
+class ManualQueue:
+    def __init__(self):
+        self.queue = deque()
+        # Need to write all the worker logic yourself
+    
+    def add_job(self, job):
+        self.queue.append(job)
+    
+    # ... many more lines of code
+
+# With RQ (simple and powerful)
+from rq import Queue
+from redis import Redis
+
+# Connect to Redis/Valkey
+redis_conn = Redis(host='localhost', port=6379)
+
+# Create a queue (that's it!)
+queue = Queue(connection=redis_conn)
+
+# Add a job - RQ handles everything else
+job = queue.enqueue(my_function, arg1, arg2)
+```
+
+---
+
+### Concept 2: Redis vs Valkey (The License Issue)
+
+**The Problem:** Redis changed its open-source license, causing concerns.
+
+**The Solution:** Valkey - a fork that is 100% compatible.
+
+```python
+# Redis connection (old way)
+from redis import Redis
+redis_conn = Redis(host='localhost', port=6379)
+
+# Valkey connection (new way - SAME CODE!)
+from redis import Redis
+valkey_conn = Redis(host='localhost', port=6379)  
+# ⭐ ZERO code changes! Same library, same syntax!
+
+# Both work identically:
+# - Same commands
+# - Same data structures
+# - Same RQ integration
+```
+
+**Key Point:** You don't need to change a single line of code if you switch between Redis and Valkey.
+
+---
+
+### Concept 3: Setting Up Valkey with Docker Compose
+
+**docker-compose.yml** for Valkey:
+
+```yaml
+version: '3.8'
+
+services:
+  # Vector Database (Qdrant) - already running on port 6333
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+
+  # Valkey - drop-in Redis replacement
+  valkey:
+    image: valkey/valkey:latest  # Official Valkey image
+    ports:
+      - "6379:6379"  # Same port as Redis!
+    volumes:
+      - ./valkey_data:/data
+
+# To run: docker-compose up -d
+```
+
+**Commands to set up:**
+
+```bash
+# Create a new folder
+mkdir rag_q
+cd rag_q
+
+# Create docker-compose.yml (with above content)
+
+# Start both services
+docker-compose up -d
+
+# Check if running
+docker ps
+
+# Output should show:
+# qdrant: 0.0.0.0:6333->6333/tcp
+# valkey: 0.0.0.0:6379->6379/tcp
+```
+
+---
+
+### Concept 4: Complete RQ Setup Example
+
+Here's how everything fits together:
+
+```python
+# ============================================
+# FILE: worker.py (The background processor)
+# ============================================
+from redis import Redis
+from rq import Queue, Worker
+import time
+
+# Connect to Valkey (same as Redis)
+redis_conn = Redis(
+    host='localhost',
+    port=6379,
+    decode_responses=True
+)
+
+# Define the actual work function
+def process_pdf_job(pdf_path: str, user_id: str):
+    """This runs in the background"""
+    print(f"📄 Processing PDF: {pdf_path} for user {user_id}")
+    
+    # Simulate heavy RAG work
+    time.sleep(10)  # Chunking, embedding, indexing
+    
+    result = f"PDF '{pdf_path}' successfully indexed"
+    print(f"✅ {result}")
+    
+    return result
+
+# Create a queue
+queue = Queue('rag_tasks', connection=redis_conn)
+
+# To start a worker (run this in a separate terminal):
+# worker = Worker([queue], connection=redis_conn)
+# worker.work()
+
+
+# ============================================
+# FILE: main.py (FastAPI server)
+# ============================================
+from fastapi import FastAPI, BackgroundTasks
+from redis import Redis
+from rq import Queue
+from uuid import uuid4
+
+app = FastAPI()
+
+# Connect to Valkey
+redis_conn = Redis(host='localhost', port=6379)
+task_queue = Queue('rag_tasks', connection=redis_conn)
+
+# In-memory store for job statuses (use Redis or DB in production)
+job_status = {}
+
+@app.post("/index-pdf/")
+async def index_pdf(pdf_path: str, user_id: str):
+    # Create a unique job ID
+    job_id = str(uuid4())
+    
+    # Enqueue the job - INSTANT! No blocking!
+    job = task_queue.enqueue(
+        'worker.process_pdf_job',  # Function to call
+        pdf_path,
+        user_id,
+        job_id=job_id,
+        job_timeout=3600  # 1 hour timeout for large PDFs
+    )
+    
+    # Store job info
+    job_status[job_id] = {
+        'status': 'queued',
+        'job_id': job_id,
+        'message': 'Your PDF is queued for processing'
+    }
+    
+    return {
+        'status': 'accepted',
+        'job_id': job_id,
+        'queue_position': len(task_queue),
+        'message': f'PDF {pdf_path} queued successfully'
+    }
+
+@app.get("/job-status/{job_id}")
+async def get_job_status(job_id: str):
+    from redis import Redis
+    from rq import Queue
+    
+    redis_conn = Redis(host='localhost', port=6379)
+    queue = Queue('rag_tasks', connection=redis_conn)
+    
+    # Fetch job from queue
+    job = queue.fetch_job(job_id)
+    
+    if job is None:
+        return {'status': 'not_found', 'job_id': job_id}
+    
+    if job.is_finished:
+        return {
+            'status': 'completed',
+            'job_id': job_id,
+            'result': job.result
+        }
+    elif job.is_queued:
+        return {
+            'status': 'queued',
+            'job_id': job_id,
+            'position': job.get_position()
+        }
+    elif job.is_started:
+        return {
+            'status': 'processing',
+            'job_id': job_id,
+            'started_at': job.started_at
+        }
+    elif job.is_failed:
+        return {
+            'status': 'failed',
+            'job_id': job_id,
+            'error': str(job.exc_info)
+        }
+```
+
+---
+
+### Concept 5: Running the Complete System
+
+```bash
+# TERMINAL 1: Start Valkey with Docker
+cd rag_q
+docker-compose up -d
+
+# TERMINAL 2: Start an RQ worker
+python -m rq worker rag_tasks --url redis://localhost:6379
+
+# Output:
+# *** Listening on rag_tasks...
+# Waiting for jobs...
+
+# TERMINAL 3: Run your FastAPI server
+uvicorn main:app --reload --port 8000
+
+# TERMINAL 4: Send requests (using curl or Python)
+curl -X POST "http://localhost:8000/index-pdf/" \
+     -H "Content-Type: application/json" \
+     -d '{"pdf_path": "my_document.pdf", "user_id": "alice"}'
+
+# Response (instant):
+# {
+#   "status": "accepted",
+#   "job_id": "abc123",
+#   "message": "PDF my_document.pdf queued successfully"
+# }
+
+# Check status:
+curl "http://localhost:8000/job-status/abc123"
+```
+
+---
+
+## 🏗️ Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         DOCKER COMPOSE                          │
+├─────────────────────────────┬───────────────────────────────────┤
+│    QDRANT (Vector DB)        │      VALKEY (Redis Replacement)   │
+│    Port: 6333                │      Port: 6379                   │
+│    Stores embeddings         │      Stores job queue             │
+└─────────────────────────────┴───────────────────────────────────┘
+                              ▲
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                          RQ SYSTEM                               │
+├─────────────────┬─────────────────┬─────────────────────────────┤
+│   FastAPI App   │      RQ Queue    │      RQ Worker              │
+│   (Producer)    │   (Redis/Valkey) │      (Consumer)             │
+│                 │                 │                             │
+│ • Receives      │ • Stores jobs   │ • Picks jobs from queue      │
+│   requests      │ • FIFO order    │ • Processes PDFs             │
+│ • Enqueues jobs │ • Persists      │ • Indexes to Qdrant          │
+│ • Returns job   │   across        │ • Stores results             │
+│   ID instantly  │   restarts       │                             │
+└─────────────────┴─────────────────┴─────────────────────────────┘
+```
+
+---
+
+## 🔧 Commands Cheat Sheet
+
+| Task | Command |
+|------|---------|
+| Start Valkey + Qdrant | `docker-compose up -d` |
+| Stop all services | `docker-compose down` |
+| Check running services | `docker ps` |
+| Start RQ worker | `python -m rq worker rag_tasks --url redis://localhost:6379` |
+| Start FastAPI | `uvicorn main:app --reload` |
+| Clear all jobs from queue | `python -c "from redis import Redis; Redis().flushall()"` |
+
+---
+
+## 📊 Comparison: Redis vs Valkey
+
+| Feature | Redis | Valkey |
+|---------|-------|--------|
+| RQ Support | ✅ Yes | ✅ Yes |
+| Python Library | `redis` | `redis` (same!) |
+| Default Port | 6379 | 6379 |
+| Commands | Standard Redis commands | Same commands |
+| License | Changed (controversial) | Open source friendly |
+| Code Changes | N/A | **ZERO** changes needed |
+
+---
+
+## 💡 Key Takeaway
+
+```python
+# This is all you need to add queuing to your RAG system:
+
+from redis import Redis
+from rq import Queue
+
+# 1. Connect (works for Redis OR Valkey)
+redis = Redis(host='localhost', port=6379)
+
+# 2. Create a queue
+queue = Queue(connection=redis)
+
+# 3. Add a job (non-blocking)
+job = queue.enqueue(my_rag_function, pdf_path)
+
+# 4. That's it! RQ handles the rest!
+```
+
+**Bottom line:** RQ + Valkey = Simple, production-ready queuing for your RAG system. No complex setup, no code changes if you switch from Redis, and complete async background processing!
+
+---
+
+## 157. Setting up Redis and Valkey with Docker (02:09)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
