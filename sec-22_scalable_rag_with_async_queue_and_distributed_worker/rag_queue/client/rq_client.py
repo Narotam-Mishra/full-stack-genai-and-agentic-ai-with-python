@@ -10,3 +10,5 @@ redis_conn = Redis(
 
 # create queue
 queue = Queue(connection=redis_conn)
+
+# queue.enqueue()
