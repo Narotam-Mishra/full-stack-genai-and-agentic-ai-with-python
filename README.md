@@ -39273,6 +39273,1391 @@ graph_builder = StateGraph(State)
 
 ## 169. Defining Nodes and Functions in LangGraph (03:46)
 
+## 📝 Simple Summary
+
+**Nodes** are simply functions that perform specific tasks in your LangGraph workflow. Each node receives the current **state** as input and returns an **updated state**. When you return a message from a node, the `add_messages` annotation automatically **appends** it to the existing messages list (instead of replacing). After defining node functions, you must **register** them with the graph builder using `add_node()`, giving each node a name and the function reference.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Node** = A function that performs a specific task |
+| 2 | Every node has access to the current `state` |
+| 3 | Each node must **return a state** (updated or same) |
+| 4 | Returned messages are **appended** due to `add_messages` annotation |
+| 5 | Original message + new message = conversation history preserved |
+| 6 | Nodes must be **registered** with `graph_builder.add_node()`
+| 7 | Registration requires: a **name** (string) and the **function** |
+| 8 | Multiple nodes can be registered in the same graph |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: What is a Node?
+
+A node is just a Python function that:
+1. Takes `state` as a parameter
+2. Does some work
+3. Returns an updated state
+
+```python
+# Basic node structure
+def my_node(state: State) -> State:
+    # 1. Read from state
+    # 2. Do some work
+    # 3. Return updated state
+    return {"messages": ["Something new"]}
+```
+
+---
+
+### Concept 2: Creating a Simple Chatbot Node
+
+**File: `chat.py` (continuing from previous)**
+
+```python
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, END
+
+# Define State (from previous video)
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# ============================================
+# NODE 1: Chatbot Node
+# ============================================
+def chatbot(state: State) -> State:
+    """
+    This node represents the chatbot.
+    It receives state, does something, returns updated state.
+    """
+    print(f"🤖 Chatbot node received: {state}")
+    
+    # Return a new message (will be APPENDED due to add_messages)
+    return {"messages": ["Hi! This is a message from the Chatbot node."]}
+
+# Register the node with the graph builder
+graph_builder.add_node("chatbot", chatbot)  # "chatbot" is the name
+
+print("✅ Chatbot node registered!")
+```
+
+---
+
+### Concept 3: Creating Multiple Nodes
+
+```python
+# ============================================
+# NODE 2: End Node (or any other node)
+# ============================================
+def end_node(state: State) -> State:
+    """
+    Another node - could be for validation, formatting, etc.
+    """
+    print(f"📝 End node received: {state}")
+    
+    # Return another message (will be APPENDED)
+    return {"messages": ["Sample message appended from end node."]}
+
+# Register the second node
+graph_builder.add_node("end", end_node)  # "end" is the name
+
+print("✅ End node registered!")
+print(f"📊 Total nodes registered: 2")
+```
+
+---
+
+### Concept 4: How State Flows Through Nodes
+
+```python
+# Complete example showing state flow
+
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, END
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# Node 1: Greeting node
+def greeting_node(state: State) -> State:
+    print(f"\n📥 Greeting node INPUT: {state}")
+    
+    # Return a greeting
+    result = {"messages": ["Hello! Welcome to the conversation."]}
+    print(f"📤 Greeting node OUTPUT: {result}")
+    return result
+
+# Node 2: Question node
+def question_node(state: State) -> State:
+    print(f"\n📥 Question node INPUT: {state}")
+    
+    # Return a question
+    result = {"messages": ["How can I help you today?"]}
+    print(f"📤 Question node OUTPUT: {result}")
+    return result
+
+# Node 3: Farewell node
+def farewell_node(state: State) -> State:
+    print(f"\n📥 Farewell node INPUT: {state}")
+    
+    # Return a farewell
+    result = {"messages": ["Goodbye! Have a great day!"]}
+    print(f"📤 Farewell node OUTPUT: {result}")
+    return result
+
+# Register all nodes
+graph_builder.add_node("greeting", greeting_node)
+graph_builder.add_node("question", question_node)
+graph_builder.add_node("farewell", farewell_node)
+
+# Set edges (order of execution)
+graph_builder.set_entry_point("greeting")
+graph_builder.add_edge("greeting", "question")
+graph_builder.add_edge("question", "farewell")
+graph_builder.add_edge("farewell", END)
+
+# Compile and run
+graph = graph_builder.compile()
+
+# Initial state with user message
+initial_state = {"messages": ["User says: Hi there!"]}
+
+print("=" * 50)
+print("🚀 Running graph with multiple nodes")
+print("=" * 50)
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("📝 FINAL CONVERSATION HISTORY")
+print("=" * 50)
+for i, msg in enumerate(final_state["messages"]):
+    print(f"{i+1}. {msg}")
+```
+
+**Output:**
+```
+==================================================
+🚀 Running graph with multiple nodes
+==================================================
+
+📥 Greeting node INPUT: {'messages': ['User says: Hi there!']}
+📤 Greeting node OUTPUT: {'messages': ['Hello! Welcome to the conversation.']}
+
+📥 Question node INPUT: {'messages': ['User says: Hi there!', 'Hello! Welcome to the conversation.']}
+📤 Question node OUTPUT: {'messages': ['How can I help you today?']}
+
+📥 Farewell node INPUT: {'messages': ['User says: Hi there!', 'Hello! Welcome to the conversation.', 'How can I help you today?']}
+📤 Farewell node OUTPUT: {'messages': ['Goodbye! Have a great day!']}
+
+==================================================
+📝 FINAL CONVERSATION HISTORY
+==================================================
+1. User says: Hi there!
+2. Hello! Welcome to the conversation.
+3. How can I help you today?
+4. Goodbye! Have a great day!
+```
+
+---
+
+### Concept 5: Understanding the Appending Behavior
+
+```python
+# DEMONSTRATION: How add_messages appends messages
+
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, END
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+graph_builder = StateGraph(State)
+
+def node_a(state: State) -> State:
+    print(f"Node A sees: {state['messages']}")
+    return {"messages": ["Message from Node A"]}
+
+def node_b(state: State) -> State:
+    print(f"Node B sees: {state['messages']}")
+    return {"messages": ["Message from Node B"]}
+
+def node_c(state: State) -> State:
+    print(f"Node C sees: {state['messages']}")
+    return {"messages": ["Message from Node C"]}
+
+# Register nodes
+graph_builder.add_node("A", node_a)
+graph_builder.add_node("B", node_b)
+graph_builder.add_node("C", node_c)
+
+# Set edges
+graph_builder.set_entry_point("A")
+graph_builder.add_edge("A", "B")
+graph_builder.add_edge("B", "C")
+graph_builder.add_edge("C", END)
+
+# Run
+graph = graph_builder.compile()
+initial_state = {"messages": ["Initial user message"]}
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("FINAL STATE (All messages appended!)")
+print("=" * 50)
+for i, msg in enumerate(final_state["messages"]):
+    print(f"{i+1}. {msg}")
+```
+
+**Output:**
+```
+Node A sees: ['Initial user message']
+Node B sees: ['Initial user message', 'Message from Node A']
+Node C sees: ['Initial user message', 'Message from Node A', 'Message from Node B']
+
+==================================================
+FINAL STATE (All messages appended!)
+==================================================
+1. Initial user message
+2. Message from Node A
+3. Message from Node B
+4. Message from Node C
+```
+
+---
+
+### Concept 6: Node Naming Best Practices
+
+```python
+# Good naming practices
+
+# ✅ DO: Use descriptive names
+graph_builder.add_node("chatbot", chatbot_function)
+graph_builder.add_node("retrieve_documents", retrieve_function)
+graph_builder.add_node("generate_response", generate_function)
+graph_builder.add_node("validate_answer", validate_function)
+
+# ❌ DON'T: Use vague names
+graph_builder.add_node("node1", some_function)
+graph_builder.add_node("xyz", another_function)
+graph_builder.add_node("temp", temp_function)
+
+# ✅ DO: Name matches function purpose
+def process_user_query(state): ...
+graph_builder.add_node("process_query", process_user_query)
+
+def search_web(state): ...
+graph_builder.add_node("web_search", search_web)
+```
+
+---
+
+### Concept 7: Complete Working Example
+
+```python
+# complete_nodes_demo.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, END
+
+# 1. Define State
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+    step_count: int  # Additional field to track steps
+
+# 2. Create graph builder
+graph_builder = StateGraph(State)
+
+# 3. Define nodes
+def node_think(state: State) -> State:
+    """Node 1: Think about the input"""
+    print("💭 Thinking...")
+    return {
+        "messages": ["[THOUGHT] Processing your request"],
+        "step_count": state.get("step_count", 0) + 1
+    }
+
+def node_act(state: State) -> State:
+    """Node 2: Take action"""
+    print("🎬 Taking action...")
+    return {
+        "messages": ["[ACTION] Executing task"],
+        "step_count": state.get("step_count", 0) + 1
+    }
+
+def node_respond(state: State) -> State:
+    """Node 3: Generate response"""
+    print("💬 Generating response...")
+    return {
+        "messages": ["[RESPONSE] Task completed successfully!"],
+        "step_count": state.get("step_count", 0) + 1
+    }
+
+# 4. Register nodes
+graph_builder.add_node("think", node_think)
+graph_builder.add_node("act", node_act)
+graph_builder.add_node("respond", node_respond)
+
+# 5. Add edges (define workflow)
+graph_builder.set_entry_point("think")
+graph_builder.add_edge("think", "act")
+graph_builder.add_edge("act", "respond")
+graph_builder.add_edge("respond", END)
+
+# 6. Compile
+graph = graph_builder.compile()
+
+# 7. Run
+initial_state = {
+    "messages": ["User: Please help me"],
+    "step_count": 0
+}
+
+result = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("✅ FINAL RESULTS")
+print("=" * 50)
+print(f"Steps executed: {result['step_count']}")
+print("\nConversation:")
+for msg in result["messages"]:
+    print(f"  • {msg}")
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Node
+
+```python
+def my_node(state: State) -> State:
+    # Do something with state
+    return {"messages": ["Your response here"]}
+
+graph_builder.add_node("node_name", my_node)
+```
+
+### Template 2: Node with Logic
+
+```python
+def conditional_node(state: State) -> State:
+    last_message = state["messages"][-1]
+    
+    if "hello" in last_message.lower():
+        return {"messages": ["Hello! How are you?"]}
+    else:
+        return {"messages": ["I don't understand."]}
+
+graph_builder.add_node("responder", conditional_node)
+```
+
+### Template 3: Node with Multiple State Updates
+
+```python
+def advanced_node(state: State) -> State:
+    # Read from state
+    user_message = state["messages"][-1]
+    
+    # Process
+    response = f"Received: {user_message}"
+    
+    # Return multiple state updates
+    return {
+        "messages": [response],
+        "processed": True,
+        "timestamp": "2024-01-01"
+    }
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Node** | A function that performs a specific task |
+| **State** | Data passed to and returned from nodes |
+| **Register** | Adding a node to the graph with `add_node()` |
+| **Node Name** | String identifier for the node (must be unique) |
+| **Entry Point** | The first node that runs |
+| **Append** | Adding to the end (due to `add_messages`) |
+
+---
+
+## 📊 Visual Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    NODE REGISTRATION                            │
+│                                                                  │
+│   def chatbot(state):          graph_builder.add_node(          │
+│       return {"messages":...}       "chatbot",    chatbot       │
+│                                         ↑           ↑           │
+│                                     (name)      (function)      │
+│                                                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                    STATE FLOW                                    │
+│                                                                  │
+│   Initial State: {"messages": ["User: Hi"]}                     │
+│                         │                                        │
+│                         ▼                                        │
+│   ┌──────────────────────────────────────────────────────┐      │
+│   │              CHATBOT NODE                             │      │
+│   │  Receives: {"messages": ["User: Hi"]}                │      │
+│   │  Returns:  {"messages": ["Bot: Hello"]}              │      │
+│   └──────────────────────────────────────────────────────┘      │
+│                         │                                        │
+│                         ▼                                        │
+│   Final State: {"messages": ["User: Hi", "Bot: Hello"]}        │
+│                                                                  │
+│   ✨ Original message + new message = BOTH preserved!           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Node = Function** - Simple Python function that takes state and returns state
+2. **Every node receives state** - Current conversation/data
+3. **Every node returns state** - Updated conversation/data
+4. **Returned messages are APPENDED** - Due to `add_messages` annotation
+5. **Must register nodes** - Use `graph_builder.add_node(name, function)`
+6. **Multiple nodes allowed** - Build complex workflows
+7. **Node names should be descriptive** - Makes graph readable
+
+**Bottom line:** Nodes are the building blocks of LangGraph. Each node is a function that takes state and returns updated state. Register them with the graph builder, and LangGraph handles the state flow automatically!
+
+---
+
+## 170. Connecting Nodes with Edges - Designing Complex AI Graph (02:22)
+
+## 📝 Simple Summary
+
+After creating nodes, you need to define **edges** - the connections that determine the order of execution. You import two special nodes: `START` and `END`. Edges tell LangGraph where to begin (`START → first node`), how nodes connect to each other (`node1 → node2`), and where to finish (`last node → END`). Once all nodes and edges are added, you **compile** the graph to make it runnable. Then you can `invoke` it to execute the workflow.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Import `START` and `END` from `langgraph.graph` |
+| 2 | `START` is a special node indicating where execution begins |
+| 3 | `END` is a special node indicating where execution finishes |
+| 4 | **Edges** define the flow/order between nodes |
+| 5 | Use `add_edge(from_node, to_node)` to connect nodes |
+| 6 | First edge: `START → first_node` |
+| 7 | Last edge: `last_node → END` |
+| 8 | After adding all edges, **compile** the graph with `compile()` |
+| 9 | Compiled graph can be **invoked** to run the workflow |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Importing START and END
+
+```python
+from langgraph.graph import StateGraph, START, END
+
+# START - Special node that marks where execution begins
+# END - Special node that marks where execution ends
+# These are predefined - you don't need to create them
+```
+
+---
+
+### Concept 2: Adding Edges to Connect Nodes
+
+```python
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+
+# Define state
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# Define nodes (from previous video)
+def chatbot(state: State) -> State:
+    print("🤖 Inside chatbot node")
+    print(f"   State: {state}")
+    return {"messages": ["Message from chatbot"]}
+
+def sample_node(state: State) -> State:
+    print("📝 Inside sample node")
+    print(f"   State: {state}")
+    return {"messages": ["Message from sample node"]}
+
+# Register nodes
+graph_builder.add_node("chatbot", chatbot)
+graph_builder.add_node("sample", sample_node)
+
+# ============================================
+# ADDING EDGES (The important part!)
+# ============================================
+
+# Edge 1: START → chatbot (where to begin)
+graph_builder.add_edge(START, "chatbot")
+
+# Edge 2: chatbot → sample (flow between nodes)
+graph_builder.add_edge("chatbot", "sample")
+
+# Edge 3: sample → END (where to finish)
+graph_builder.add_edge("sample", END)
+
+print("✅ All edges added!")
+print("   START → chatbot → sample → END")
+```
+
+---
+
+### Concept 3: Visualizing the Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GRAPH WITH EDGES                             │
+│                                                                  │
+│                    ┌─────────┐                                  │
+│                    │  START  │ (special node)                   │
+│                    └────┬────┘                                  │
+│                         │                                        │
+│                    (Edge 1)                                      │
+│                         │                                        │
+│                         ▼                                        │
+│                    ┌─────────┐                                  │
+│                    │ Chatbot │ (node)                           │
+│                    │  Node   │                                  │
+│                    └────┬────┘                                  │
+│                         │                                        │
+│                    (Edge 2)                                      │
+│                         │                                        │
+│                         ▼                                        │
+│                    ┌─────────┐                                  │
+│                    │ Sample  │ (node)                           │
+│                    │  Node   │                                  │
+│                    └────┬────┘                                  │
+│                         │                                        │
+│                    (Edge 3)                                      │
+│                         │                                        │
+│                         ▼                                        │
+│                    ┌─────────┐                                  │
+│                    │   END   │ (special node)                   │
+│                    └─────────┘                                  │
+│                                                                  │
+│   Total edges: 3                                                │
+│   START → chatbot → sample → END                                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Concept 4: Compiling and Running the Graph
+
+```python
+# After adding all nodes and edges, COMPILE the graph
+graph = graph_builder.compile()
+
+print("✅ Graph compiled! Ready to run.")
+
+# Now INVOKE the graph with initial state
+initial_state = {"messages": ["User says: Hello!"]}
+
+print("\n" + "=" * 50)
+print("🚀 Running the graph...")
+print("=" * 50)
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("📝 FINAL STATE")
+print("=" * 50)
+print(f"Messages: {final_state['messages']}")
+```
+
+**Output:**
+```
+✅ Graph compiled! Ready to run.
+
+==================================================
+🚀 Running the graph...
+==================================================
+🤖 Inside chatbot node
+   State: {'messages': ['User says: Hello!']}
+📝 Inside sample node
+   State: {'messages': ['User says: Hello!', 'Message from chatbot']}
+
+==================================================
+📝 FINAL STATE
+==================================================
+Messages: ['User says: Hello!', 'Message from chatbot', 'Message from sample node']
+```
+
+---
+
+### Concept 5: Complete Working Example
+
+```python
+# complete_edges_demo.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+
+# 1. Define State
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+    step: int
+
+# 2. Create graph builder
+graph_builder = StateGraph(State)
+
+# 3. Define nodes
+def node_input(state: State) -> State:
+    """First node: Process input"""
+    print(f"📍 Node 1 (INPUT) - Step {state.get('step', 0)}")
+    return {
+        "messages": ["[INPUT] Received user message"],
+        "step": state.get("step", 0) + 1
+    }
+
+def node_process(state: State) -> State:
+    """Second node: Process the data"""
+    print(f"📍 Node 2 (PROCESS) - Step {state.get('step', 0)}")
+    return {
+        "messages": ["[PROCESS] Processing complete"],
+        "step": state.get("step", 0) + 1
+    }
+
+def node_output(state: State) -> State:
+    """Third node: Generate output"""
+    print(f"📍 Node 3 (OUTPUT) - Step {state.get('step', 0)}")
+    return {
+        "messages": ["[OUTPUT] Final response ready"],
+        "step": state.get("step", 0) + 1
+    }
+
+# 4. Register nodes
+graph_builder.add_node("input", node_input)
+graph_builder.add_node("process", node_process)
+graph_builder.add_node("output", node_output)
+
+# 5. Add edges (THIS IS THE KEY PART)
+graph_builder.add_edge(START, "input")     # Start → first node
+graph_builder.add_edge("input", "process") # input → process
+graph_builder.add_edge("process", "output") # process → output
+graph_builder.add_edge("output", END)      # output → End
+
+# 6. Compile
+graph = graph_builder.compile()
+print("✅ Graph compiled with 3 nodes and 4 edges")
+
+# 7. Run
+initial_state = {
+    "messages": ["User: Hello, world!"],
+    "step": 0
+}
+
+print("\n" + "=" * 50)
+print("🏃 Running workflow...")
+print("=" * 50)
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("✅ FINAL RESULTS")
+print("=" * 50)
+print(f"Total steps: {final_state['step']}")
+print("\nMessage history:")
+for i, msg in enumerate(final_state["messages"]):
+    print(f"  {i+1}. {msg}")
+```
+
+**Output:**
+```
+✅ Graph compiled with 3 nodes and 4 edges
+
+==================================================
+🏃 Running workflow...
+==================================================
+📍 Node 1 (INPUT) - Step 0
+📍 Node 2 (PROCESS) - Step 1
+📍 Node 3 (OUTPUT) - Step 2
+
+==================================================
+✅ FINAL RESULTS
+==================================================
+Total steps: 3
+
+Message history:
+  1. User: Hello, world!
+  2. [INPUT] Received user message
+  3. [PROCESS] Processing complete
+  4. [OUTPUT] Final response ready
+```
+
+---
+
+### Concept 6: Multiple Edge Patterns
+
+```python
+# Pattern 1: Linear chain (one after another)
+graph_builder.add_edge(START, "node_a")
+graph_builder.add_edge("node_a", "node_b")
+graph_builder.add_edge("node_b", "node_c")
+graph_builder.add_edge("node_c", END)
+
+# Pattern 2: Skipping nodes (not all nodes need to be connected)
+graph_builder.add_edge(START, "node_a")
+graph_builder.add_edge("node_a", "node_c")  # Skip node_b!
+graph_builder.add_edge("node_c", END)
+# Node_b never runs because no edge points to it
+
+# Pattern 3: Multiple paths (one node can point to many)
+graph_builder.add_edge(START, "splitter")
+graph_builder.add_edge("splitter", "path_a")
+graph_builder.add_edge("splitter", "path_b")  # Both run after splitter
+# Note: Both paths will execute (parallel-like behavior)
+
+# Pattern 4: Joining paths
+graph_builder.add_edge(START, "node_a")
+graph_builder.add_edge(START, "node_b")  # Both start from START
+graph_builder.add_edge("node_a", "joiner")
+graph_builder.add_edge("node_b", "joiner")  # Both go to joiner
+graph_builder.add_edge("joiner", END)
+```
+
+---
+
+### Concept 7: Debugging with Print Statements
+
+```python
+# Add print statements inside nodes to track execution
+
+def chatbot(state: State) -> State:
+    print(f"🔵 [CHATBOT] Starting with {len(state['messages'])} messages")
+    # ... do work ...
+    print(f"🔵 [CHATBOT] Returning response")
+    return {"messages": ["Bot response"]}
+
+def sample_node(state: State) -> State:
+    print(f"🟢 [SAMPLE] Starting with {len(state['messages'])} messages")
+    # ... do work ...
+    print(f"🟢 [SAMPLE] Returning")
+    return {"messages": ["Sample response"]}
+
+# This helps you track:
+# - Which node is running
+# - What state looks like
+# - Execution order
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Linear Graph
+
+```python
+from langgraph.graph import StateGraph, START, END
+
+graph_builder = StateGraph(State)
+
+# Add nodes
+graph_builder.add_node("node1", func1)
+graph_builder.add_node("node2", func2)
+
+# Add edges
+graph_builder.add_edge(START, "node1")
+graph_builder.add_edge("node1", "node2")
+graph_builder.add_edge("node2", END)
+
+# Compile and run
+graph = graph_builder.compile()
+result = graph.invoke(initial_state)
+```
+
+### Template 2: Graph with 3 Nodes
+
+```python
+graph_builder.add_edge(START, "first")
+graph_builder.add_edge("first", "second")
+graph_builder.add_edge("second", "third")
+graph_builder.add_edge("third", END)
+```
+
+### Template 3: Complete Setup Pattern
+
+```python
+# 1. Import
+from langgraph.graph import StateGraph, START, END
+
+# 2. Create builder
+builder = StateGraph(State)
+
+# 3. Add nodes
+builder.add_node("name", function)
+
+# 4. Add edges
+builder.add_edge(START, "first_node")
+builder.add_edge("first_node", "second_node")
+builder.add_edge("second_node", END)
+
+# 5. Compile
+app = builder.compile()
+
+# 6. Run
+result = app.invoke(initial_state)
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Edge** | Connection between two nodes (defines flow) |
+| **START** | Special node - where execution begins |
+| **END** | Special node - where execution ends |
+| **add_edge()** | Method to connect two nodes |
+| **Compile** | Convert graph builder into runnable graph |
+| **Invoke** | Execute the graph with initial state |
+
+---
+
+## 📊 Edge Summary Diagram
+
+```
+    START (special)
+       │
+       │ add_edge(START, "chatbot")
+       ▼
+    ┌─────────┐
+    │ Chatbot │ (node)
+    └────┬────┘
+         │ add_edge("chatbot", "sample")
+         ▼
+    ┌─────────┐
+    │ Sample  │ (node)
+    └────┬────┘
+         │ add_edge("sample", END)
+         ▼
+     END (special)
+
+Total edges = number of arrows
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Edges define flow** - They tell LangGraph the order of execution
+2. **START and END are special** - Must import them; they're predefined
+3. **First edge**: `START → first_node` (where to begin)
+4. **Middle edges**: `node1 → node2` (connections between nodes)
+5. **Last edge**: `last_node → END` (where to finish)
+6. **Compile after edges** - Turns builder into runnable graph
+7. **Invoke to run** - Execute with initial state
+
+**Bottom line:** Edges are the "glue" that connects your nodes into a workflow. START tells where to begin, END tells where to finish, and edges in between define the sequence. Compile the graph, then invoke it to run your agent!
+
+---
+
+## 171. Testing and Debugging Your LangGraph AI Workflow (02:40)
+
+Here's a simple summary of the tutorial transcript about **invoking a LangGraph** and running the workflow.
+
+## 📝 Simple Summary
+
+To run a LangGraph, you use the **invoke()** method and pass an **initial state**. The graph executes nodes in the order defined by your edges. Each node receives the current state, modifies it, and passes it to the next node. The final result is an **updated state** containing all the accumulated messages/data from every node. The example shows: initial message → chatbot node appends → sample node appends → final state with all three messages.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Use `graph.invoke(initial_state)` to run the graph |
+| 2 | Initial state contains the starting data (e.g., user message) |
+| 3 | Each node receives state, modifies it, returns updated state |
+| 4 | State flows sequentially through nodes based on edges |
+| 5 | Final state includes all accumulated messages/data |
+| 6 | `invoke()` returns the final updated state |
+| 7 | You can print the final state to see results |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Basic Invocation
+
+```python
+# Complete example with invoke
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+
+# Define state
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# Define nodes
+def chatbot(state: State) -> State:
+    print("🤖 Chatbot node running...")
+    return {"messages": ["Hello from chatbot!"]}
+
+def sample_node(state: State) -> State:
+    print("📝 Sample node running...")
+    return {"messages": ["Hello from sample node!"]}
+
+# Register nodes
+graph_builder.add_node("chatbot", chatbot)
+graph_builder.add_node("sample", sample_node)
+
+# Add edges
+graph_builder.add_edge(START, "chatbot")
+graph_builder.add_edge("chatbot", "sample")
+graph_builder.add_edge("sample", END)
+
+# Compile
+graph = graph_builder.compile()
+
+# ============================================
+# INVOKE THE GRAPH
+# ============================================
+initial_state = {
+    "messages": ["Hi, my name is Piyush"]
+}
+
+print("=" * 50)
+print("🚀 Invoking graph...")
+print("=" * 50)
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("📝 FINAL UPDATED STATE")
+print("=" * 50)
+for i, msg in enumerate(final_state["messages"]):
+    print(f"{i+1}. {msg}")
+```
+
+**Output:**
+```
+==================================================
+🚀 Invoking graph...
+==================================================
+🤖 Chatbot node running...
+📝 Sample node running...
+
+==================================================
+📝 FINAL UPDATED STATE
+==================================================
+1. Hi, my name is Piyush
+2. Hello from chatbot!
+3. Hello from sample node!
+```
+
+---
+
+### Concept 2: Step-by-Step State Flow
+
+```python
+# Demonstrating how state flows through each node
+
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+graph_builder = StateGraph(State)
+
+def node_A(state: State) -> State:
+    print(f"\n📍 Node A - Received: {state['messages']}")
+    new_msg = "Message from Node A"
+    print(f"   Appending: '{new_msg}'")
+    return {"messages": [new_msg]}
+
+def node_B(state: State) -> State:
+    print(f"\n📍 Node B - Received: {state['messages']}")
+    new_msg = "Message from Node B"
+    print(f"   Appending: '{new_msg}'")
+    return {"messages": [new_msg]}
+
+def node_C(state: State) -> State:
+    print(f"\n📍 Node C - Received: {state['messages']}")
+    new_msg = "Message from Node C"
+    print(f"   Appending: '{new_msg}'")
+    return {"messages": [new_msg]}
+
+# Register nodes
+graph_builder.add_node("A", node_A)
+graph_builder.add_node("B", node_B)
+graph_builder.add_node("C", node_C)
+
+# Add edges (A → B → C)
+graph_builder.add_edge(START, "A")
+graph_builder.add_edge("A", "B")
+graph_builder.add_edge("B", "C")
+graph_builder.add_edge("C", END)
+
+# Compile
+graph = graph_builder.compile()
+
+# Invoke with initial state
+initial_state = {"messages": ["Initial user message"]}
+
+print("=" * 50)
+print("🚀 Starting Graph Execution")
+print("=" * 50)
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("✅ FINAL STATE (All messages accumulated)")
+print("=" * 50)
+for i, msg in enumerate(final_state["messages"]):
+    print(f"{i+1}. {msg}")
+```
+
+**Output:**
+```
+==================================================
+🚀 Starting Graph Execution
+==================================================
+
+📍 Node A - Received: ['Initial user message']
+   Appending: 'Message from Node A'
+
+📍 Node B - Received: ['Initial user message', 'Message from Node A']
+   Appending: 'Message from Node B'
+
+📍 Node C - Received: ['Initial user message', 'Message from Node A', 'Message from Node B']
+   Appending: 'Message from Node C'
+
+==================================================
+✅ FINAL STATE (All messages accumulated)
+==================================================
+1. Initial user message
+2. Message from Node A
+3. Message from Node B
+4. Message from Node C
+```
+
+---
+
+### Concept 3: Visualizing the Invocation Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    INVOCATION FLOW                              │
+│                                                                  │
+│   graph.invoke(initial_state)                                   │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │ Initial State: {"messages": ["User: Hi"]}               │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                    START NODE                            │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                    CHATBOT NODE                          │    │
+│   │  Receives: {"messages": ["User: Hi"]}                   │    │
+│   │  Returns:  {"messages": ["Bot: Hello"]}                 │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                    SAMPLE NODE                           │    │
+│   │  Receives: {"messages": ["User: Hi", "Bot: Hello"]}     │    │
+│   │  Returns:  {"messages": ["Sample: Done"]}               │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                     END NODE                             │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │ Final State: {"messages": ["User: Hi",                  │    │
+│   │                          "Bot: Hello",                   │    │
+│   │                          "Sample: Done"]}                │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│   ✨ All messages preserved and accumulated!                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Concept 4: Complete Working Example
+
+```python
+# complete_invoke_demo.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+    counter: int
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# Define nodes with print statements for tracking
+def node_first(state: State) -> State:
+    print(f"\n🔵 [FIRST NODE]")
+    print(f"   Received counter: {state.get('counter', 0)}")
+    print(f"   Received messages: {len(state['messages'])}")
+    return {
+        "messages": ["First node processed the input"],
+        "counter": state.get("counter", 0) + 1
+    }
+
+def node_second(state: State) -> State:
+    print(f"\n🟢 [SECOND NODE]")
+    print(f"   Received counter: {state.get('counter', 0)}")
+    print(f"   Received messages: {len(state['messages'])}")
+    return {
+        "messages": ["Second node did additional processing"],
+        "counter": state.get("counter", 0) + 1
+    }
+
+def node_third(state: State) -> State:
+    print(f"\n🟡 [THIRD NODE]")
+    print(f"   Received counter: {state.get('counter', 0)}")
+    print(f"   Received messages: {len(state['messages'])}")
+    return {
+        "messages": ["Third node finalized the response"],
+        "counter": state.get("counter", 0) + 1
+    }
+
+# Register nodes
+graph_builder.add_node("first", node_first)
+graph_builder.add_node("second", node_second)
+graph_builder.add_node("third", node_third)
+
+# Add edges
+graph_builder.add_edge(START, "first")
+graph_builder.add_edge("first", "second")
+graph_builder.add_edge("second", "third")
+graph_builder.add_edge("third", END)
+
+# Compile
+graph = graph_builder.compile()
+
+# INVOKE with initial state
+initial_state = {
+    "messages": ["User: Hello, I need help!"],
+    "counter": 0
+}
+
+print("=" * 60)
+print("🚀 INVOKING LANGGRAPH")
+print("=" * 60)
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 60)
+print("✅ FINAL STATE AFTER INVOCATION")
+print("=" * 60)
+print(f"Total counter value: {final_state['counter']}")
+print(f"Total messages: {len(final_state['messages'])}")
+print("\nMessage history:")
+for i, msg in enumerate(final_state["messages"]):
+    print(f"  {i+1}. {msg}")
+```
+
+**Output:**
+```
+============================================================
+🚀 INVOKING LANGGRAPH
+============================================================
+
+🔵 [FIRST NODE]
+   Received counter: 0
+   Received messages: 1
+
+🟢 [SECOND NODE]
+   Received counter: 1
+   Received messages: 2
+
+🟡 [THIRD NODE]
+   Received counter: 2
+   Received messages: 3
+
+============================================================
+✅ FINAL STATE AFTER INVOCATION
+============================================================
+Total counter value: 3
+Total messages: 4
+
+Message history:
+  1. User: Hello, I need help!
+  2. First node processed the input
+  3. Second node did additional processing
+  4. Third node finalized the response
+```
+
+---
+
+### Concept 5: Different Ways to Invoke
+
+```python
+# Method 1: Regular invoke (synchronous)
+result = graph.invoke(initial_state)
+
+# Method 2: Async invoke (for async code)
+result = await graph.ainvoke(initial_state)
+
+# Method 3: Stream (get partial results as they happen)
+for chunk in graph.stream(initial_state):
+    print(chunk)
+
+# Method 4: With config (for checkpoints, callbacks)
+config = {"configurable": {"thread_id": "user_session_123"}}
+result = graph.invoke(initial_state, config=config)
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Invoke
+
+```python
+# Define graph (nodes + edges + compile)
+graph = graph_builder.compile()
+
+# Invoke with initial state
+initial_state = {"messages": ["User message here"]}
+final_state = graph.invoke(initial_state)
+
+# Use the final state
+print(final_state["messages"])
+```
+
+### Template 2: Invoke with Print Statements
+
+```python
+def my_node(state: State) -> State:
+    print(f"Node received: {state}")
+    # Do work
+    return {"messages": ["Response"]}
+
+# ... build graph ...
+
+initial_state = {"messages": ["Hello"]}
+final_state = graph.invoke(initial_state)
+print(f"Final: {final_state}")
+```
+
+### Template 3: Complete Script Structure
+
+```python
+# 1. Imports
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+
+# 2. Define State
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# 3. Define Nodes
+def node1(state: State) -> State:
+    return {"messages": ["Response from node1"]}
+
+def node2(state: State) -> State:
+    return {"messages": ["Response from node2"]}
+
+# 4. Build Graph
+builder = StateGraph(State)
+builder.add_node("node1", node1)
+builder.add_node("node2", node2)
+builder.add_edge(START, "node1")
+builder.add_edge("node1", "node2")
+builder.add_edge("node2", END)
+graph = builder.compile()
+
+# 5. Invoke
+initial = {"messages": ["User: Hi"]}
+final = graph.invoke(initial)
+
+# 6. Results
+print(final["messages"])
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **invoke()** | Method to run the graph with initial state |
+| **Initial State** | Starting data passed to the graph |
+| **Final State** | Result after all nodes have executed |
+| **State Flow** | How data moves from node to node |
+| **Accumulation** | Messages keep adding (appending) as nodes run |
+
+---
+
+## 💡 Key Takeaways
+
+1. **invoke() runs the graph** - Pass initial state, get final state
+2. **Initial state** = starting data (e.g., user message)
+3. **Each node receives state** → modifies it → returns new state
+4. **State flows sequentially** based on edges
+5. **Messages accumulate** due to `add_messages` annotation
+6. **Final state** = complete result after all nodes
+7. **Print statements inside nodes** help debug the flow
+
+**Bottom line:** `graph.invoke(initial_state)` is how you run your LangGraph. The initial state flows through each node in sequence, picking up new data along the way. The final state contains everything accumulated - perfect for tracking conversation history or multi-step processing!
+
+---
+
+## 172. Integrating AI LLM into LangGraph (02:40)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
