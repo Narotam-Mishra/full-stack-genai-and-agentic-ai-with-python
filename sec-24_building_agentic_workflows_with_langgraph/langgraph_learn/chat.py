@@ -1,17 +1,30 @@
 
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env explicitly with override=True to avoid shell var conflicts
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path, override=True)
+
 from typing_extensions import TypedDict
 from typing import Annotated
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, START, END
+from langchain_classic.chat_models import init_chat_model
+
+llm = init_chat_model(
+    model="gpt-4.1-mini",
+    model_provider="openai"
+)
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 # create node (create method)
 def chatbot(state: State):
-    print(f"\n\nInside chatbot node: {state}")
+    response = llm.invoke(state.get("messages"))
     return{
-        "messages": ["Hi, This is a message from ChatBot Node"]
+        "messages": [response]
     }
 
 def samplenode(state: State):

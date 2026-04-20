@@ -40658,6 +40658,9 @@ print(final["messages"])
 
 ## 172. Integrating AI LLM into LangGraph (02:40)
 
+
+## 173. Conditional Edges and Smart Routing (11:50)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
