@@ -40658,8 +40658,986 @@ print(final["messages"])
 
 ## 172. Integrating AI LLM into LangGraph (02:40)
 
+Here's a simple summary of the tutorial transcript about **adding AI support to LangGraph**.
+
+## 📝 Simple Summary
+
+Now that the basic graph is working, you can replace the random messages with **actual AI responses**. You do this by creating an LLM (using `init_chat_model` from LangChain) and calling it inside your chatbot node. The LLM receives the conversation state (all messages so far) and returns a real AI response. You also need to load environment variables (`.env` file) for the API key. The result is a fully functional AI agent that responds intelligently!
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Replace static messages with actual LLM calls |
+| 2 | Use `init_chat_model` from `langchain.chat_models` |
+| 3 | Specify model (e.g., `gpt-4o-mini`) and provider (e.g., `openai`) |
+| 4 | Use `llm.invoke(state["messages"])` to get AI response |
+| 5 | Load `.env` file with `load_dotenv()` for API key |
+| 6 | LLM response includes content + metadata (tokens, cost) |
+| 7 | The response automatically appends to messages due to `add_messages` |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Setting Up the LLM
+
+```python
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+# Load environment variables (API keys)
+load_dotenv()
+
+# Create the LLM
+llm = init_chat_model(
+    model="gpt-4o-mini",  # The model to use
+    model_provider="openai"  # The provider (OpenAI)
+)
+
+# Now you can use llm.invoke() to get AI responses
+```
+
+---
+
+### Concept 2: Complete AI-Powered Chatbot Node
+
+```python
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Define state
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# Create LLM
+llm = init_chat_model(
+    model="gpt-4o-mini",
+    model_provider="openai"
+)
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# ============================================
+# AI-POWERED CHATBOT NODE
+# ============================================
+def chatbot(state: State) -> State:
+    """
+    This node calls the actual LLM to get a response.
+    """
+    print("🤖 Calling LLM...")
+    
+    # Invoke LLM with all messages in state
+    response = llm.invoke(state["messages"])
+    
+    print(f"✅ LLM responded: {response.content[:50]}...")
+    
+    # Return the response (will be appended due to add_messages)
+    return {"messages": [response]}
+
+# Sample node (can be removed or kept for demo)
+def sample_node(state: State) -> State:
+    print("📝 Sample node running...")
+    return {"messages": ["This is a sample message"]}
+
+# Register nodes
+graph_builder.add_node("chatbot", chatbot)
+graph_builder.add_node("sample", sample_node)
+
+# Add edges
+graph_builder.add_edge(START, "chatbot")
+graph_builder.add_edge("chatbot", "sample")
+graph_builder.add_edge("sample", END)
+
+# Compile
+graph = graph_builder.compile()
+
+# Run the graph
+initial_state = {"messages": ["Hi, my name is Piyush"]}
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("FINAL CONVERSATION")
+print("=" * 50)
+for i, msg in enumerate(final_state["messages"]):
+    if hasattr(msg, 'content'):
+        print(f"{i+1}. AI: {msg.content}")
+    else:
+        print(f"{i+1}. User: {msg}")
+```
+
+**Output:**
+```
+🤖 Calling LLM...
+✅ LLM responded: Hello Piyush! How can I assist you today?...
+
+==================================================
+FINAL CONVERSATION
+==================================================
+1. User: Hi, my name is Piyush
+2. AI: Hello Piyush! How can I assist you today?
+3. This is a sample message
+```
+
+---
+
+### Concept 3: Understanding LLM Response Structure
+
+```python
+# The LLM response contains more than just the answer
+
+response = llm.invoke(messages)
+
+# Main content (the actual response)
+print(response.content)
+# Output: "Hello! How can I help you?"
+
+# Additional metadata
+print(response.response_metadata)
+# Output: {
+#     'token_usage': {'prompt_tokens': 20, 'completion_tokens': 10, 'total_tokens': 30},
+#     'model_name': 'gpt-4o-mini',
+#     'finish_reason': 'stop'
+# }
+
+# Usage info (tokens, cost)
+print(response.usage_metadata)
+# Output: {
+#     'input_tokens': 20,
+#     'output_tokens': 10,
+#     'total_tokens': 30
+# }
+```
+
+---
+
+### Concept 4: Complete Working Example
+
+```python
+# ai_chatbot_demo.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
+# Verify API key is set
+if not os.getenv("OPENAI_API_KEY"):
+    print("❌ OPENAI_API_KEY not found in .env file")
+    exit(1)
+
+print("✅ Environment loaded successfully")
+
+# Define state
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+# Initialize LLM
+llm = init_chat_model(
+    model="gpt-4o-mini",
+    model_provider="openai",
+    temperature=0.7  # Optional: controls randomness
+)
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# Define AI chatbot node
+def ai_chatbot(state: State) -> State:
+    """Node that uses LLM to generate responses"""
+    print(f"\n📨 Processing {len(state['messages'])} message(s)...")
+    
+    # Get the last user message for display
+    last_msg = state["messages"][-1]
+    if hasattr(last_msg, 'content'):
+        print(f"   User said: {last_msg.content[:50]}...")
+    else:
+        print(f"   User said: {last_msg[:50]}...")
+    
+    # Call LLM
+    print("   🤖 Calling OpenAI API...")
+    response = llm.invoke(state["messages"])
+    
+    print(f"   ✅ AI responded: {response.content[:50]}...")
+    
+    # Return response (appends automatically)
+    return {"messages": [response]}
+
+# Optional: Add a formatting node
+def format_response(state: State) -> State:
+    """Add formatting or post-processing"""
+    print("   🎨 Formatting response...")
+    # You could add emoji, fix grammar, etc.
+    return {"messages": []}  # Return empty to not add extra message
+
+# Register nodes
+graph_builder.add_node("chatbot", ai_chatbot)
+# graph_builder.add_node("formatter", format_response)  # Optional
+
+# Add edges
+graph_builder.add_edge(START, "chatbot")
+# graph_builder.add_edge("chatbot", "formatter")
+graph_builder.add_edge("chatbot", END)
+
+# Compile
+graph = graph_builder.compile()
+print("\n✅ Graph compiled successfully!")
+
+# Run the graph
+print("\n" + "=" * 50)
+print("🚀 STARTING AI CHATBOT")
+print("=" * 50)
+
+initial_state = {
+    "messages": [("user", "Hi, my name is Piyush. What is LangGraph?")]
+}
+
+final_state = graph.invoke(initial_state)
+
+print("\n" + "=" * 50)
+print("📝 FINAL CONVERSATION")
+print("=" * 50)
+
+for i, msg in enumerate(final_state["messages"]):
+    if hasattr(msg, 'content'):
+        # AI message
+        print(f"{i+1}. 🤖 AI: {msg.content}")
+    elif isinstance(msg, tuple):
+        # User message as tuple
+        print(f"{i+1}. 👤 User: {msg[1]}")
+    else:
+        # String message
+        print(f"{i+1}. {msg}")
+```
+
+**Output:**
+```
+✅ Environment loaded successfully
+✅ Graph compiled successfully!
+
+==================================================
+🚀 STARTING AI CHATBOT
+==================================================
+
+📨 Processing 1 message(s)...
+   User said: Hi, my name is Piyush. What is LangGraph?...
+   🤖 Calling OpenAI API...
+   ✅ AI responded: LangGraph is a framework for building stateful,...
+
+==================================================
+📝 FINAL CONVERSATION
+==================================================
+1. 👤 User: Hi, my name is Piyush. What is LangGraph?
+2. 🤖 AI: LangGraph is a framework for building stateful, multi-agent applications with LLMs. It allows you to define workflows as graphs...
+```
+
+---
+
+### Concept 5: Setting Up .env File
+
+```bash
+# Copy .env from images folder to langgraph-learning folder
+cp ../images/.env .env
+
+# Or create new .env file
+echo "OPENAI_API_KEY=sk-your-actual-key-here" > .env
+
+# Verify the file exists
+ls -la .env
+```
+
+**.env file content:**
+```env
+OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+### Concept 6: Multiple Ways to Create LLM
+
+```python
+# Method 1: Using init_chat_model (recommended)
+from langchain.chat_models import init_chat_model
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+# Method 2: Using ChatOpenAI directly
+from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+# Method 3: With custom parameters
+llm = init_chat_model(
+    model="gpt-4o-mini",
+    model_provider="openai",
+    temperature=0.5,  # Lower = more focused
+    max_tokens=500,    # Limit response length
+    timeout=30         # 30 second timeout
+)
+
+# Method 4: For other providers (Anthropic, Google, etc.)
+# llm = init_chat_model(
+#     model="claude-3-haiku-20240307",
+#     model_provider="anthropic"
+# )
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic AI-Powered Graph
+
+```python
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+load_dotenv()
+
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+def chatbot(state):
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+# Build graph...
+```
+
+### Template 2: Complete AI Agent Template
+
+```python
+# ai_agent_template.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+def ai_node(state: State) -> State:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+builder = StateGraph(State)
+builder.add_node("ai", ai_node)
+builder.add_edge(START, "ai")
+builder.add_edge("ai", END)
+graph = builder.compile()
+
+result = graph.invoke({"messages": [("user", "Hello!")]})
+print(result["messages"][-1].content)
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| `init_chat_model` | LangChain function to create LLM instances |
+| `model_provider` | Who provides the model (OpenAI, Anthropic, etc.) |
+| `llm.invoke()` | Call the LLM with messages, get response |
+| `response.content` | The actual text response from AI |
+| `response_metadata` | Token usage, model name, finish reason |
+| `load_dotenv()` | Loads API keys from `.env` file |
+
+---
+
+## 📊 Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AI-POWERED LANGGRAPH                         │
+│                                                                  │
+│   User Input: "Hi, my name is Piyush"                           │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                    GRAPH INVOKE                          │    │
+│   │  Initial State: {"messages": ["User: Hi..."]}           │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                  CHATBOT NODE                            │    │
+│   │                                                          │    │
+│   │  1. Receives state with user message                    │    │
+│   │  2. Calls llm.invoke(state["messages"])                 │    │
+│   │                    │                                     │    │
+│   │                    ▼                                     │    │
+│   │   ┌─────────────────────────────────────────────┐       │    │
+│   │   │              OPENAI API                      │       │    │
+│   │   │  Returns: "Hello Piyush! How can I help?"   │       │    │
+│   │   └─────────────────────────────────────────────┘       │    │
+│   │                                                          │    │
+│   │  3. Returns {"messages": [response]}                    │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│        │                                                         │
+│        ▼                                                         │
+│   Final State: {"messages": [                                   │
+│       "User: Hi, my name is Piyush",                            │
+│       "AI: Hello Piyush! How can I help?"                       │
+│   ]}                                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Replace static messages** with `llm.invoke(state["messages"])`
+2. **Must load `.env`** with `load_dotenv()` for API key
+3. **`init_chat_model`** is the easiest way to create LLM
+4. **LLM receives full conversation history** (all messages in state)
+5. **Response automatically appends** due to `add_messages`
+6. **LLM response includes metadata** (tokens, cost, model)
+7. **Graph remains clean** - just one node change to add AI!
+
+**Bottom line:** Adding AI to LangGraph is simple - replace your static message with `llm.invoke(state["messages"])`. The LLM gets the full conversation history and returns a real response. The `add_messages` annotation automatically appends it to the state. That's it - you now have an AI agent! 🚀
+
+---
 
 ## 173. Conditional Edges and Smart Routing (11:50)
+
+Here's a simple summary of the tutorial transcript about **conditional edges in LangGraph**, along with the solution to the assignment.
+
+## 📝 Simple Summary
+
+**Conditional edges** allow your LangGraph to make decisions - like a diamond shape in a flowchart. Based on some condition (like whether an AI response is "good enough"), you can either go to one node or another. In the tutorial, you build a graph that: takes user query → gets response from GPT-4o-mini → evaluates quality → if good, go to END; if not good, try again with another model (Gemini) → then END. The evaluation logic is currently hardcoded, but the assignment is to make it an **actual AI call** that judges the response quality.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Conditional edges** = decision points (if/else in graph form) |
+| 2 | Use `add_conditional_edges()` to add decision logic |
+| 3 | The condition function returns which node to go to next |
+| 4 | Return type must be a `Literal` (specific string options) |
+| 5 | Can redirect to different nodes based on evaluation |
+| 6 | State can hold custom fields (user_query, llm_output, is_good) |
+| 7 | Assignment: Replace hardcoded evaluation with actual AI call |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Custom State Definition
+
+```python
+from typing import Optional, Literal
+from typing_extensions import TypedDict
+
+class State(TypedDict):
+    user_query: str              # User's input question
+    llm_output: Optional[str]    # Response from LLM
+    is_good: Optional[bool]      # Whether response is good
+```
+
+---
+
+### Concept 2: Chatbot Node (Calls GPT)
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+def chatbot_node(state: State) -> State:
+    """Call GPT-4o-mini to get response"""
+    print("🤖 Chatbot node running...")
+    
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "user", "content": state["user_query"]}
+        ]
+    )
+    
+    llm_output = response.choices[0].message.content
+    
+    print(f"   Response: {llm_output[:50]}...")
+    
+    return {
+        "llm_output": llm_output,
+        "is_good": None  # Will be evaluated later
+    }
+```
+
+---
+
+### Concept 3: Conditional Edge Function
+
+```python
+from typing import Literal
+
+def evaluate_quality(state: State) -> Literal["good_end", "retry_gemini"]:
+    """
+    Decide which node to go to next based on response quality.
+    Returns the NAME of the next node.
+    """
+    print("🔍 Evaluating response quality...")
+    
+    # HARDCODED for now (assignment will replace this)
+    is_good = True  # Change to False to test retry path
+    
+    if is_good:
+        print("   ✅ Response is good! Ending...")
+        return "good_end"
+    else:
+        print("   ❌ Response needs improvement. Trying Gemini...")
+        return "retry_gemini"
+```
+
+---
+
+### Concept 4: Building the Graph with Conditional Edge
+
+```python
+from langgraph.graph import StateGraph, START, END
+
+# Create graph builder
+graph_builder = StateGraph(State)
+
+# Add nodes
+graph_builder.add_node("chatbot", chatbot_node)
+graph_builder.add_node("retry_gemini", gemini_node)
+graph_builder.add_node("good_end", end_node)
+
+# Add regular edges
+graph_builder.add_edge(START, "chatbot")
+graph_builder.add_edge("chatbot", "evaluate")  # Wait, we need evaluate node?
+
+# ACTUAL WAY: Add conditional edge FROM chatbot
+graph_builder.add_conditional_edges(
+    "chatbot",           # Source node
+    evaluate_quality,    # Function that decides next node
+    {
+        "good_end": "good_end",      # If returns "good_end" → go to good_end
+        "retry_gemini": "retry_gemini"  # If returns "retry_gemini" → go to gemini
+    }
+)
+
+# Add edge from gemini to end
+graph_builder.add_edge("retry_gemini", "good_end")
+graph_builder.add_edge("good_end", END)
+
+# Compile
+graph = graph_builder.compile()
+```
+
+---
+
+### Concept 5: Complete Working Example (Hardcoded)
+
+```python
+# conditional_edges_demo.py
+from typing import Optional, Literal
+from typing_extensions import TypedDict
+from langgraph.graph import StateGraph, START, END
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+client = OpenAI()
+
+# Define state
+class State(TypedDict):
+    user_query: str
+    llm_output: Optional[str]
+    is_good: Optional[bool]
+
+# Node 1: Chatbot (GPT)
+def chatbot_node(state: State) -> State:
+    print("\n📝 [CHATBOT] Calling GPT-4o-mini...")
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": state["user_query"]}]
+    )
+    output = response.choices[0].message.content
+    print(f"   Response: {output}")
+    return {"llm_output": output}
+
+# Node 2: Gemini fallback
+def gemini_node(state: State) -> State:
+    print("\n🔄 [GEMINI] Retrying with better model...")
+    # In reality, you'd call Gemini API here
+    # For demo, we'll simulate
+    better_response = f"After careful consideration: {state['llm_output']} (verified)"
+    print(f"   Response: {better_response}")
+    return {"llm_output": better_response, "is_good": True}
+
+# Node 3: End node
+def end_node(state: State) -> State:
+    print("\n🏁 [END] Final response ready")
+    return state
+
+# Conditional edge function
+def should_retry(state: State) -> Literal["good_end", "retry_gemini"]:
+    print("\n🔍 [EVALUATE] Checking response quality...")
+    
+    # HARDCODED - change to False to test retry
+    IS_GOOD = True  # Try changing to False!
+    
+    if IS_GOOD:
+        print("   ✅ Response is good!")
+        return "good_end"
+    else:
+        print("   ❌ Response needs improvement!")
+        return "retry_gemini"
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("chatbot", chatbot_node)
+builder.add_node("retry_gemini", gemini_node)
+builder.add_node("good_end", end_node)
+
+# Add edges
+builder.add_edge(START, "chatbot")
+builder.add_conditional_edges(
+    "chatbot",
+    should_retry,
+    {
+        "good_end": "good_end",
+        "retry_gemini": "retry_gemini"
+    }
+)
+builder.add_edge("retry_gemini", "good_end")
+builder.add_edge("good_end", END)
+
+graph = builder.compile()
+
+# Run
+result = graph.invoke({"user_query": "What is 2+2?"})
+print("\n" + "=" * 50)
+print(f"Final output: {result['llm_output']}")
+```
+
+---
+
+## 🎯 ASSIGNMENT SOLUTION
+
+### Assignment: Replace hardcoded evaluation with AI call
+
+The assignment is to make `should_retry()` actually call an AI to judge if the response is good.
+
+**Solution:**
+
+```python
+# solution_conditional_edges.py
+from typing import Optional, Literal
+from typing_extensions import TypedDict
+from langgraph.graph import StateGraph, START, END
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+client = OpenAI()
+
+class State(TypedDict):
+    user_query: str
+    llm_output: Optional[str]
+    is_good: Optional[bool]
+
+# Node 1: Chatbot (GPT-4o-mini)
+def chatbot_node(state: State) -> State:
+    print("\n📝 [CHATBOT] Generating initial response...")
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": state["user_query"]}]
+    )
+    output = response.choices[0].message.content
+    print(f"   Response: {output[:100]}...")
+    return {"llm_output": output}
+
+# Node 2: Gemini fallback (better model)
+def gemini_node(state: State) -> State:
+    print("\n🔄 [GEMINI] Generating improved response...")
+    # Using GPT-4 (better model) as fallback
+    response = client.chat.completions.create(
+        model="gpt-4",  # Better model for fallback
+        messages=[
+            {"role": "system", "content": "Provide a more accurate, detailed, and helpful response."},
+            {"role": "user", "content": state["user_query"]}
+        ]
+    )
+    output = response.choices[0].message.content
+    print(f"   Improved response: {output[:100]}...")
+    return {"llm_output": output, "is_good": True}
+
+# Node 3: End node
+def end_node(state: State) -> State:
+    print("\n🏁 [END] Done!")
+    return state
+
+# ============================================
+# ASSIGNMENT SOLUTION: AI-based evaluation
+# ============================================
+def evaluate_with_ai(state: State) -> Literal["good_end", "retry_gemini"]:
+    """
+    Use an AI judge to evaluate response quality.
+    Returns which node to go to next.
+    """
+    print("\n🤖 [EVALUATOR] AI Judge is reviewing the response...")
+    
+    evaluation_prompt = f"""
+    You are a quality evaluator. Analyze this response and decide if it's GOOD or BAD.
+    
+    User Question: {state['user_query']}
+    
+    AI Response: {state['llm_output']}
+    
+    Criteria for GOOD response:
+    - Accurate and correct information
+    - Helpful and relevant to the question
+    - Clear and well-structured
+    - No harmful or misleading content
+    
+    Respond with ONLY ONE WORD: "GOOD" or "BAD"
+    """
+    
+    try:
+        eval_response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Cheaper model for evaluation
+            messages=[{"role": "user", "content": evaluation_prompt}],
+            max_tokens=10
+        )
+        
+        verdict = eval_response.choices[0].message.content.strip().upper()
+        
+        if "GOOD" in verdict:
+            print("   ✅ AI Judge says: GOOD response!")
+            return "good_end"
+        else:
+            print("   ❌ AI Judge says: BAD response - needs improvement!")
+            return "retry_gemini"
+            
+    except Exception as e:
+        print(f"   ⚠️ Evaluation error: {e}. Defaulting to GOOD.")
+        return "good_end"
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("chatbot", chatbot_node)
+builder.add_node("retry_gemini", gemini_node)
+builder.add_node("good_end", end_node)
+
+# Edges
+builder.add_edge(START, "chatbot")
+builder.add_conditional_edges(
+    "chatbot",
+    evaluate_with_ai,  # USING AI EVALUATION (not hardcoded!)
+    {
+        "good_end": "good_end",
+        "retry_gemini": "retry_gemini"
+    }
+)
+builder.add_edge("retry_gemini", "good_end")
+builder.add_edge("good_end", END)
+
+graph = builder.compile()
+
+# Test with different queries
+test_queries = [
+    "What is 2+2?",  # Should be GOOD
+    "Explain quantum physics in one sentence",  # Might be GOOD
+    "What is the meaning of life?"  # Subjective
+]
+
+for query in test_queries:
+    print("\n" + "=" * 60)
+    print(f"🔵 TESTING QUERY: {query}")
+    print("=" * 60)
+    
+    result = graph.invoke({"user_query": query})
+    print(f"\n📌 FINAL ANSWER: {result['llm_output']}")
+```
+
+---
+
+### Enhanced Solution with Structured Evaluation
+
+```python
+# advanced_solution.py
+import json
+
+def evaluate_with_structured_ai(state: State) -> Literal["good_end", "retry_gemini"]:
+    """
+    Advanced AI evaluation with structured output and scoring.
+    """
+    print("\n🎯 [EVALUATOR] Advanced AI Judge evaluating...")
+    
+    evaluation_prompt = f"""
+    Evaluate this Q&A pair. Return a JSON object with 'score' (1-10) and 'verdict' (GOOD/BAD).
+    
+    Question: {state['user_query']}
+    Answer: {state['llm_output']}
+    
+    Scoring:
+    - 8-10: Excellent, accurate, helpful → GOOD
+    - 5-7: Acceptable but could be better → BAD
+    - 1-4: Poor, incorrect, or unhelpful → BAD
+    
+    Return ONLY JSON: {{"score": number, "verdict": "GOOD" or "BAD"}}
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": evaluation_prompt}],
+            temperature=0  # Consistent evaluation
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        score = result.get("score", 0)
+        verdict = result.get("verdict", "BAD")
+        
+        print(f"   📊 Score: {score}/10")
+        
+        if verdict == "GOOD" and score >= 7:
+            print(f"   ✅ Verdict: GOOD (score {score})")
+            return "good_end"
+        else:
+            print(f"   ❌ Verdict: BAD (score {score}) - needs improvement")
+            return "retry_gemini"
+            
+    except Exception as e:
+        print(f"   ⚠️ Evaluation error: {e}. Defaulting to GOOD.")
+        return "good_end"
+```
+
+---
+
+## 📊 Visual Flow with Conditional Edge
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │              START                       │
+                    └─────────────────┬───────────────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────────┐
+                    │           CHATBOT NODE                   │
+                    │      (GPT-4o-mini generates response)   │
+                    └─────────────────┬───────────────────────┘
+                                      │
+                                      ▼
+                    ┌─────────────────────────────────────────┐
+                    │        CONDITIONAL EDGE                  │
+                    │      (AI Judge evaluates)                │
+                    │                                           │
+                    │         "Is response good?"              │
+                    └─────────────────┬───────────────────────┘
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    │                                   │
+                    ▼                                   ▼
+        ┌─────────────────────┐           ┌─────────────────────────┐
+        │     GOOD END        │           │    RETRY GEMINI NODE     │
+        │  (Return response)  │           │  (Better model fallback) │
+        └─────────────────────┘           └───────────┬─────────────┘
+                    │                                   │
+                    │                                   ▼
+                    │                    ┌─────────────────────────┐
+                    │                    │       GOOD END          │
+                    │                    │   (Return improved)     │
+                    │                    └─────────────────────────┘
+                    │                                   │
+                    └───────────────┬───────────────────┘
+                                    ▼
+                    ┌─────────────────────────────────────────┐
+                    │                  END                     │
+                    └─────────────────────────────────────────┘
+```
+
+---
+
+## 📝 Code Template for Conditional Edges
+
+```python
+# Template for conditional edges
+from typing import Literal
+from langgraph.graph import StateGraph, START, END
+
+# Define state
+class State(TypedDict):
+    data: str
+    condition: bool
+
+# Decision function
+def decide_next(state: State) -> Literal["path_a", "path_b"]:
+    if state["condition"]:
+        return "path_a"
+    return "path_b"
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("node1", node1_func)
+builder.add_node("path_a", path_a_func)
+builder.add_node("path_b", path_b_func)
+
+builder.add_edge(START, "node1")
+builder.add_conditional_edges(
+    "node1",           # Source
+    decide_next,       # Decision function
+    {
+        "path_a": "path_a",
+        "path_b": "path_b"
+    }
+)
+builder.add_edge("path_a", END)
+builder.add_edge("path_b", END)
+```
+
+---
+
+## 🔑 Key Takeaways
+
+| Concept | Explanation |
+|---------|-------------|
+| **Conditional Edge** | Decision point that chooses next node based on logic |
+| **Literal Return Type** | Tells LangGraph what node names are valid |
+| **Evaluation Function** | Contains logic to decide which path to take |
+| **Fallback Pattern** | Try simple model → if bad → try better model |
+| **AI Judge** | Using LLM to evaluate LLM responses |
+
+---
+
+## 💡 Assignment Solution Summary
+
+The assignment required replacing hardcoded `IS_GOOD = True/False` with an actual AI call that:
+1. Takes the user query and AI response
+2. Evaluates quality based on criteria (accuracy, helpfulness, clarity)
+3. Returns "GOOD" or "BAD" verdict
+4. Routes to appropriate next node
+
+**Key insight:** Using an AI judge (even a cheaper model like GPT-3.5-turbo) works well for evaluating response quality. This creates a self-improving agent system!
+
+---
+
+## Sec 25 - Checkpointing Workflows in LangGraph with MongoDB 
+
+## 174. What is Checkpointing? Enabling Persistence in AI Agent Workflows (02:09)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
