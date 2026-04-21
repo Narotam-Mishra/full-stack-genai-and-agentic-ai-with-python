@@ -41118,8 +41118,6 @@ print(result["messages"][-1].content)
 
 ## 173. Conditional Edges and Smart Routing (11:50)
 
-Here's a simple summary of the tutorial transcript about **conditional edges in LangGraph**, along with the solution to the assignment.
-
 ## 📝 Simple Summary
 
 **Conditional edges** allow your LangGraph to make decisions - like a diamond shape in a flowchart. Based on some condition (like whether an AI response is "good enough"), you can either go to one node or another. In the tutorial, you build a graph that: takes user query → gets response from GPT-4o-mini → evaluates quality → if good, go to END; if not good, try again with another model (Gemini) → then END. The evaluation logic is currently hardcoded, but the assignment is to make it an **actual AI call** that judges the response quality.
@@ -41638,6 +41636,864 @@ The assignment required replacing hardcoded `IS_GOOD = True/False` with an actua
 ## Sec 25 - Checkpointing Workflows in LangGraph with MongoDB 
 
 ## 174. What is Checkpointing? Enabling Persistence in AI Agent Workflows (02:09)
+
+## 📝 Simple Summary
+
+Your LangGraph chatbot works perfectly, but there's a big problem: **state is not persistent**. When you run a graph, the state stays in memory during execution, but once the graph invocation finishes, the state is **deleted forever**. If you ask "My name is Piyush" in one run, the AI remembers. But if you run again and ask "What's my name?", the AI has no memory because the previous state is gone. **Checkpointing** solves this by saving state somewhere (like a database) so it persists across different runs and even across days.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | State exists only **during graph execution** (in memory) |
+| 2 | After `invoke()` completes, state is **deleted** |
+| 3 | Each new run starts with **fresh state** (no memory of past) |
+| 4 | AI forgets previous conversations between runs |
+| 5 | **Checkpointing** = Saving state to persistent storage |
+| 6 | With checkpointing, state survives across application restarts |
+| 7 | Users can come back days later and AI remembers everything |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: The Problem - State is Not Persistent
+
+```python
+# WITHOUT CHECKPOINTING - State gets deleted after each run
+
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+def chatbot(state: State) -> State:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("chatbot", chatbot)
+builder.add_edge(START, "chatbot")
+builder.add_edge("chatbot", END)
+graph = builder.compile()
+
+# RUN 1: Tell AI your name
+print("=" * 50)
+print("RUN 1: Telling AI my name")
+print("=" * 50)
+
+result1 = graph.invoke({"messages": [("user", "My name is Piyush")]})
+print(f"AI: {result1['messages'][-1].content}")
+# Output: AI: Nice to meet you Piyush!
+
+# RUN 2: Ask AI your name (NEW RUN - NO MEMORY!)
+print("\n" + "=" * 50)
+print("RUN 2: Asking AI my name")
+print("=" * 50)
+
+result2 = graph.invoke({"messages": [("user", "What is my name?")]})
+print(f"AI: {result2['messages'][-1].content}")
+# Output: AI: I don't know your name. You haven't told me.
+
+# PROBLEM: The AI forgot! State was deleted after RUN 1.
+```
+
+**Output:**
+```
+==================================================
+RUN 1: Telling AI my name
+==================================================
+AI: Nice to meet you Piyush!
+
+==================================================
+RUN 2: Asking AI my name
+==================================================
+AI: I don't know your name. You haven't told me.
+```
+
+---
+
+### Concept 2: Visualizing the Problem
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              WITHOUT CHECKPOINTING (BAD)                        │
+│                                                                  │
+│   RUN 1:                                                        │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │ Initial State: {"messages": ["User: My name is Piyush"]}│   │
+│   │                         │                                │   │
+│   │                         ▼                                │   │
+│   │ Graph Execution ──────► Final State with memory         │   │
+│   │                         │                                │   │
+│   │                         ▼                                │   │
+│   │ 🗑️ STATE DELETED! (after invoke completes)              │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│   RUN 2 (Separate execution):                                   │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │ Initial State: {"messages": ["User: What's my name?"]}  │   │
+│   │                         │                                │   │
+│   │                         ▼                                │   │
+│   │ Graph Execution ──────► AI has NO memory of RUN 1       │   │
+│   │                                                                  │
+│   │ Result: "I don't know your name" ❌                      │   │
+│   └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Concept 3: The Solution - Checkpointing
+
+Checkpointing saves the state to persistent storage (like memory or database) so it can be loaded in future runs.
+
+```python
+# WITH CHECKPOINTING - State persists across runs
+
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint import MemorySaver  # IMPORTANT!
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+def chatbot(state: State) -> State:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("chatbot", chatbot)
+builder.add_edge(START, "chatbot")
+builder.add_edge("chatbot", END)
+
+# ✅ ADD CHECKPOINTING!
+memory = MemorySaver()  # Saves state in memory (use PostgresSaver for production)
+graph = builder.compile(checkpointer=memory)
+
+# Create a thread ID (like a conversation ID)
+config = {"configurable": {"thread_id": "conversation_123"}}
+
+# RUN 1: Tell AI your name (with checkpointing)
+print("=" * 50)
+print("RUN 1: Telling AI my name")
+print("=" * 50)
+
+result1 = graph.invoke(
+    {"messages": [("user", "My name is Piyush")]},
+    config=config  # Pass the config with thread_id
+)
+print(f"AI: {result1['messages'][-1].content}")
+
+# RUN 2: Ask AI your name (SAME thread_id - HAS MEMORY!)
+print("\n" + "=" * 50)
+print("RUN 2: Asking AI my name")
+print("=" * 50)
+
+result2 = graph.invoke(
+    {"messages": [("user", "What is my name?")]},
+    config=config  # Same thread_id = same conversation!
+)
+print(f"AI: {result2['messages'][-1].content}")
+# Output: AI: Your name is Piyush! (REMEMBERS!)
+```
+
+**Output:**
+```
+==================================================
+RUN 1: Telling AI my name
+==================================================
+AI: Nice to meet you Piyush!
+
+==================================================
+RUN 2: Asking AI my name
+==================================================
+AI: Your name is Piyush! I remember from our conversation.
+```
+
+---
+
+### Concept 4: How Checkpointing Works
+
+```python
+from langgraph.checkpoint import MemorySaver
+
+# Create checkpointer (saves state in RAM)
+memory = MemorySaver()
+
+# Compile graph with checkpointer
+graph = builder.compile(checkpointer=memory)
+
+# Each conversation gets a unique thread_id
+config_1 = {"configurable": {"thread_id": "user_alice"}}
+config_2 = {"configurable": {"thread_id": "user_bob"}}
+
+# Different threads have DIFFERENT memory
+graph.invoke({"messages": [("user", "My name is Alice")]}, config=config_1)
+graph.invoke({"messages": [("user", "My name is Bob")]}, config=config_2)
+
+# Each remembers its own conversation!
+result_alice = graph.invoke({"messages": [("user", "What's my name?")]}, config=config_1)
+# Returns: "Your name is Alice"
+
+result_bob = graph.invoke({"messages": [("user", "What's my name?")]}, config=config_2)
+# Returns: "Your name is Bob"
+```
+
+---
+
+### Concept 5: Complete Example with Multiple Turns
+
+```python
+# checkpointing_demo.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint import MemorySaver
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+import time
+
+load_dotenv()
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+def chatbot(state: State) -> State:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+# Build graph with checkpointing
+builder = StateGraph(State)
+builder.add_node("chatbot", chatbot)
+builder.add_edge(START, "chatbot")
+builder.add_edge("chatbot", END)
+
+memory = MemorySaver()
+graph = builder.compile(checkpointer=memory)
+
+# Single conversation thread
+config = {"configurable": {"thread_id": "my_chat_session"}}
+
+print("=" * 60)
+print("🤖 CHATBOT WITH PERSISTENT MEMORY")
+print("=" * 60)
+
+# Turn 1
+print("\n👤 User: My name is Piyush and I love Python")
+result = graph.invoke(
+    {"messages": [("user", "My name is Piyush and I love Python")]},
+    config=config
+)
+print(f"🤖 AI: {result['messages'][-1].content[:100]}...")
+
+# Turn 2 (AI should remember name)
+print("\n👤 User: What's my favorite programming language?")
+result = graph.invoke(
+    {"messages": [("user", "What's my favorite programming language?")]},
+    config=config
+)
+print(f"🤖 AI: {result['messages'][-1].content}")
+
+# Turn 3 (AI should remember name AND language)
+print("\n👤 User: What's my name again?")
+result = graph.invoke(
+    {"messages": [("user", "What's my name again?")]},
+    config=config
+)
+print(f"🤖 AI: {result['messages'][-1].content}")
+
+print("\n" + "=" * 60)
+print("✅ All responses remembered across turns!")
+print("=" * 60)
+```
+
+---
+
+### Concept 6: Different Types of Checkpointers
+
+```python
+# Type 1: MemorySaver (for development - saves in RAM)
+from langgraph.checkpoint import MemorySaver
+memory = MemorySaver()
+graph = builder.compile(checkpointer=memory)
+# ⚠️ State lost when application restarts!
+
+# Type 2: SqliteSaver (for production - saves to file)
+from langgraph.checkpoint.sqlite import SqliteSaver
+sqlite = SqliteSaver.from_conn_string("checkpoints.db")
+graph = builder.compile(checkpointer=sqlite)
+# ✅ State persists across application restarts!
+
+# Type 3: PostgresSaver (for production - saves to database)
+from langgraph.checkpoint.postgres import PostgresSaver
+postgres = PostgresSaver.from_conn_string(
+    "postgresql://user:pass@localhost/db"
+)
+graph = builder.compile(checkpointer=postgres)
+# ✅ Best for production with multiple users!
+```
+
+---
+
+### Concept 7: Getting State History
+
+```python
+# You can also get previous states from checkpoint
+
+# Get the current state
+current_state = graph.get_state(config)
+print(current_state.values["messages"])
+
+# Get state history (all previous states)
+history = graph.get_state_history(config)
+for state in history:
+    print(f"Step: {state.step}, Messages: {len(state.values['messages'])}")
+
+# Get a specific checkpoint
+checkpoint_id = "some_checkpoint_id"
+specific_state = graph.get_state(config, checkpoint_id)
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Checkpointing Setup
+
+```python
+from langgraph.checkpoint import MemorySaver
+
+# Create checkpointer
+memory = MemorySaver()
+
+# Compile graph with checkpointer
+graph = builder.compile(checkpointer=memory)
+
+# Use config with thread_id
+config = {"configurable": {"thread_id": "unique_conversation_id"}}
+
+# Invoke with config
+result = graph.invoke(initial_state, config=config)
+```
+
+### Template 2: Multiple Conversation Threads
+
+```python
+# Different users have different thread_ids
+user_configs = {
+    "alice": {"configurable": {"thread_id": "alice_session"}},
+    "bob": {"configurable": {"thread_id": "bob_session"}},
+    "charlie": {"configurable": {"thread_id": "charlie_session"}}
+}
+
+# Each maintains separate memory
+for user, config in user_configs.items():
+    result = graph.invoke(
+        {"messages": [("user", f"My name is {user}")]},
+        config=config
+    )
+```
+
+### Template 3: Production Setup with SQLite
+
+```python
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+# Create persistent database
+with SqliteSaver.from_conn_string("conversations.db") as checkpointer:
+    graph = builder.compile(checkpointer=checkpointer)
+    
+    config = {"configurable": {"thread_id": "user_123"}}
+    result = graph.invoke(initial_state, config=config)
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Checkpointing** | Saving state to persistent storage |
+| **MemorySaver** | In-memory checkpointing (for development) |
+| **thread_id** | Unique identifier for a conversation/session |
+| **Config** | Dictionary containing thread_id for checkpointing |
+| **State Persistence** | State survives across application runs |
+| **SqliteSaver** | File-based checkpointing (production-ready) |
+
+---
+
+## 📊 Visual Comparison
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    WITHOUT CHECKPOINTING                            │
+│                                                                      │
+│   Run 1 ──► State in Memory ──► Deleted ──► Run 2 ──► Fresh State  │
+│                      ❌ No memory between runs                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    WITH CHECKPOINTING                               │
+│                                                                      │
+│   Run 1 ──► State ──► Saved to Checkpoint ──► ┐                    │
+│                                                │                    │
+│   Run 2 ──► Load from Checkpoint ──► Continue ┘                    │
+│                      ✅ Memory preserved!                           │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Problem**: State is deleted after `invoke()` completes
+2. **Result**: AI forgets everything between runs
+3. **Solution**: Checkpointing saves state to persistent storage
+4. **MemorySaver**: Good for development (but lost on restart)
+5. **thread_id**: Unique ID for each conversation/session
+6. **Same thread_id** = Same memory across multiple invocations
+7. **Production**: Use SqliteSaver or PostgresSaver
+
+**Bottom line:** Checkpointing is essential for any real-world chatbot. Without it, your AI has amnesia after every response. With checkpointing and a `thread_id`, your AI remembers everything forever - even across days or weeks! 🚀
+
+---
+
+## 175. Setting Up MongoDB with Docker for LangGraph CheckPoint Storage (03:21)
+
+Here's a simple summary of the tutorial transcript about **setting up MongoDB for checkpointing** in LangGraph.
+
+## 📝 Simple Summary
+
+To make checkpointing work in production, you need a **persistent database** to store conversation states. While `MemorySaver` works for development, it loses all data when the application restarts. The solution is to use **MongoDB** as your checkpointer. You set up MongoDB using Docker Compose with a simple configuration: define the MongoDB service, expose port 27017, set environment variables (username/password), and add volume mapping for persistent storage. Once running, MongoDB will store all graph states permanently.
+
+- [Checkpoints](https://docs.langchain.com/oss/python/langgraph/persistence#checkpoints)
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Checkpoint** = Snapshot of graph state at a specific point in time |
+| 2 | MemorySaver loses data on application restart |
+| 3 | Production needs persistent database like MongoDB |
+| 4 | MongoDB runs on default port **27017** |
+| 5 | Use Docker Compose to easily set up MongoDB |
+| 6 | Environment variables: `MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` |
+| 7 | Volume mapping ensures data persists even after container stops |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: What is a Checkpoint?
+
+```python
+# A checkpoint is a snapshot of your graph's state at a moment in time
+
+# Example state
+state = {
+    "messages": [
+        {"role": "user", "content": "My name is Piyush"},
+        {"role": "assistant", "content": "Hello Piyush!"},
+        {"role": "user", "content": "What's my name?"},
+        {"role": "assistant", "content": "Your name is Piyush"}
+    ],
+    "step": 4,
+    "user_id": "user_123"
+}
+
+# This state can be saved as a CHECKPOINT in MongoDB
+# Later, you can restore this exact state and continue the conversation
+```
+
+---
+
+### Concept 2: Docker Compose for MongoDB
+
+**File: `docker-compose.yml`**
+
+```yaml
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest          # Official MongoDB image
+    container_name: langgraph_mongo
+    ports:
+      - "27017:27017"            # Expose MongoDB default port
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin      # Root username
+      MONGO_INITDB_ROOT_PASSWORD: admin      # Root password
+    volumes:
+      - mongodb_data:/data/db    # Persistent storage
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:                   # Named volume for data persistence
+```
+
+---
+
+### Concept 3: Starting MongoDB with Docker
+
+```bash
+# Navigate to your project folder
+cd langgraph-learning
+
+# Start MongoDB container
+docker-compose up -d
+
+# Check if container is running
+docker ps
+
+# Output should show:
+# CONTAINER ID   IMAGE         PORTS                      NAMES
+# xxxxxxxxxxxx   mongo:latest  0.0.0.0:27017->27017/tcp   langgraph_mongo
+
+# Check Docker Desktop (if using)
+# You'll see the container running with port 27017
+```
+
+---
+
+### Concept 4: Verifying MongoDB is Running
+
+```bash
+# Method 1: Docker ps command
+docker ps --filter "name=mongo"
+
+# Method 2: Check logs
+docker logs langgraph_mongo
+
+# Method 3: Connect to MongoDB (optional test)
+docker exec -it langgraph_mongo mongosh -u admin -p admin
+
+# Inside MongoDB shell:
+# show dbs
+# exit
+```
+
+---
+
+### Concept 5: Complete Setup Script
+
+```bash
+# setup_mongo.sh - Complete setup script
+
+#!/bin/bash
+
+echo "🚀 Setting up MongoDB for LangGraph Checkpointing"
+
+# Step 1: Create docker-compose.yml
+cat > docker-compose.yml << EOF
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: langgraph_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+EOF
+
+echo "✅ docker-compose.yml created"
+
+# Step 2: Start MongoDB
+echo "📦 Starting MongoDB container..."
+docker-compose up -d
+
+# Step 3: Wait for MongoDB to be ready
+echo "⏳ Waiting for MongoDB to be ready..."
+sleep 5
+
+# Step 4: Check status
+echo "🔍 Checking container status..."
+docker ps --filter "name=langgraph_mongo"
+
+echo ""
+echo "✅ MongoDB is ready!"
+echo "   Connection string: mongodb://admin:admin@localhost:27017"
+echo "   Port: 27017"
+```
+
+---
+
+### Concept 6: Production vs Development Checkpointers
+
+```python
+# DEVELOPMENT (Memory only - data lost on restart)
+from langgraph.checkpoint import MemorySaver
+
+memory = MemorySaver()
+graph = builder.compile(checkpointer=memory)
+# ⚠️ All conversations lost when app restarts!
+
+
+# PRODUCTION (MongoDB - persistent storage)
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from pymongo import MongoClient
+
+# Connect to MongoDB
+client = MongoClient("mongodb://admin:admin@localhost:27017/")
+checkpointer = MongoDBSaver(client, db_name="langgraph_checkpoints")
+
+graph = builder.compile(checkpointer=checkpointer)
+# ✅ Conversations survive app restarts!
+
+
+# PRODUCTION (SQLite - file-based persistence)
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+sqlite = SqliteSaver.from_conn_string("checkpoints.db")
+graph = builder.compile(checkpointer=sqlite)
+# ✅ Conversations saved to file
+```
+
+---
+
+### Concept 7: How MongoDB Checkpointing Works
+
+```python
+# When you use MongoDB as checkpointer:
+
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from pymongo import MongoClient
+
+# 1. Connect to MongoDB
+client = MongoClient("mongodb://admin:admin@localhost:27017/")
+checkpointer = MongoDBSaver(client, db_name="langgraph_checkpoints")
+
+# 2. Compile graph with checkpointer
+graph = builder.compile(checkpointer=checkpointer)
+
+# 3. Run with thread_id
+config = {"configurable": {"thread_id": "user_session_123"}}
+
+# First invocation - saves checkpoint to MongoDB
+result1 = graph.invoke(
+    {"messages": [("user", "My name is Piyush")]},
+    config=config
+)
+
+# Second invocation - LOADS previous state from MongoDB
+result2 = graph.invoke(
+    {"messages": [("user", "What's my name?")]},
+    config=config  # Same thread_id = loads previous state
+)
+
+# MongoDB stores:
+# - All messages
+# - Current state
+# - Step number
+# - Thread ID
+# - Timestamp
+```
+
+---
+
+### Concept 8: Complete Example (Ready for Next Video)
+
+```python
+# ready_for_mongodb_checkpointing.py
+from typing import Annotated, List
+from typing_extensions import TypedDict
+from langgraph.graph.message import add_messages
+from langgraph.graph import StateGraph, START, END
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class State(TypedDict):
+    messages: Annotated[List, add_messages]
+
+llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+
+def chatbot(state: State) -> State:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
+
+# Build graph
+builder = StateGraph(State)
+builder.add_node("chatbot", chatbot)
+builder.add_edge(START, "chatbot")
+builder.add_edge("chatbot", END)
+
+# TODO: In next video, add MongoDB checkpointer
+# from langgraph.checkpoint.mongodb import MongoDBSaver
+# from pymongo import MongoClient
+# client = MongoClient("mongodb://admin:admin@localhost:27017/")
+# checkpointer = MongoDBSaver(client, db_name="langgraph_checkpoints")
+# graph = builder.compile(checkpointer=checkpointer)
+
+# For now, compile without checkpointer
+graph = builder.compile()
+
+print("✅ Graph ready!")
+print("📦 MongoDB is running on port 27017")
+print("🔜 Next: Connect MongoDB as checkpointer!")
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Docker Compose for MongoDB
+
+```yaml
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: my_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: myuser
+      MONGO_INITDB_ROOT_PASSWORD: mypassword
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+```
+
+### Template 2: Start/Stop Commands
+
+```bash
+# Start MongoDB
+docker-compose up -d
+
+# Stop MongoDB
+docker-compose down
+
+# Stop AND delete data (careful!)
+docker-compose down -v
+
+# View logs
+docker-compose logs -f
+
+# Restart MongoDB
+docker-compose restart
+```
+
+### Template 3: MongoDB Connection String Formats
+
+```python
+# Local with auth
+"mongodb://admin:admin@localhost:27017/"
+
+# Local without auth (not recommended)
+"mongodb://localhost:27017/"
+
+# With specific database
+"mongodb://admin:admin@localhost:27017/langgraph_db"
+
+# For production (Atlas)
+"mongodb+srv://username:password@cluster.mongodb.net/"
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Checkpoint** | Snapshot of graph state at a point in time |
+| **MongoDB** | NoSQL database for persistent storage |
+| **Docker Compose** | Tool to define and run multi-container apps |
+| **Volume** | Persistent storage that survives container restarts |
+| **27017** | Default MongoDB port |
+| **MONGO_INITDB_ROOT_USERNAME** | Env var for MongoDB admin user |
+| **State Snapshot** | Complete state saved at a super step |
+
+---
+
+## 📊 Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CHECKPOINTING ARCHITECTURE                   │
+│                                                                  │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                    YOUR APPLICATION                      │    │
+│   │                                                          │    │
+│   │   graph = builder.compile(checkpointer=saver)          │    │
+│   │                                                          │    │
+│   │   config = {"thread_id": "user_123"}                    │    │
+│   │   result = graph.invoke(state, config)                  │    │
+│   └─────────────────────────┬───────────────────────────────┘    │
+│                             │                                    │
+│                             │ Save/Load State                    │
+│                             ▼                                    │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │                    MONGODB (Docker)                      │    │
+│   │                                                          │    │
+│   │   Container: langgraph_mongo                            │    │
+│   │   Port: 27017                                           │    │
+│   │   Database: langgraph_checkpoints                       │    │
+│   │                                                          │    │
+│   │   Collections:                                           │    │
+│   │   - checkpoints (stores state snapshots)                │    │
+│   │   - writes (stores pending writes)                      │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│   Volume: mongodb_data (persists even after container stops)    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Checkpoint** = Snapshot of graph state at a specific time
+2. **MemorySaver** = Good for development, bad for production
+3. **MongoDB** = Production-ready persistent storage for checkpoints
+4. **Docker Compose** = Easiest way to run MongoDB locally
+5. **Port 27017** = MongoDB's default port
+6. **Volume mapping** = Ensures data survives container restarts
+7. **Environment variables** = Set username/password for security
+
+**Bottom line:** Setting up MongoDB with Docker Compose is simple - just define the service, expose port 27017, set credentials, and add a volume. This gives you a production-ready database for storing conversation checkpoints. In the next video, you'll connect this MongoDB to LangGraph as the checkpointer! 🚀
+
+---
+
+
+## 176. Implementing MongoDB Checkpointer in LangGraph Workflow Graphs (10:53)
 
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
