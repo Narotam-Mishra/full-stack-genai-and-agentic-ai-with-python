@@ -46957,6 +46957,756 @@ memory.add(messages=messages, user_id="user_123")
 
 ## 186. Mem0 Configuration with Python for Agents (03:32)
 
+## 📝 Simple Summary
+
+To create a memory agent with Mem0, you need to create a **configuration** that tells Mem0 three things: (1) which **embedding model** to use (text-embedding-3-small), (2) which **LLM** to extract facts (gpt-4.1), and (3) which **vector database** to store memories (Qdrant on localhost:6333). After defining the config, you pass it to `Memory.from_config(config)` to create a memory client. This client can then add, search, and manage user memories.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | Configuration has **three main parts**: embedder, LLM, vector_store |
+| 2 | **Embedder** = creates vector embeddings (text-embedding-3-small) |
+| 3 | **LLM** = extracts facts from conversations (gpt-4.1) |
+| 4 | **Vector Store** = stores memories (Qdrant on port 6333) |
+| 5 | Config version should be `v1.1` |
+| 6 | API key is read from environment variable `OPENAI_API_KEY` |
+| 7 | Create memory client with `Memory.from_config(config)` |
+| 8 | Memory client handles add, search, update operations |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Complete Mem0 Configuration
+
+```python
+# memory_agent.py - Complete configuration for Mem0 with Qdrant
+
+import os
+from mem0 import Memory
+
+# Set OpenAI API key
+os.environ["OPENAI_API_KEY"] = "your-openai-api-key"
+
+# ============================================
+# MEM0 CONFIGURATION
+# ============================================
+config = {
+    "version": "v1.1",
+    
+    # 1. EMBEDDER - For creating vector embeddings
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "text-embedding-3-small"  # 1536 dimensions
+        }
+    },
+    
+    # 2. LLM - For extracting facts/memories from conversations
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "gpt-4.1"  # Fact extraction model
+        }
+    },
+    
+    # 3. VECTOR STORE - Where memories are stored
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "host": "localhost",
+            "port": 6333  # Qdrant default port
+        }
+    }
+}
+
+# Create memory client with configuration
+memory_client = Memory.from_config(config)
+
+print("✅ Memory agent created successfully!")
+print(f"   Embedder: {config['embedder']['config']['model']}")
+print(f"   LLM: {config['llm']['config']['model']}")
+print(f"   Vector Store: Qdrant on port {config['vector_store']['config']['port']}")
+```
+
+**Output:**
+```
+✅ Memory agent created successfully!
+   Embedder: text-embedding-3-small
+   LLM: gpt-4.1
+   Vector Store: Qdrant on port 6333
+```
+
+---
+
+### Concept 2: Configuration Breakdown
+
+```python
+"""
+MEM0 CONFIGURATION BREAKDOWN
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CONFIGURATION                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │  "embedder" - Vector Embedding Creation                     │    │
+│  │  • Provider: OpenAI                                          │    │
+│  │  • Model: text-embedding-3-small                            │    │
+│  │  • Purpose: Convert text to vectors for similarity search   │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │  "llm" - Fact Extraction                                    │    │
+│  │  • Provider: OpenAI                                          │    │
+│  │  • Model: gpt-4.1                                           │    │
+│  │  • Purpose: Extract key facts from conversations           │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │  "vector_store" - Memory Storage                            │    │
+│  │  • Provider: Qdrant                                         │    │
+│  │  • Host: localhost                                          │    │
+│  │  • Port: 6333                                               │    │
+│  │  • Purpose: Store and search memory vectors                │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+"""
+```
+
+---
+
+### Concept 3: Using the Memory Client
+
+```python
+# After creating memory_client, you can perform operations
+
+# ============================================
+# ADDING MEMORIES
+# ============================================
+# Add a memory from text
+result = memory_client.add(
+    "My name is Piyush and I love building AI agents with LangGraph",
+    user_id="piyush_123",
+    metadata={"source": "conversation", "type": "user_profile"}
+)
+print(f"Added memory: {result}")
+
+# Add memories from conversation
+messages = [
+    {"role": "user", "content": "I prefer short, concise answers"},
+    {"role": "assistant", "content": "I'll keep that in mind!"}
+]
+result = memory_client.add(
+    messages=messages,
+    user_id="piyush_123",
+    metadata={"source": "chat_session"}
+)
+
+# ============================================
+# SEARCHING MEMORIES
+# ============================================
+search_results = memory_client.search(
+    query="What does the user like?",
+    user_id="piyush_123",
+    limit=5
+)
+print(f"\nSearch results: {search_results}")
+
+# ============================================
+# GETTING ALL MEMORIES
+# ============================================
+all_memories = memory_client.get_all(user_id="piyush_123")
+print(f"\nTotal memories for user: {len(all_memories.get('results', []))}")
+```
+
+---
+
+### Concept 4: Complete Memory Agent Example
+
+```python
+# complete_memory_agent.py
+import os
+from mem0 import Memory
+
+os.environ["OPENAI_API_KEY"] = "your-openai-api-key"
+
+# Configuration
+config = {
+    "version": "v1.1",
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "text-embedding-3-small"
+        }
+    },
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "gpt-4.1"
+        }
+    },
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "host": "localhost",
+            "port": 6333
+        }
+    }
+}
+
+class MemoryAgent:
+    """AI Agent with persistent memory using Mem0"""
+    
+    def __init__(self):
+        self.memory = Memory.from_config(config)
+        print("🚀 Memory Agent initialized!")
+    
+    def remember(self, user_id: str, text: str, metadata: dict = None):
+        """Store a memory for a user"""
+        result = self.memory.add(
+            text, 
+            user_id=user_id, 
+            metadata=metadata or {}
+        )
+        print(f"📝 Stored memory for {user_id}: {text[:50]}...")
+        return result
+    
+    def recall(self, user_id: str, query: str, limit: int = 3):
+        """Retrieve relevant memories for a user"""
+        results = self.memory.search(
+            query=query,
+            user_id=user_id,
+            limit=limit
+        )
+        print(f"🔍 Found {len(results.get('results', []))} relevant memories")
+        return results
+    
+    def get_all_memories(self, user_id: str):
+        """Get all memories for a user"""
+        return self.memory.get_all(user_id=user_id)
+    
+    def get_memory_history(self, memory_id: str):
+        """View change history of a memory"""
+        return self.memory.history(memory_id=memory_id)
+
+
+# DEMONSTRATION
+if __name__ == "__main__":
+    agent = MemoryAgent()
+    
+    # Store user memories
+    print("\n" + "=" * 50)
+    print("STORING MEMORIES")
+    print("=" * 50)
+    
+    agent.remember("piyush", "My name is Piyush")
+    agent.remember("piyush", "I love building AI agents with Python")
+    agent.remember("piyush", "I prefer concise, short answers")
+    agent.remember("piyush", "I visited Paris in 2023 and loved it")
+    
+    # Search memories
+    print("\n" + "=" * 50)
+    print("SEARCHING MEMORIES")
+    print("=" * 50)
+    
+    results = agent.recall("piyush", "What does the user like to build?")
+    
+    # View all memories
+    print("\n" + "=" * 50)
+    print("ALL MEMORIES")
+    print("=" * 50)
+    
+    all_mem = agent.get_all_memories("piyush")
+    for mem in all_mem.get("results", []):
+        print(f"  • {mem.get('memory', '')}")
+```
+
+---
+
+### Concept 5: Qdrant Requirements
+
+```bash
+# Before running Mem0 with Qdrant, ensure Qdrant is running
+
+# Start Qdrant using Docker
+docker run -d -p 6333:6333 -p 6334:6334 qdrant/qdrant
+
+# Or using docker-compose (as shown in earlier videos)
+docker-compose up -d
+
+# Check if Qdrant is running
+curl http://localhost:6333/collections
+
+# Expected output:
+# {"status":"ok","result":{"collections":[]}}
+```
+
+---
+
+### Concept 6: Configuration with Environment Variables
+
+```python
+# Best practice: Use .env file for API keys
+
+# .env file content:
+# OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxx
+
+import os
+from dotenv import load_dotenv
+from mem0 import Memory
+
+load_dotenv()  # Loads .env file
+
+config = {
+    "version": "v1.1",
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),  # Read from .env
+            "model": "text-embedding-3-small"
+        }
+    },
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),  # Read from .env
+            "model": "gpt-4.1"
+        }
+    },
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "host": "localhost",
+            "port": 6333
+        }
+    }
+}
+
+memory = Memory.from_config(config)
+print("✅ Memory client configured with .env file")
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Basic Memory Client
+
+```python
+import os
+from mem0 import Memory
+
+os.environ["OPENAI_API_KEY"] = "your-key"
+
+config = {
+    "version": "v1.1",
+    "embedder": {"provider": "openai", "config": {"model": "text-embedding-3-small"}},
+    "llm": {"provider": "openai", "config": {"model": "gpt-4.1"}},
+    "vector_store": {"provider": "qdrant", "config": {"host": "localhost", "port": 6333}}
+}
+
+memory = Memory.from_config(config)
+```
+
+### Template 2: Memory Agent Class
+
+```python
+class Mem0Agent:
+    def __init__(self):
+        self.memory = Memory.from_config(config)
+    
+    def add(self, user_id, text):
+        return self.memory.add(text, user_id=user_id)
+    
+    def search(self, user_id, query):
+        return self.memory.search(query, user_id=user_id)
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Config** | Dictionary telling Mem0 how to work |
+| **Embedder** | Creates vector embeddings from text |
+| **LLM** | Extracts facts/concepts from conversations |
+| **Vector Store** | Database for storing memory vectors |
+| **Qdrant** | Vector database (default port 6333) |
+
+---
+
+## 📊 Configuration Summary
+
+| Section | Provider | Model/Config | Purpose |
+|---------|----------|--------------|---------|
+| **embedder** | OpenAI | text-embedding-3-small | Convert text to vectors |
+| **llm** | OpenAI | gpt-4.1 | Extract facts from text |
+| **vector_store** | Qdrant | localhost:6333 | Store/search memory vectors |
+
+---
+
+## 💡 Key Takeaways
+
+1. **Three main config sections**: embedder, llm, vector_store
+2. **Embedder** = text-embedding-3-small (1536 dimensions)
+3. **LLM** = gpt-4.1 (fact extraction)
+4. **Vector Store** = Qdrant on localhost:6333
+5. **API key** from environment variable (use .env file)
+6. **Create client**: `Memory.from_config(config)`
+7. **Operations**: add, search, get_all, history, update
+
+**Bottom line:** Creating a memory agent with Mem0 is simple - define the config with your embedder, LLM, and vector store, then create the client. The client handles all memory operations automatically! 🧠
+
+---
+
+## 187. Vector Database Setup with Docker for Memory (00:51)
+
+Here's a simple summary of the tutorial transcript about **setting up Qdrant vector database** for Mem0.
+
+## 📝 Simple Summary
+
+Before using Mem0's memory client, you need to **spin up Qdrant** - the vector database where memories will be stored. You already have a Docker Compose configuration from earlier videos. Simply copy the Qdrant service configuration into a `docker-compose.yml` file in your memory agent folder, then run `docker-compose up -d`. Qdrant will run on port **6333** (which matches the port specified in your Mem0 config). You can verify it's running by visiting `http://localhost:6333/dashboard`. Once Qdrant is running, you're ready to start adding memories using the Mem0 client.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Qdrant** is the vector database for storing memories |
+| 2 | Use Docker Compose to spin up Qdrant |
+| 3 | Qdrant runs on default port **6333** |
+| 4 | Port must match the `vector_store` config in Mem0 |
+| 5 | Run `docker-compose up -d` to start Qdrant |
+| 6 | Access dashboard at `http://localhost:6333/dashboard` |
+| 7 | Dashboard shows collections, memories, and vector data |
+| 8 | Initially, dashboard shows "No memory, no nothing" |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Docker Compose for Qdrant
+
+**File: `docker-compose.yml`**
+
+```yaml
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mem0_qdrant
+    ports:
+      - "6333:6333"   # HTTP API port
+      - "6334:6334"   # gRPC API port
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+```
+
+---
+
+### Concept 2: Starting Qdrant
+
+```bash
+# Navigate to memory agent folder
+cd memory_agent
+
+# Start Qdrant container
+docker-compose up -d
+
+# Check if container is running
+docker ps
+
+# Output should show:
+# CONTAINER ID   IMAGE             PORTS                              NAMES
+# xxxxxxxxxxxx   qdrant/qdrant     0.0.0.0:6333-6334->6333-6334/tcp   mem0_qdrant
+
+# Check Qdrant is responding
+curl http://localhost:6333/collections
+
+# Output:
+# {"status":"ok","result":{"collections":[]}}
+```
+
+---
+
+### Concept 3: Verifying Qdrant is Running
+
+```python
+# test_qdrant_connection.py
+import requests
+
+def test_qdrant():
+    try:
+        response = requests.get("http://localhost:6333/collections")
+        if response.status_code == 200:
+            print("✅ Qdrant is running!")
+            print(f"   Collections: {response.json()['result']['collections']}")
+            return True
+    except Exception as e:
+        print(f"❌ Qdrant connection failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    test_qdrant()
+```
+
+**Output:**
+```
+✅ Qdrant is running!
+   Collections: []
+```
+
+---
+
+### Concept 4: Mem0 Configuration with Qdrant (Review)
+
+```python
+# Mem0 configuration with Qdrant (matches docker-compose)
+config = {
+    "version": "v1.1",
+    
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "text-embedding-3-small"
+        }
+    },
+    
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "gpt-4.1"
+        }
+    },
+    
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "host": "localhost",
+            "port": 6333  # Must match docker-compose port!
+        }
+    }
+}
+
+# IMPORTANT: The port in config (6333) must match docker-compose port
+```
+
+---
+
+### Concept 5: Complete Setup Script
+
+```bash
+# setup_memory_agent.sh - Complete setup script
+
+#!/bin/bash
+
+echo "🚀 Setting up Memory Agent with Qdrant"
+
+# Step 1: Create docker-compose.yml
+cat > docker-compose.yml << EOF
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mem0_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+EOF
+
+echo "✅ docker-compose.yml created"
+
+# Step 2: Start Qdrant
+echo "📦 Starting Qdrant container..."
+docker-compose up -d
+
+# Step 3: Wait for Qdrant to be ready
+echo "⏳ Waiting for Qdrant to be ready..."
+sleep 5
+
+# Step 4: Verify Qdrant is running
+echo "🔍 Checking Qdrant status..."
+curl -s http://localhost:6333/collections > /dev/null
+
+if [ $? -eq 0 ]; then
+    echo "✅ Qdrant is running on port 6333"
+    echo "   Dashboard: http://localhost:6333/dashboard"
+else
+    echo "❌ Qdrant failed to start"
+fi
+```
+
+---
+
+### Concept 6: Qdrant Dashboard
+
+```python
+# Qdrant provides a dashboard to visualize your memories
+
+print("""
+QDRANT DASHBOARD
+===============
+
+Access at: http://localhost:6333/dashboard
+
+Dashboard shows:
+- Collections (each = a set of memories)
+- Points (individual memory vectors)
+- Vector dimensions (1536 for text-embedding-3-small)
+- Payload (metadata stored with each memory)
+
+Initially: "No memory, no nothing"
+After adding memories: Collections will appear!
+""")
+```
+
+---
+
+### Concept 7: Complete Memory Agent Folder Structure
+
+```
+memory_agent/
+│
+├── docker-compose.yml      # Qdrant service
+├── memory_agent.py          # Mem0 configuration and client
+├── .env                     # OpenAI API key
+└── requirements.txt         # Python dependencies (mem0ai, openai, etc.)
+```
+
+---
+
+## 📝 Code Templates
+
+### Template 1: Docker Compose for Qdrant
+
+```yaml
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_mem0
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  qdrant_data:
+```
+
+### Template 2: Check Qdrant Status
+
+```bash
+# Check if Qdrant is running
+docker ps | grep qdrant
+
+# Check Qdrant API
+curl http://localhost:6333/collections
+
+# View logs
+docker logs mem0_qdrant
+
+# Stop Qdrant
+docker-compose down
+
+# Stop and delete data (careful!)
+docker-compose down -v
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Qdrant** | Vector database for storing memory embeddings |
+| **Port 6333** | Default Qdrant HTTP API port |
+| **Port 6334** | Default Qdrant gRPC API port |
+| **Dashboard** | Web UI at /dashboard to view collections |
+| **Collection** | A set of related memory vectors |
+
+---
+
+## 📊 Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    MEMORY AGENT SETUP                           │
+│                                                                  │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │                 DOCKER COMPOSE                           │   │
+│   │                                                          │   │
+│   │   services:                                              │   │
+│   │     qdrant:                                              │   │
+│   │       image: qdrant/qdrant:latest                       │   │
+│   │       ports:                                             │   │
+│   │         - "6333:6333"  ←───┐                            │   │
+│   │                            │                             │   │
+│   └────────────────────────────┼─────────────────────────────┘   │
+│                                 │                                │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │                 MEM0 CONFIG                             │   │
+│   │                                                          │   │
+│   │   vector_store: {                                       │   │
+│   │     "provider": "qdrant",                               │   │
+│   │     "config": {                                         │   │
+│   │       "host": "localhost",                              │   │
+│   │       "port": 6333  ──────┘                            │   │
+│   │     }                                                   │   │
+│   │   }                                                     │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                                 │                                │
+│                                 ▼                                │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │              QDRANT DASHBOARD                            │   │
+│   │         http://localhost:6333/dashboard                 │   │
+│   │                                                          │   │
+│   │   Shows: Collections, Points, Vectors, Payload         │   │
+│   └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Qdrant is required** - Mem0 needs a vector database to store memories
+2. **Docker Compose** - Simplest way to run Qdrant locally
+3. **Port 6333** - Must match between docker-compose and Mem0 config
+4. **Dashboard** - Visual interface at `http://localhost:6333/dashboard`
+5. **Initially empty** - Dashboard shows "no memory" until you add data
+6. **One-time setup** - Run once, Qdrant persists data via volume
+
+**Bottom line:** Setting up Qdrant for Mem0 is simple - just use Docker Compose to spin it up on port 6333. Once running, your Mem0 client can connect and start storing memories. Check the dashboard to see your memories appear! 🚀
+
+---
+
+## 188. Using Vector Databases for AI Agent Memory (10:14)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
