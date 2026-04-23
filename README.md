@@ -49770,6 +49770,734 @@ print("5. Building memory graphs for AI agents")
 
 ## 194. Basics of Cypher Query for Graph Databases (08:11)
 
+## 📝 Simple Summary
+
+**Cypher** is the query language for Neo4j (like SQL for relational databases). You can use **AI (ChatGPT)** to generate Cypher queries - just describe what you want in plain English. The tutorial covers: creating nodes (users, companies), creating relationships (EMPLOYEE_OF), querying data, and deleting nodes. Key concept: You need to **match existing nodes first** before creating relationships to avoid duplicate nodes. Cypher uses a visual, pattern-based syntax with parentheses for nodes `(node)` and arrows for relationships `-->`.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Cypher** = Query language for Neo4j (like SQL for graphs) |
+| 2 | Use **AI (ChatGPT)** to generate Cypher queries from plain English |
+| 3 | `CREATE (n:Label {property: 'value'})` - creates a node |
+| 4 | `MATCH (n:Label) RETURN n` - queries all nodes |
+| 5 | `MATCH (u:User {name: 'Piyush'})` - finds specific node |
+| 6 | **Merge/Create relationship**: `MERGE (u)-[:EMPLOYEE_OF]->(c)` |
+| 7 | **Always MATCH existing nodes first** before creating relationships |
+| 8 | `MATCH (n) WHERE elementId(n) = 'id' DELETE n` - delete node by ID |
+| 9 | Creating multiple duplicate nodes = relationships get messed up |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Creating Nodes
+
+```cypher
+-- Create a User node with name property
+CREATE (u:User {name: 'Piyush'})
+RETURN u
+
+-- Create multiple users
+CREATE (u:User {name: 'John'})
+CREATE (u:User {name: 'Jane'})
+CREATE (u:User {name: 'Alex'})
+
+-- Create a Company node
+CREATE (c:Company {name: 'Google'})
+RETURN c
+```
+
+**Python equivalent concept:**
+```python
+# What Cypher does
+# CREATE (u:User {name: 'Piyush'})
+# Creates a node with:
+# - Label: User
+# - Property: name = "Piyush"
+```
+
+---
+
+### Concept 2: Querying All Nodes
+
+```cypher
+-- Match all nodes (any label) and return them
+MATCH (n)
+RETURN n
+
+-- Match only User nodes
+MATCH (u:User)
+RETURN u
+
+-- Match User nodes with specific name
+MATCH (u:User {name: 'Piyush'})
+RETURN u
+```
+
+**Output visualization:**
+```
+Query returns all nodes in database:
+┌─────────────────────────────────────┐
+│  (User: Piyush)                     │
+│  (User: John)                       │
+│  (User: Jane)                       │
+│  (User: Alex)                       │
+│  (Company: Google)                  │
+└─────────────────────────────────────┘
+```
+
+---
+
+### Concept 3: Creating Relationships (The Right Way)
+
+```cypher
+-- WRONG WAY: Creates duplicate Company nodes!
+MATCH (u:User {name: 'Piyush'})
+MERGE (u)-[:EMPLOYEE_OF]->(c:Company {name: 'Google'})
+-- This creates a NEW Google node each time!
+
+-- RIGHT WAY: Match existing Company first
+MATCH (u:User {name: 'Piyush'})
+MATCH (c:Company {name: 'Google'})
+MERGE (u)-[:EMPLOYEE_OF]->(c)
+-- Uses existing Google node, no duplicates!
+```
+
+**Complete example for multiple users:**
+```cypher
+-- Step 1: Create users
+CREATE (u1:User {name: 'Piyush'})
+CREATE (u2:User {name: 'John'})
+CREATE (u3:User {name: 'Jane'})
+
+-- Step 2: Create company
+CREATE (c:Company {name: 'Google'})
+
+-- Step 3: Create relationships (using existing nodes)
+MATCH (u:User {name: 'Piyush'})
+MATCH (c:Company {name: 'Google'})
+MERGE (u)-[:EMPLOYEE_OF]->(c)
+
+MATCH (u:User {name: 'John'})
+MATCH (c:Company {name: 'Google'})
+MERGE (u)-[:EMPLOYEE_OF]->(c)
+
+MATCH (u:User {name: 'Jane'})
+MATCH (c:Company {name: 'Google'})
+MERGE (u)-[:EMPLOYEE_OF]->(c)
+```
+
+---
+
+### Concept 4: Querying Relationships
+
+```cypher
+-- Find all users who are employees of Google
+MATCH (u:User)-[:EMPLOYEE_OF]->(c:Company {name: 'Google'})
+RETURN u.name, c.name
+
+-- Find all employees (with relationship)
+MATCH (u:User)-[r:EMPLOYEE_OF]->(c:Company)
+RETURN u.name, c.name
+
+-- Find what companies a specific user works for
+MATCH (u:User {name: 'Piyush'})-[:EMPLOYEE_OF]->(c:Company)
+RETURN c.name
+```
+
+**Output:**
+```
+╔═════════╦══════════╗
+║ u.name  ║ c.name   ║
+╠═════════╬══════════╣
+║ Piyush  ║ Google   ║
+║ John    ║ Google   ║
+║ Jane    ║ Google   ║
+╚═════════╩══════════╝
+```
+
+---
+
+### Concept 5: Deleting Nodes
+
+```cypher
+-- Delete node by element ID (modern way)
+MATCH (n)
+WHERE elementId(n) = '4:1234-5678-90ab-cdef'
+DELETE n
+
+-- Delete node by ID (deprecated - avoid)
+MATCH (n)
+WHERE id(n) = 123
+DELETE n
+
+-- Delete all nodes (dangerous!)
+MATCH (n)
+DELETE n
+
+-- Delete node and all its relationships
+MATCH (n:User {name: 'Alex'})
+DETACH DELETE n
+```
+
+**Warning:** `DETACH DELETE` removes the node AND all its relationships!
+
+---
+
+### Concept 6: Using AI to Generate Cypher Queries
+
+```python
+"""
+USING CHATGPT FOR CYPHER QUERIES
+
+Instead of memorizing Cypher syntax, just describe what you want in English!
+
+Example prompts for ChatGPT:
+
+1. "Write a Cypher query to create a User node with name Piyush"
+   → CREATE (u:User {name: 'Piyush'}) RETURN u
+
+2. "Write a Cypher query to create a relationship between user Piyush and company Google as EMPLOYEE_OF"
+   → MATCH (u:User {name: 'Piyush'})
+     MATCH (c:Company {name: 'Google'})
+     MERGE (u)-[:EMPLOYEE_OF]->(c)
+
+3. "Write a Cypher query to find all employees of Google"
+   → MATCH (u:User)-[:EMPLOYEE_OF]->(c:Company {name: 'Google'})
+     RETURN u.name
+
+4. "Write a Cypher query to delete a user node with name Alex"
+   → MATCH (u:User {name: 'Alex'})
+     DETACH DELETE u
+"""
+
+print("💡 TIP: Use ChatGPT to generate Cypher queries!")
+print("   Just describe what you want in plain English.")
+```
+
+---
+
+### Concept 7: Common Cypher Patterns for Memory Graphs
+
+```cypher
+-- 1. Create user profile (Factual Memory)
+CREATE (u:User {
+    userId: 'piyush_123',
+    name: 'Piyush',
+    age: 25,
+    location: 'India'
+})
+
+-- 2. Add preference (Factual Memory)
+MATCH (u:User {userId: 'piyush_123'})
+CREATE (u)-[:LIKES]->(f:Food {name: 'Pizza', cuisine: 'Italian'})
+
+-- 3. Add episodic memory (past event)
+MATCH (u:User {userId: 'piyush_123'})
+CREATE (u)-[:HAD_EVENT]->(e:Event {
+    type: 'complaint',
+    description: 'User complained about slow response',
+    timestamp: '2024-01-15'
+})
+
+-- 4. Add semantic memory (general knowledge)
+CREATE (c:Cuisine {name: 'Italian'})
+CREATE (f:Food {name: 'Pizza'})
+CREATE (f)-[:IS_A]->(c)
+
+-- 5. Multi-hop query: Find Italian food user likes
+MATCH (u:User {userId: 'piyush_123'})-[:LIKES]->(f:Food)-[:IS_A]->(c:Cuisine {name: 'Italian'})
+RETURN f.name
+
+-- 6. Find all user preferences (all relationships)
+MATCH (u:User {userId: 'piyush_123'})-[r]->(n)
+RETURN type(r), n
+```
+
+---
+
+### Concept 8: Complete Memory Graph Example
+
+```cypher
+-- Complete example: Building a user memory graph
+
+-- Create nodes
+CREATE (u:User {id: 'user1', name: 'Piyush', email: 'piyush@example.com'})
+CREATE (c1:Company {name: 'Google'})
+CREATE (c2:Company {name: 'Microsoft'})
+CREATE (f1:Food {name: 'Pizza'})
+CREATE (f2:Food {name: 'Pasta'})
+CREATE (cu:Cuisine {name: 'Italian'})
+
+-- Create relationships
+MATCH (u:User {id: 'user1'})
+MATCH (c:Company {name: 'Google'})
+MERGE (u)-[:WORKS_AT {since: 2023}]->(c)
+
+MATCH (u:User {id: 'user1'})
+MATCH (f:Food {name: 'Pizza'})
+MERGE (u)-[:LIKES {level: 'very_much'}]->(f)
+
+MATCH (u:User {id: 'user1'})
+MATCH (f:Food {name: 'Pasta'})
+MERGE (u)-[:LIKES]->(f)
+
+MATCH (f:Food {name: 'Pizza'})
+MATCH (cu:Cuisine {name: 'Italian'})
+MERGE (f)-[:IS_A]->(cu)
+
+-- Query: What Italian food does user like?
+MATCH (u:User {id: 'user1'})-[:LIKES]->(f:Food)-[:IS_A]->(cu:Cuisine {name: 'Italian'})
+RETURN f.name AS ItalianFoodLiked
+```
+
+---
+
+## 📊 Cypher Quick Reference
+
+| Operation | Cypher Query |
+|-----------|--------------|
+| **Create node** | `CREATE (n:Label {prop: 'value'})` |
+| **Find node** | `MATCH (n:Label {prop: 'value'}) RETURN n` |
+| **Create relationship** | `MATCH (a), (b) MERGE (a)-[:REL]->(b)` |
+| **Find relationships** | `MATCH (a)-[:REL]->(b) RETURN a, b` |
+| **Delete node** | `MATCH (n) WHERE elementId(n) = 'id' DELETE n` |
+| **Delete with relations** | `MATCH (n) DETACH DELETE n` |
+| **Update property** | `MATCH (n) SET n.prop = 'new value'` |
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Cypher** | Neo4j's query language |
+| **Node** | Entity (User, Company, Food) |
+| **Relationship** | Connection between nodes (LIKES, WORKS_AT) |
+| **Label** | Type/category of node (User, Company) |
+| **Property** | Key-value data on node (name: 'Piyush') |
+| **MATCH** | Find nodes/relationships |
+| **CREATE** | Create new nodes/relationships |
+| **MERGE** | Create if doesn't exist, otherwise match |
+| **DETACH DELETE** | Delete node and all its relationships |
+
+---
+
+## 💡 Key Takeaways
+
+1. **Cypher = SQL for graphs** - Visual, pattern-based syntax
+2. **Use AI to generate Cypher** - ChatGPT is great at this
+3. **CREATE** - Makes new nodes/relationships
+4. **MATCH** - Finds existing nodes/relationships
+5. **Always MATCH existing nodes first** before creating relationships
+6. **Duplicate nodes cause problems** - Always reuse existing nodes
+7. **MERGE is safer than CREATE** - Creates only if doesn't exist
+8. **DETACH DELETE** - Deletes node AND all its relationships
+
+**Bottom line:** Cypher is easy to learn, especially with AI assistance. Just describe what you want in plain English, and ChatGPT will generate the Cypher query. The key is to MATCH existing nodes before creating relationships to avoid duplicates! 🔍
+
+---
+
+## 195. Adding Graph Database Support for Memory Agent (01:29)
+
+## 📝 Simple Summary
+
+To add graph memory support to your AI agent, you need to **configure Neo4j** alongside your existing vector store (Qdrant). You copy the **connection URI** from Neo4j Aura (cloud dashboard), then add a new `graph_store` section to your Mem0 configuration with provider set to "neo4j". The configuration requires: `url` (connection URI), `username` (usually "neo4j"), and `password` (your saved password). Once added, Mem0 will automatically store memories as **knowledge graphs** in Neo4j alongside vectors in Qdrant.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Copy connection URI** from Neo4j Aura dashboard |
+| 2 | Add `graph_store` section to Mem0 configuration |
+| 3 | Provider = "neo4j" for graph database |
+| 4 | Configuration needs: `url`, `username`, `password` |
+| 5 | Username is typically "neo4j" (default) |
+| 6 | Password = the one you set during instance creation |
+| 7 | **Load credentials from .env** for production (not hardcoded) |
+| 8 | Mem0 will now store memories as **both** vectors AND graphs |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Getting Neo4j Connection Details
+
+```python
+"""
+NEO4J AURA CONNECTION DETAILS
+
+From Neo4j Aura dashboard, you get:
+- Connection URI (starts with neo4j+s://)
+- Username (default: neo4j)
+- Password (set during instance creation)
+"""
+
+# Example connection details (from Aura dashboard)
+connection_details = {
+    "uri": "neo4j+s://your-instance.databases.neo4j.io",
+    "username": "neo4j",
+    "password": "your-saved-password"
+}
+
+print("📋 Neo4j Connection Details:")
+print(f"   URI: {connection_details['uri']}")
+print(f"   Username: {connection_details['username']}")
+print(f"   Password: {'*' * len(connection_details['password'])}")
+```
+
+---
+
+### Concept 2: Complete Mem0 Configuration with Graph Store
+
+```python
+# Complete Mem0 configuration with Neo4j graph store
+
+import os
+from mem0 import Memory
+from dotenv import load_dotenv
+
+load_dotenv()
+
+config = {
+    "version": "v1.1",
+    
+    # Vector Store (for semantic search)
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "host": "localhost",
+            "port": 6333
+        }
+    },
+    
+    # Graph Store (for relationships) - NEW!
+    "graph_store": {
+        "provider": "neo4j",
+        "config": {
+            "url": os.getenv("NEO4J_URI", "neo4j+s://localhost:7687"),
+            "username": os.getenv("NEO4J_USERNAME", "neo4j"),
+            "password": os.getenv("NEO4J_PASSWORD")
+        }
+    },
+    
+    # Embedder (for vectors)
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "text-embedding-3-small"
+        }
+    },
+    
+    # LLM (for fact extraction)
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "gpt-4.1"
+        }
+    }
+}
+
+# Initialize memory with both vector + graph support
+memory = Memory.from_config(config)
+
+print("✅ Memory configured with:")
+print("   📊 Vector Store: Qdrant (semantic search)")
+print("   🕸️ Graph Store: Neo4j (relationships)")
+```
+
+---
+
+### Concept 3: Environment Variables (.env file)
+
+```env
+# .env file for Neo4j credentials
+
+# OpenAI
+OPENAI_API_KEY=sk-proj-your-key-here
+
+# Neo4j Aura (from cloud dashboard)
+NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your-saved-password
+
+# Qdrant (local)
+QDRANT_HOST=localhost
+QDRANT_PORT=6333
+```
+
+```python
+# Loading credentials from .env
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+neo4j_config = {
+    "url": os.getenv("NEO4J_URI"),
+    "username": os.getenv("NEO4J_USERNAME"),
+    "password": os.getenv("NEO4J_PASSWORD")
+}
+
+print("✅ Credentials loaded from .env file")
+print(f"   URI: {neo4j_config['url']}")
+print(f"   Username: {neo4j_config['username']}")
+```
+
+---
+
+### Concept 4: How Mem0 Uses Both Stores
+
+```python
+"""
+HOW MEM0 USES VECTOR + GRAPH STORES
+
+When you add a memory:
+1. Text is sent to LLM for fact extraction
+2. Facts are converted to vectors (stored in Qdrant)
+3. Relationships are extracted and stored in Neo4j as graph
+
+When you search:
+- Vector search (Qdrant): Finds semantically similar memories
+- Graph search (Neo4j): Finds relationship connections
+
+Result: Best of both worlds!
+"""
+
+# Example: Adding a memory
+memory.add(
+    "Piyush works at Google and likes Pizza",
+    user_id="piyush_123"
+)
+
+# What gets stored:
+# In Qdrant (vector): 
+#   - "Piyush works at Google" (as vector)
+#   - "Piyush likes Pizza" (as vector)
+#
+# In Neo4j (graph):
+#   (User:Piyush)-[:WORKS_AT]->(Company:Google)
+#   (User:Piyush)-[:LIKES]->(Food:Pizza)
+```
+
+---
+
+### Concept 5: Complete Setup Script
+
+```python
+# setup_neo4j_memory.py
+import os
+from mem0 import Memory
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def setup_memory_with_graph():
+    """Initialize Mem0 with both vector and graph storage"""
+    
+    config = {
+        "version": "v1.1",
+        
+        "vector_store": {
+            "provider": "qdrant",
+            "config": {
+                "host": os.getenv("QDRANT_HOST", "localhost"),
+                "port": int(os.getenv("QDRANT_PORT", 6333))
+            }
+        },
+        
+        "graph_store": {
+            "provider": "neo4j",
+            "config": {
+                "url": os.getenv("NEO4J_URI"),
+                "username": os.getenv("NEO4J_USERNAME", "neo4j"),
+                "password": os.getenv("NEO4J_PASSWORD")
+            }
+        },
+        
+        "embedder": {
+            "provider": "openai",
+            "config": {
+                "api_key": os.getenv("OPENAI_API_KEY"),
+                "model": "text-embedding-3-small"
+            }
+        },
+        
+        "llm": {
+            "provider": "openai",
+            "config": {
+                "api_key": os.getenv("OPENAI_API_KEY"),
+                "model": "gpt-4.1"
+            }
+        }
+    }
+    
+    # Validate required credentials
+    required_vars = ["OPENAI_API_KEY", "NEO4J_URI", "NEO4J_PASSWORD"]
+    missing = [v for v in required_vars if not os.getenv(v)]
+    
+    if missing:
+        print(f"❌ Missing environment variables: {missing}")
+        return None
+    
+    print("✅ All credentials found!")
+    memory = Memory.from_config(config)
+    print("📊 Vector Store: Qdrant (semantic search)")
+    print("🕸️ Graph Store: Neo4j (relationships)")
+    
+    return memory
+
+# Initialize
+memory_client = setup_memory_with_graph()
+
+if memory_client:
+    print("\n🚀 Ready to store memories with graph support!")
+```
+
+---
+
+### Concept 6: Testing the Graph Memory
+
+```python
+# test_graph_memory.py
+# After configuring Neo4j, test if graph is working
+
+def test_graph_memory(memory_client):
+    """Test if Neo4j graph storage is working"""
+    
+    user_id = "test_user_123"
+    
+    # Add memory with relationship
+    print("📝 Adding memory with relationship...")
+    result = memory_client.add(
+        "John works at TechCorp and manages Sarah",
+        user_id=user_id
+    )
+    print(f"   Result: {result}")
+    
+    # Search for related information
+    print("\n🔍 Searching for 'who works at TechCorp'...")
+    results = memory_client.search(
+        query="Who works at TechCorp?",
+        user_id=user_id
+    )
+    
+    print(f"   Found: {results}")
+    
+    # The graph should capture:
+    # (John)-[:WORKS_AT]->(TechCorp)
+    # (John)-[:MANAGES]->(Sarah)
+    
+    return results
+
+# Note: This requires Neo4j to be properly configured
+```
+
+---
+
+### Concept 7: Neo4j Connection String Formats
+
+```python
+"""
+NEO4J CONNECTION STRING FORMATS
+
+Different Neo4j deployment types:
+
+1. Neo4j Aura (Cloud):
+   neo4j+s://your-instance.databases.neo4j.io
+   (encrypted connection)
+
+2. Neo4j Local (Docker):
+   bolt://localhost:7687
+   (unencrypted, local)
+
+3. Neo4j Local (with encryption):
+   neo4j://localhost:7687
+   (encrypted)
+
+4. Neo4j Desktop:
+   bolt://localhost:7687
+"""
+
+connection_examples = {
+    "Neo4j Aura (Cloud)": "neo4j+s://xxxxx.databases.neo4j.io",
+    "Neo4j Local (Docker)": "bolt://localhost:7687",
+    "Neo4j Desktop": "bolt://localhost:7687"
+}
+
+print("📌 Neo4j Connection String Examples:")
+for type, uri in connection_examples.items():
+    print(f"   {type}: {uri}")
+```
+
+---
+
+## 📊 Architecture with Neo4j Added
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    MEM0 MEMORY SYSTEM                               │
+│                                                                      │
+│   User Input: "John works at Google"                                │
+│                         │                                            │
+│                         ▼                                            │
+│   ┌─────────────────────────────────────────────────────────────┐   │
+│   │                    MEM0 CONFIGURATION                        │   │
+│   │                                                              │   │
+│   │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │   │
+│   │  │  Embedder    │  │     LLM      │  │ Vector Store │       │   │
+│   │  │  (OpenAI)    │  │  (OpenAI)    │  │  (Qdrant)    │       │   │
+│   │  └──────────────┘  └──────────────┘  └──────────────┘       │   │
+│   │                                                              │   │
+│   │  ┌──────────────┐                                           │   │
+│   │  │ Graph Store  │  ← NEW!                                   │   │
+│   │  │  (Neo4j)     │                                           │   │
+│   │  └──────────────┘                                           │   │
+│   └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│   Result:                                                           │
+│   📊 Qdrant: "John works at Google" (as vector for similarity)     │
+│   🕸️ Neo4j: (John)-[:WORKS_AT]->(Google) (as graph for relations)  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **graph_store** | Mem0 configuration section for graph database |
+| **connection URI** | Address to connect to Neo4j (neo4j+s://...) |
+| **bolt protocol** | Neo4j's native protocol (port 7687) |
+| **Aura** | Neo4j's cloud service |
+
+---
+
+## 💡 Key Takeaways
+
+1. **Copy connection URI** from Neo4j Aura dashboard
+2. **Add `graph_store`** to Mem0 configuration
+3. **Provider = "neo4j"** - tells Mem0 to use Neo4j
+4. **Configuration needs**: url, username, password
+5. **Username is typically "neo4j"** (default)
+6. **Load from .env** - never hardcode credentials
+7. **Mem0 now supports both** - vectors (Qdrant) + graphs (Neo4j)
+
+**Bottom line:** Adding Neo4j to Mem0 is simple - just add a `graph_store` section to your config with the Neo4j connection details. Mem0 will automatically store memories as both vectors (for similarity search) AND graphs (for relationship queries). Best of both worlds! 🕸️
+
+---
+
+## 196. Testing Graph Memory Implementation in Agents (04:35)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`

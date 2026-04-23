@@ -34,6 +34,14 @@ config = {
             },
         },
     },
+    "graph_store":{
+        "provider": "neo4j",
+        "config": {
+            "url": os.getenv("NEO4J_CONNECTION_URI"),
+            "username": os.getenv("NEO4J_USERNAME"),
+            "password": os.getenv("NEO4J_PASSWORD"),
+        }
+    },
     "vector_store": {
         "provider": "qdrant",
         "config": {
