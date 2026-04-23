@@ -16,6 +16,9 @@ import json
 client = OpenAI()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+NEO4J_URL = os.getenv("NEO4J_CONNECTION_URI")
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
 
 # define configuration for memory setup
 config = {
@@ -33,6 +36,14 @@ config = {
                 "model": "gpt-4.1"
             },
         },
+    },
+    "graph_store":{
+        "provider": "neo4j",
+        "config": {
+            "url": NEO4J_URL,
+            "username": NEO4J_USERNAME,
+            "password": NEO4J_PASSWORD,
+        }
     },
     "vector_store": {
         "provider": "qdrant",

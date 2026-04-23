@@ -50498,6 +50498,410 @@ for type, uri in connection_examples.items():
 
 ## 196. Testing Graph Memory Implementation in Agents (04:35)
 
+## 📝 Simple Summary
+
+After configuring Neo4j, you need to install two missing packages: `langchain-neo4j` and potentially others. Once installed, Mem0 automatically creates a **knowledge graph** from your conversations. As you chat, Mem0 extracts entities (like "Piyush", "Pizza", "Hot Tea", "Node JS", "Postgres") and relationships ("likes", "works with", "tech stack") and stores them in Neo4j. You can see the graph growing in real-time in the Neo4j dashboard. When you ask questions like "What is my tech stack?", Mem0 queries the graph and returns accurate answers based on the relationships it has learned.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Missing packages**: Install `langchain-neo4j` and other required packages |
+| 2 | Mem0 automatically creates **knowledge graphs** from conversations |
+| 3 | Entities extracted: User, Food, Beverage, Tech Stack, Skills |
+| 4 | Relationships extracted: LIKES, WORKS_WITH, TECH_STACK, USES |
+| 5 | Neo4j dashboard shows **nodes and relationships** visually |
+| 6 | Graph grows **dynamically** as you chat more |
+| 7 | You can query using natural language - Mem0 uses the graph to answer |
+| 8 | Example: "What is my tech stack?" → Returns Node JS, JavaScript, Postgres, Python |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Installing Missing Packages
+
+```bash
+# Install required Neo4j package for LangChain
+pip install langchain-neo4j
+
+# You might also need:
+pip install neo4j
+pip install langchain
+
+# Verify installation
+pip list | grep -E "neo4j|langchain"
+```
+
+**Common installation errors and fixes:**
+```python
+# Error: cannot import memory graph for provider neo4j
+# Fix: pip install langchain-neo4j
+
+# Error: No module named 'neo4j'
+# Fix: pip install neo4j
+```
+
+---
+
+### Concept 2: How Mem0 Builds the Knowledge Graph
+
+```python
+"""
+HOW MEM0 BUILDS KNOWLEDGE GRAPH FROM CONVERSATION
+
+When you say: "My name is Piyush and I like pizza with hot tea"
+
+Mem0 extracts:
+Entities:        Relationships:
+- Piyush         - (Piyush) -[:LIKES]-> (Pizza)
+- Pizza          - (Piyush) -[:LIKES]-> (Hot Tea)
+- Hot Tea        - (Piyush) -[:NAME_IS]-> (Piyush)
+
+When you say: "I am a full stack developer with Node JS and Postgres"
+
+Mem0 extracts:
+Entities:        Relationships:
+- Full Stack     - (Piyush) -[:IS_A]-> (Full Stack Developer)
+- Node JS        - (Piyush) -[:TECH_STACK]-> (Node JS)
+- Postgres       - (Piyush) -[:TECH_STACK]-> (Postgres)
+
+When you say: "I work with Python for generative AI"
+
+Mem0 extracts:
+Entities:        Relationships:
+- Python         - (Piyush) -[:WORKS_WITH]-> (Python)
+- Generative AI  - (Python) -[:USED_FOR]-> (Generative AI)
+"""
+```
+
+---
+
+### Concept 3: Viewing the Graph in Neo4j Dashboard
+
+```cypher
+-- Query all nodes and relationships in Neo4j
+MATCH (n)
+RETURN n
+
+-- Query specific relationships
+MATCH (u:User {id: 'piyush'})-[r:LIKES]->(f)
+RETURN u, r, f
+
+-- Query tech stack
+MATCH (u:User {id: 'piyush'})-[r:TECH_STACK]->(t)
+RETURN t.name
+
+-- Query what user works with
+MATCH (u:User {id: 'piyush'})-[r:WORKS_WITH]->(s)
+RETURN s.name, r.used_for
+```
+
+**What you'll see in the dashboard:**
+```
+Nodes discovered:
+┌─────────────────────────────────────────────────────────────────┐
+│  (User: Piyush)                                                │
+│     ├── LIKES → (Food: Pizza)                                  │
+│     ├── LIKES → (Food: Hot Tea)                                │
+│     ├── IS_A → (Role: Full Stack Developer)                    │
+│     ├── TECH_STACK → (Technology: Node JS)                     │
+│     ├── TECH_STACK → (Technology: Postgres)                    │
+│     ├── TECH_STACK → (Technology: Python)                      │
+│     └── WORKS_WITH → (Skill: Generative AI)                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Concept 4: Complete Working Example
+
+```python
+# memory_with_graph.py
+import os
+from mem0 import Memory
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Configure Mem0 with Neo4j graph store
+config = {
+    "version": "v1.1",
+    
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "host": "localhost",
+            "port": 6333
+        }
+    },
+    
+    "graph_store": {
+        "provider": "neo4j",
+        "config": {
+            "url": os.getenv("NEO4J_URI"),
+            "username": os.getenv("NEO4J_USERNAME", "neo4j"),
+            "password": os.getenv("NEO4J_PASSWORD")
+        }
+    },
+    
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "text-embedding-3-small"
+        }
+    },
+    
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "api_key": os.getenv("OPENAI_API_KEY"),
+            "model": "gpt-4.1"
+        }
+    }
+}
+
+# Initialize memory
+memory = Memory.from_config(config)
+USER_ID = "piyush"
+
+def chat_and_remember():
+    """Chat and automatically build knowledge graph"""
+    print("🤖 Memory Agent with Graph (type 'quit' to exit)")
+    print("-" * 50)
+    
+    while True:
+        user_input = input("\n👤 You: ")
+        if user_input.lower() == 'quit':
+            break
+        
+        # Search for relevant memories (uses both vector + graph)
+        relevant_memories = memory.search(
+            query=user_input,
+            user_id=USER_ID,
+            limit=5
+        )
+        
+        # Build context from memories
+        context = ""
+        for mem in relevant_memories.get("results", []):
+            context += f"- {mem.get('memory', '')}\n"
+        
+        # Get AI response (would call LLM here)
+        # The graph is automatically updated when you add memories!
+        
+        print(f"🤖 AI: [Response based on your knowledge graph]")
+
+# Run the agent
+chat_and_remember()
+```
+
+---
+
+### Concept 5: Querying the Knowledge Graph
+
+```python
+# After building the graph, you can query it directly
+
+from neo4j import GraphDatabase
+
+class Neo4jQuery:
+    def __init__(self, uri, user, password):
+        self.driver = GraphDatabase.driver(uri, auth=(user, password))
+    
+    def get_user_tech_stack(self, user_name):
+        """Query user's tech stack from graph"""
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (u:User {id: $name})-[r:TECH_STACK]->(t)
+                RETURN t.name AS technology
+                """,
+                name=user_name
+            )
+            return [record["technology"] for record in result]
+    
+    def get_user_likes(self, user_name):
+        """Query what user likes"""
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (u:User {id: $name})-[r:LIKES]->(f)
+                RETURN f.name AS liked_item
+                """,
+                name=user_name
+            )
+            return [record["liked_item"] for record in result]
+    
+    def get_all_relationships(self, user_name):
+        """Get all relationships for a user"""
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (u:User {id: $name})-[r]->(n)
+                RETURN type(r) AS relationship, labels(n)[0] AS type, n.name AS name
+                """,
+                name=user_name
+            )
+            return list(result)
+
+# Example usage
+query = Neo4jQuery(uri, "neo4j", password)
+print("Tech Stack:", query.get_user_tech_stack("piyush"))
+print("Likes:", query.get_user_likes("piyush"))
+print("All Relationships:", query.get_all_relationships("piyush"))
+```
+
+---
+
+### Concept 6: Graph Growth Over Time
+
+```python
+"""
+GRAPH EVOLUTION - As you chat more, the graph grows
+
+Conversation 1: "My name is Piyush"
+Graph: (Piyush)
+
+Conversation 2: "I like pizza and hot tea"
+Graph: (Piyush) -[:LIKES]-> (Pizza)
+       (Piyush) -[:LIKES]-> (Hot Tea)
+
+Conversation 3: "I'm a full stack developer"
+Graph: (Piyush) -[:IS_A]-> (Full Stack Developer)
+
+Conversation 4: "My tech stack: Node JS, Postgres"
+Graph: (Piyush) -[:TECH_STACK]-> (Node JS)
+       (Piyush) -[:TECH_STACK]-> (Postgres)
+
+Conversation 5: "I work with Python for generative AI"
+Graph: (Piyush) -[:WORKS_WITH]-> (Python)
+       (Python) -[:USED_FOR]-> (Generative AI)
+
+Final Knowledge Graph for User:
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   (Piyush) ──[IS_A]──► (Full Stack Developer)                  │
+│       │                                                          │
+│       ├──[LIKES]──────► (Pizza)                                 │
+│       ├──[LIKES]──────► (Hot Tea)                               │
+│       ├──[TECH_STACK]► (Node JS)                                │
+│       ├──[TECH_STACK]► (Postgres)                               │
+│       └──[WORKS_WITH]► (Python) ──[USED_FOR]─► (Generative AI) │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+"""
+```
+
+---
+
+### Concept 7: Asking Questions to the Graph-Enabled Agent
+
+```python
+"""
+NATURAL LANGUAGE QUERIES vs GRAPH ANSWERS
+
+Question: "What is my tech stack?"
+Graph Query: MATCH (u:User)-[:TECH_STACK]->(t) RETURN t.name
+Answer: "Node JS, Postgres, Python"
+
+Question: "What do I like to eat?"
+Graph Query: MATCH (u:User)-[:LIKES]->(f:Food) RETURN f.name
+Answer: "Pizza"
+
+Question: "What do I work with?"
+Graph Query: MATCH (u:User)-[:WORKS_WITH]->(s) RETURN s.name
+Answer: "Python (for Generative AI)"
+
+Question: "What is my role?"
+Graph Query: MATCH (u:User)-[:IS_A]->(r) RETURN r.name
+Answer: "Full Stack Developer"
+
+ALL ANSWERED FROM THE KNOWLEDGE GRAPH! 
+NO CONVERSATION HISTORY NEEDED!
+"""
+```
+
+---
+
+## 📊 Neo4j Dashboard - What You'll See
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    NEO4J DASHBOARD VISUALIZATION                    │
+│                                                                      │
+│                         ┌─────────────────┐                         │
+│                         │   (User)        │                         │
+│                         │   Piyush        │                         │
+│                         └────────┬────────┘                         │
+│                                  │                                   │
+│            ┌─────────────────────┼─────────────────────┐            │
+│            │                     │                     │            │
+│            ▼                     ▼                     ▼            │
+│   ┌─────────────┐       ┌─────────────┐       ┌─────────────┐       │
+│   │  (Food)     │       │ (Role)      │       │ (Technology)│       │
+│   │  Pizza      │       │ Full Stack  │       │  Node JS    │       │
+│   └─────────────┘       └─────────────┘       └─────────────┘       │
+│            │                     │                     │            │
+│            ▼                     │                     ▼            │
+│   ┌─────────────┐               │              ┌─────────────┐       │
+│   │  (Beverage) │               │              │ (Technology)│       │
+│   │  Hot Tea    │               │              │  Postgres   │       │
+│   └─────────────┘               │              └─────────────┘       │
+│                                  │                                   │
+│                                  ▼                                   │
+│                         ┌─────────────────┐                         │
+│                         │ (Technology)    │                         │
+│                         │    Python       │                         │
+│                         └────────┬────────┘                         │
+│                                  │                                   │
+│                                  ▼                                   │
+│                         ┌─────────────────┐                         │
+│                         │   (Skill)       │                         │
+│                         │ Generative AI   │                         │
+│                         └─────────────────┘                         │
+│                                                                      │
+│   Each circle = Node, Arrow = Relationship                          │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Knowledge Graph** | Network of entities and their relationships |
+| **Entity** | A thing/noun (User, Food, Technology) |
+| **Relationship** | Connection between entities (LIKES, TECH_STACK) |
+| **Graph Growth** | Graph automatically expands as you chat |
+| **Node Extraction** | Mem0 identifies entities from text |
+| **Relationship Extraction** | Mem0 identifies connections between entities |
+
+---
+
+## 💡 Key Takeaways
+
+1. **Install missing packages**: `pip install langchain-neo4j neo4j`
+2. **Mem0 automatically builds knowledge graphs** from your conversations
+3. **Entities extracted**: User, Food, Technology, Role, Skill, Beverage
+4. **Relationships extracted**: LIKES, TECH_STACK, IS_A, WORKS_WITH, USED_FOR
+5. **Neo4j dashboard** shows visual representation of your knowledge graph
+6. **Graph grows dynamically** - more conversations = richer graph
+7. **Query naturally** - "What's my tech stack?" uses the graph to answer
+8. **No conversation history needed** - just the knowledge graph!
+
+**Bottom line:** Mem0 with Neo4j automatically transforms your conversations into a rich knowledge graph. As you chat, it extracts entities and relationships, building a permanent, queryable graph of everything about you. Ask anything - the graph remembers! 🕸️
+
+---
+
+## Sec 28 - Conversational Agentic AI with Voice Agents and Chained Patterns
+
+## 197. Section Intro to Conversational Agentic AI (01:09)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
