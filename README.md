@@ -53212,6 +53212,383 @@ Windows Setup:
 
 ## 203. Setting Up OpenAI GPT Completions for Chained Agent (03:32)
 
+## 📝 Simple Summary
+
+After converting speech to text (STT), the next step is to pass that text to an **LLM** (like GPT-4o-mini) to generate a response. You can use **any text-to-text model** - OpenAI, Gemini, Claude, etc. The key is adding a **system prompt** that tells the LLM it's acting as a **voice agent**, not a text agent. The response you get back is text, which will be converted to speech in the next step (TTS). You also need to load your OpenAI API key from the `.env` file.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | After STT, pass the transcribed text to an LLM |
+| 2 | Use **any text-to-text model** (GPT, Gemini, Claude, etc.) |
+| 3 | Add a **system prompt** to set the agent's role (voice agent) |
+| 4 | System prompt tells LLM to output as if speaking (not a text agent) |
+| 5 | Response will be converted to audio in the next step (TTS) |
+| 6 | Load API key from `.env` file using `load_dotenv()` |
+| 7 | The LLM step gives you **full flexibility** for tools, RAG, memory |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Complete LLM Integration with STT
+
+```python
+# voice_agent_with_llm.py
+import speech_recognition as sr
+from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables (API keys)
+load_dotenv()
+
+# Initialize OpenAI client
+client = OpenAI()
+
+def speech_to_text():
+    """Convert user speech to text using microphone"""
+    recognizer = sr.Recognizer()
+    
+    with sr.Microphone() as source:
+        print("\n🎤 Adjusting for ambient noise...")
+        recognizer.adjust_for_ambient_noise(source)
+        recognizer.pause_threshold = 2
+        
+        print("🗣️ Speak something...")
+        audio = recognizer.listen(source)
+        
+        try:
+            text = recognizer.recognize_google(audio)
+            print(f"📝 You said: {text}")
+            return text
+        except Exception as e:
+            print(f"❌ STT error: {e}")
+            return None
+
+def get_ai_response(user_text):
+    """Get AI response using LLM"""
+    
+    # System prompt - CRITICAL for voice agent behavior
+    system_prompt = """You are an expert voice agent. 
+You are given the transcript of what the user has said using voice.
+You need to output as if you are a voice agent.
+Whatever you speak will be converted back to audio using AI and played back to the user.
+Be conversational, natural, and concise (since speech is slower than reading)."""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",  # Can use ANY text-to-text model!
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_text}
+        ]
+    )
+    
+    ai_response = response.choices[0].message.content
+    print(f"🤖 AI says: {ai_response}")
+    return ai_response
+
+def main():
+    print("=" * 50)
+    print("🎙️ VOICE AGENT (STT + LLM)")
+    print("=" * 50)
+    
+    # Step 1: Get user speech as text
+    user_text = speech_to_text()
+    
+    if user_text:
+        # Step 2: Get AI response (text)
+        ai_text = get_ai_response(user_text)
+        print(f"\n✅ Next step: Convert this to speech (TTS)")
+    else:
+        print("❌ Could not capture speech")
+
+if __name__ == "__main__":
+    main()
+```
+
+**Output when you say "Hi agent, my name is Piyush":**
+```
+==================================================
+🎙️ VOICE AGENT (STT + LLM)
+==================================================
+
+🎤 Adjusting for ambient noise...
+🗣️ Speak something...
+📝 You said: hi agent my name is piyush
+🤖 AI says: Hello Piyush! I'm doing great. How can I assist you today?
+
+✅ Next step: Convert this to speech (TTS)
+```
+
+---
+
+### Concept 2: Setting Up Environment Variables
+
+```bash
+# Copy .env from previous project
+cp ../langgraph/.env voiceagent/.env
+
+# Or create new .env file
+echo "OPENAI_API_KEY=sk-proj-your-key-here" > .env
+
+# Verify .env exists
+cat .env
+```
+
+**.env file content:**
+```env
+OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+---
+
+### Concept 3: System Prompt Importance
+
+```python
+"""
+WHY THE SYSTEM PROMPT MATTERS FOR VOICE AGENTS
+
+Without proper system prompt:
+- LLM might respond with long, complex text
+- Might include markdown, lists, code blocks
+- Not suitable for speech output
+
+With proper system prompt:
+- LLM produces natural, conversational text
+- Concise (speech is slower than reading)
+- Ready to be converted to audio
+
+Example system prompt:
+"""
+system_prompt = """You are an expert voice agent. 
+You are given the transcript of what the user has said using voice.
+You need to output as if you are a voice agent.
+Whatever you speak will be converted back to audio using AI and played back to the user.
+Be conversational, natural, and concise (since speech is slower than reading).
+Avoid markdown, bullet points, and complex formatting.
+Keep responses short and engaging."""
+
+print("✅ Good system prompt = Natural voice agent responses")
+print("❌ Bad system prompt = Robot-sounding, text-like responses")
+```
+
+---
+
+### Concept 4: Flexibility - Use ANY LLM
+
+```python
+"""
+CHAINED ARCHITECTURE = FLEXIBILITY!
+
+You can use ANY text-to-text model in the LLM step:
+"""
+
+# Option 1: OpenAI GPT-4
+from openai import OpenAI
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[...]
+)
+
+# Option 2: Google Gemini
+import google.generativeai as genai
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel('gemini-pro')
+response = model.generate_content(user_text)
+
+# Option 3: Anthropic Claude
+from anthropic import Anthropic
+claude = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+response = claude.messages.create(
+    model="claude-3-haiku-20240307",
+    messages=[{"role": "user", "content": user_text}]
+)
+
+# Option 4: Local model (Ollama, Llama)
+# Option 5: Your custom LangGraph agent!
+# Option 6: RAG-enabled agent!
+
+print("✅ Chained architecture = ANY LLM you want!")
+print("✅ Everything you learned (tools, RAG, memory) works here!")
+```
+
+---
+
+### Concept 5: Complete Voice Agent with LLM
+
+```python
+# voice_agent_complete.py
+import speech_recognition as sr
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+class VoiceAgent:
+    def __init__(self):
+        self.stt_recognizer = sr.Recognizer()
+        self.llm_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.setup_stt()
+    
+    def setup_stt(self):
+        """Configure speech recognition settings"""
+        self.stt_recognizer.pause_threshold = 2
+        self.stt_recognizer.phrase_threshold = 0.5
+    
+    def listen(self):
+        """Convert user speech to text"""
+        with sr.Microphone() as source:
+            print("\n🎤 Adjusting for ambient noise...")
+            self.stt_recognizer.adjust_for_ambient_noise(source)
+            
+            print("🗣️ Listening... (speak now)")
+            
+            try:
+                audio = self.stt_recognizer.listen(source, timeout=5)
+                text = self.stt_recognizer.recognize_google(audio)
+                print(f"📝 You: {text}")
+                return text
+            except sr.WaitTimeoutError:
+                print("⏰ No speech detected")
+                return None
+            except Exception as e:
+                print(f"❌ STT error: {e}")
+                return None
+    
+    def think(self, user_text):
+        """Generate AI response using LLM"""
+        system_prompt = """You are a helpful voice assistant. 
+        Respond conversationally as if speaking to the user.
+        Keep responses concise (spoken responses should be brief).
+        Do not use markdown, lists, or complex formatting."""
+        
+        response = self.llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_text}
+            ]
+        )
+        
+        ai_text = response.choices[0].message.content
+        print(f"🤖 AI: {ai_text}")
+        return ai_text
+    
+    def run(self):
+        """Main voice agent loop (STT → LLM)"""
+        print("=" * 50)
+        print("🎙️ VOICE AGENT READY")
+        print("=" * 50)
+        print("Say 'quit' to exit\n")
+        
+        while True:
+            user_text = self.listen()
+            
+            if user_text:
+                if user_text.lower() == 'quit':
+                    print("👋 Goodbye!")
+                    break
+                
+                ai_text = self.think(user_text)
+                print("\n💡 Next: Add TTS to speak this response!\n")
+
+# Run the agent
+if __name__ == "__main__":
+    agent = VoiceAgent()
+    agent.run()
+```
+
+---
+
+### Concept 6: What's Next - TTS Integration
+
+```python
+"""
+CURRENT STATE OF VOICE AGENT:
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   🎤 Voice → [STT] → 📝 Text → [LLM] → 📝 Text                  │
+│                                                                  │
+│   ✅ We have this working!                                      │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+NEXT STEP (TTS - Text-to-Speech):
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   🎤 Voice → [STT] → 📝 Text → [LLM] → 📝 Text → [TTS] → 🔊 Voice│
+│                                                                  │
+│   ❌ We need to add TTS to complete the chain!                  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+TTS Options:
+• OpenAI TTS (good quality, easy API)
+• ElevenLabs (most natural, voice cloning)
+• Google TTS (good for multiple languages)
+• pyttsx3 (offline, basic)
+"""
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **LLM Completion** | Getting a text response from a language model |
+| **System Prompt** | Instructions that set the agent's behavior |
+| **Voice Agent Prompt** | Special prompt telling LLM to output speech-friendly text |
+| **load_dotenv()** | Loads API keys from `.env` file |
+| **Flexibility** | Ability to use any text-to-text LLM |
+
+---
+
+## 📊 Current Architecture Status
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              VOICE AGENT - CURRENT PROGRESS                     │
+│                                                                  │
+│   ✅ STEP 1: STT (Speech-to-Text)                              │
+│      User voice → text                                         │
+│                                                                  │
+│   ✅ STEP 2: LLM Completion                                     │
+│      User text → AI text response                              │
+│                                                                  │
+│   ❌ STEP 3: TTS (Text-to-Speech) - NEXT VIDEO!                │
+│      AI text → AI voice                                        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+Complete Chain:
+🎤 Input → STT → 📝 Text → LLM → 📝 Text → TTS → 🔊 Output
+          ✅               ✅              ❌ (coming soon!)
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **After STT, pass text to LLM** for intelligent response
+2. **Any text-to-text model works** - GPT, Gemini, Claude, local models
+3. **System prompt is critical** - tells LLM it's a voice agent (output speech-friendly text)
+4. **Load API key** from `.env` file with `load_dotenv()`
+5. **Response is text** - will be converted to audio in next step (TTS)
+6. **Full flexibility** - you can add tool calling, RAG, memory, LangGraph here!
+7. **Next step**: Text-to-Speech (TTS) to complete the chain
+
+**Bottom line:** The LLM step in chained architecture gives you full power - use any model, add tools, integrate RAG, and leverage everything you've learned. Just add a good system prompt to make the LLM act like a voice agent! Next: TTS to make it speak! 🎤
+
+---
+
+## 204. Setting Up TTS for Conversational AI Agents (03:32)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 
