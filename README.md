@@ -55547,6 +55547,797 @@ for aspect, approaches in comparison.items():
 
 ## 251. Introduction (0:55)
 
+## 📝 Simple Summary
+
+You've already built amazing agents from scratch throughout this course - weather agents, coding agents, voice agents, and more. Now you'll learn to use **OpenAI's Agent SDK** to build agents that are **more maintainable, cleaner, and more scalable**. The Agent SDK simplifies and abstracts many complex details, letting you focus on agent logic instead of boilerplate code. This section will cover building agents with the SDK and exploring new concepts that make agent development faster and more production-ready.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | You've already built agents **from scratch** (weather agent, tool calling, etc.) |
+| 2 | **OpenAI Agent SDK** helps build agents faster |
+| 3 | SDK makes agents **more maintainable** (easier to update and fix) |
+| 4 | SDK makes agents **cleaner** (less boilerplate code) |
+| 5 | SDK makes agents **more scalable** (handles complexity better) |
+| 6 | SDK **simplifies and abstracts** complex details |
+| 7 | You'll learn **new concepts** specific to the Agent SDK |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: What You've Built vs What You'll Build
+
+```python
+"""
+WHAT YOU'VE BUILT (From Scratch):
+┌─────────────────────────────────────────────────────────────────┐
+│   • Weather agent with tool calling                            │
+│   • Coding agent (cursor-like project)                         │
+│   • Voice agents with STT + LLM + TTS                          │
+│   • RAG agents with vector databases                           │
+│   • LangGraph agents with state management                     │
+│   • Memory-enabled agents with Mem0                           │
+│                                                                  │
+│   You did it ALL from scratch!                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+WHAT YOU'LL BUILD (With OpenAI Agent SDK):
+┌─────────────────────────────────────────────────────────────────┐
+│   • Same powerful agents                                       │
+│   • BUT with CLEANER code                                      │
+│   • MORE MAINTAINABLE structure                                │
+│   • SCALABLE architecture                                      │
+│   • Less boilerplate                                           │
+│   • Production-ready patterns                                  │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+print("=" * 50)
+print("FROM SCRATCH → AGENT SDK")
+print("=" * 50)
+print("""
+You know HOW agents work internally.
+Now learn HOW to build them BETTER with OpenAI's SDK.
+""")
+```
+
+---
+
+### Concept 2: Why Use Agent SDK?
+
+```python
+"""
+WHY USE OPENAI AGENT SDK?
+
+PROBLEMS WITH BUILDING FROM SCRATCH:
+┌─────────────────────────────────────────────────────────────────┐
+│   • Lots of boilerplate code                                   │
+│   • Manual tool parsing                                        │
+│   • Manual conversation management                             │
+│   • Hard to scale                                              │
+│   • Each agent needs reimplementation                          │
+└─────────────────────────────────────────────────────────────────┘
+
+SOLUTIONS WITH AGENT SDK:
+┌─────────────────────────────────────────────────────────────────┐
+│   • Minimal boilerplate                                        │
+│   • Automatic tool handling                                    │
+│   • Built-in conversation management                           │
+│   • Designed for scale                                         │
+│   • Reusable agent patterns                                    │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+benefits = {
+    "Maintainability": "Easier to update and fix agents",
+    "Clean Code": "Less boilerplate, more focus on logic",
+    "Scalability": "Handles complexity better",
+    "Abstraction": "Simplifies complex details",
+    "Production-ready": "Built-in best practices"
+}
+
+print("=" * 50)
+print("AGENT SDK BENEFITS")
+print("=" * 50)
+for benefit, description in benefits.items():
+    print(f"• {benefit}: {description}")
+```
+
+---
+
+### Concept 3: From Scratch vs Agent SDK Comparison
+
+```python
+"""
+COMPARISON: Building Agent From Scratch vs Using Agent SDK
+
+FROM SCRATCH (What you've done):
+┌─────────────────────────────────────────────────────────────────┐
+│   def run_agent(user_query):                                   │
+│       # Manual tool definitions                                │
+│       tools = [{"type": "function", ...}]                      │
+│                                                                 │
+│       # Manual conversation management                         │
+│       messages = [{"role": "user", "content": user_query}]    │
+│                                                                 │
+│       # Manual tool call parsing                               │
+│       response = client.chat.completions.create(...)          │
+│       if response.tool_calls:                                  │
+│           # Parse manually                                     │
+│           for tool in response.tool_calls:                     │
+│               # Handle tool                                     │
+│                                                                 │
+│       # Manual response handling                               │
+│       return response.content                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+WITH AGENT SDK (What you'll learn):
+┌─────────────────────────────────────────────────────────────────┐
+│   from agents import Agent, function_tool                      │
+│                                                                 │
+│   @function_tool                                                │
+│   def get_weather(city: str) -> str:                           │
+│       return f"Weather in {city} is sunny"                     │
+│                                                                 │
+│   agent = Agent(                                                │
+│       name="Weather Agent",                                     │
+│       tools=[get_weather],                                      │
+│       model="gpt-4o-mini"                                       │
+│   )                                                             │
+│                                                                 │
+│   result = await agent.run(user_query)                         │
+│   # That's it! SDK handles everything else!                    │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+print("=" * 60)
+print("FROM SCRATCH (100+ lines) vs AGENT SDK (~15 lines)")
+print("=" * 60)
+```
+
+---
+
+### Concept 4: What Agent SDK Abstracts Away
+
+```python
+"""
+WHAT AGENT SDK HANDLES FOR YOU
+
+The SDK abstracts (hides the complexity of):
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│   1. TOOL DEFINITION FORMAT                                     │
+│      • No more JSON schemas                                     │
+│      • Use Python decorators (@function_tool)                  │
+│                                                                  │
+│   2. TOOL CALL PARSING                                          │
+│      • No manual parsing of tool calls                          │
+│      • SDK automatically routes to functions                   │
+│                                                                  │
+│   3. CONVERSATION MANAGEMENT                                    │
+│      • No manual message arrays                                 │
+│      • SDK maintains history                                    │
+│                                                                  │
+│   4. ERROR HANDLING                                             │
+│      • Built-in retries                                         │
+│      • Graceful failures                                        │
+│                                                                  │
+│   5. STREAMING                                                   │
+│      • Built-in streaming support                               │
+│      • No manual chunk handling                                 │
+│                                                                  │
+│   6. MULTI-AGENT COORDINATION                                   │
+│      • Easy handoffs between agents                            │
+│      • Built-in orchestration                                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+print("SDK handles ALL this complexity so you can focus on agent LOGIC!")
+```
+
+---
+
+### Concept 5: What You'll Learn in This Section
+
+```python
+print("""
+📚 AGENT SDK SECTION OVERVIEW
+=====================================
+
+1. Agent SDK Basics
+   - Installation and setup
+   - Creating your first agent
+   - Understanding the Agent class
+
+2. Tools with Agent SDK
+   - @function_tool decorator
+   - Automatic schema generation
+   - Tool calling made simple
+
+3. Conversation Management
+   - Built-in history
+   - Multi-turn conversations
+   - Context handling
+
+4. Handoffs (Multi-Agent Systems)
+   - Passing control between agents
+   - Specialized agents for different tasks
+   - Orchestration patterns
+
+5. Streaming and Real-time
+   - Streaming responses
+   - Real-time agent interactions
+
+6. Production Best Practices
+   - Error handling
+   - Monitoring
+   - Scaling agents
+
+🎯 By the end, you'll build agents that are:
+   • Cleaner (less code)
+   • More maintainable (easier to change)
+   • More scalable (handle complexity)
+   • Production-ready
+""")
+```
+
+---
+
+### Concept 6: Quick Preview - Agent SDK in Action
+
+```python
+"""
+PREVIEW: Agent SDK vs Manual Implementation
+
+MANUAL (What you've been doing):
+- 100+ lines of code
+- Manual tool definitions
+- Manual parsing
+- Manual conversation management
+- Lots of boilerplate
+
+AGENT SDK (What you'll learn):
+- ~15 lines of code
+- Decorator-based tools
+- Automatic everything
+- Built-in conversation
+- Focus on logic, not boilerplate
+"""
+
+# This is a PREVIEW - actual implementation in upcoming videos
+preview_code = """
+from agents import Agent, function_tool, Runner
+import asyncio
+
+@function_tool
+def get_weather(city: str) -> str:
+    \"\"\"Get current weather for a city\"\"\"
+    return f"The weather in {city} is sunny and 72°F"
+
+@function_tool
+def send_email(to: str, subject: str, body: str) -> str:
+    \"\"\"Send an email\"\"\"
+    return f"Email sent to {to}"
+
+agent = Agent(
+    name="Assistant",
+    instructions="You are a helpful assistant",
+    tools=[get_weather, send_email],
+    model="gpt-4o-mini"
+)
+
+async def main():
+    result = await Runner.run(agent, "Send an email to john@example.com about the meeting")
+    print(result.final_output)
+
+asyncio.run(main())
+"""
+
+print("=" * 60)
+print("PREVIEW: AGENT SDK CODE")
+print("=" * 60)
+print(preview_code)
+print("\n✅ Clean, simple, powerful!")
+```
+
+---
+
+### Concept 7: Your Journey Progress
+
+```python
+"""
+YOUR JOURNEY FROM BEGINNER TO AGENT SDK EXPERT
+
+Level 1: Understanding LLMs
+└── Learned how LLMs work and generate text
+
+Level 2: Building Basic Agents
+└── Created simple agents with tool calling
+
+Level 3: Advanced Agents
+└── Built weather agents, coding agents, RAG systems
+
+Level 4: Voice Agents
+└── Added STT and TTS for conversational AI
+
+Level 5: LangGraph
+└── Built stateful, multi-step agent workflows
+
+Level 6: Memory Systems
+└── Added long-term memory with Mem0 and Neo4j
+
+Level 7: Agent SDK ← YOU ARE HERE
+└── Learning to build cleaner, more maintainable agents
+
+YOU'VE COME A LONG WAY! 🎉
+"""
+
+print("=" * 50)
+print("YOUR AGENT BUILDING JOURNEY")
+print("=" * 50)
+print("""
+✅ LLMs & Completions
+✅ Basic Tool Calling
+✅ Weather Agent
+✅ Coding Agent (Cursor-like)
+✅ RAG Systems
+✅ LangGraph Workflows
+✅ Memory Systems (Mem0 + Neo4j)
+✅ Voice Agents (STT + TTS)
+🔜 OpenAI Agent SDK (Cleaner, Scalable Agents)
+
+You've mastered building from scratch.
+Now learn industry best practices with Agent SDK!
+""")
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Agent SDK** | OpenAI's software development kit for building agents |
+| **From Scratch** | Building without frameworks (you've done this) |
+| **Maintainable** | Easy to update and fix code |
+| **Scalable** | Can handle growing complexity |
+| **Boilerplate** | Repetitive code that SDK eliminates |
+| **Abstraction** | Hiding complex details behind simple interfaces |
+
+---
+
+## 📊 Learning Path Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    YOUR LEARNING JOURNEY                        │
+│                                                                  │
+│   Manual Building           →        Agent SDK                 │
+│   (You've done this)                  (You'll learn)           │
+│                                                                  │
+│   • 100+ lines of code                 • ~15 lines of code      │
+│   • Manual tool definitions            • Decorators             │
+│   • Manual parsing                     • Automatic             │
+│   • Manual conversation                • Built-in              │
+│   • Hard to scale                      • Built for scale       │
+│                                                                  │
+│   KNOWLEDGE:                           POWER:                  │
+│   You understand HOW                    You build BETTER       │
+│   agents work internally                agents faster          │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **You've already built amazing agents** - weather agents, coding agents, voice agents, RAG systems, LangGraph workflows
+2. **OpenAI Agent SDK** helps build agents that are **cleaner, more maintainable, and more scalable**
+3. **SDK simplifies and abstracts** complex details (tool definitions, parsing, conversation management)
+4. **Same powerful agents** - but with much less boilerplate code
+5. **From ~100 lines to ~15 lines** - that's the power of SDK abstraction
+6. **You'll learn new concepts** specific to the Agent SDK ecosystem
+7. **Production-ready patterns** built right into the SDK
+
+**Bottom line:** You've mastered building agents from scratch. Now it's time to learn the industry standard - OpenAI's Agent SDK - to build cleaner, more maintainable, production-ready agents. Your deep understanding of internals will make you an Agent SDK expert! 🚀
+
+---
+
+## 252. Hello World Agent (09:12)
+
+## 📝 Simple Summary
+
+The **OpenAI Agent SDK** lets you build AI agents with just a few lines of code. Instead of manually writing while loops, managing message history, parsing tool calls, and handling orchestration (which you've been doing throughout the course), the SDK **abstracts all that complexity**. An agent = LLM + instructions + tools. The SDK provides primitives like `Agent`, `Runner`, `handoff`, `guardrails`, and `sessions`. You create an agent with a name and instructions, then use `Runner.run_sync()` to execute it. The SDK handles all the looping, tool calling, and orchestration internally.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Agent SDK** = Lightweight, easy-to-use package for building agents |
+| 2 | **Primitives**: Agents, handoff, guardrails, sessions |
+| 3 | **Agent = LLM + Instructions + Tools** (you already know this) |
+| 4 | SDK **abstracts away** the while loop, message history, and tool orchestration |
+| 5 | Install with `pip install openai-agents` |
+| 6 | Create agent with `Agent(name="...", instructions="...")` |
+| 7 | Run agent with `Runner.run_sync(agent, user_input)` |
+| 8 | Get result with `result.final_output` |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Installing the Agent SDK
+
+```bash
+# Install the OpenAI Agent SDK
+pip install openai-agents
+
+# Verify installation
+pip freeze | grep agents
+
+# Save to requirements
+pip freeze > requirements.txt
+```
+
+---
+
+### Concept 2: Your First Agent (Hello World)
+
+```python
+# hello.py - Your first agent with OpenAI Agent SDK
+
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner
+
+# Load environment variables (API key)
+load_dotenv()
+
+# Step 1: Define your agent
+hello_agent = Agent(
+    name="Hello Agent",
+    instructions="""You are a friendly agent who greets users warmly.
+    Use emojis and a fun, cheerful tone. Make the user feel welcomed.""",
+)
+
+# Step 2: Run the agent (SDK handles everything internally!)
+async def main():
+    result = await Runner.run(
+        hello_agent,
+        "My name is Piyush"
+    )
+    print(result.final_output)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Output:**
+```
+Hey Piyush! 🎉 Welcome to the fun zone! Flash your best smile cause you're about to have a blast! 😄✨
+```
+
+**That's it!** No while loops, no message history management, no tool parsing. The SDK handles everything!
+
+---
+
+### Concept 3: What the SDK Abstracts Away
+
+```python
+"""
+WHAT THE SDK HANDLES FOR YOU (Behind the Scenes)
+
+MANUAL APPROACH (What you've been doing):
+┌─────────────────────────────────────────────────────────────────┐
+│   while True:                                                   │
+│       response = client.chat.completions.create(...)           │
+│       if response has tool_calls:                              │
+│           execute_tool()                                       │
+│           continue                                             │
+│       elif response is output:                                 │
+│           break                                                │
+│       else:                                                     │
+│           continue                                             │
+│   return response                                              │
+└─────────────────────────────────────────────────────────────────┘
+
+AGENT SDK APPROACH (What you do now):
+┌─────────────────────────────────────────────────────────────────┐
+│   result = await Runner.run(agent, user_input)                 │
+│   print(result.final_output)                                   │
+└─────────────────────────────────────────────────────────────────┘
+
+The SDK handles:
+✅ Tool calling loop
+✅ Message history management
+✅ Multiple iterations
+✅ Error handling
+✅ Streaming
+✅ Handoffs between agents
+"""
+
+print("=" * 50)
+print("SDK ABSTRACTIONS")
+print("=" * 50)
+print("""
+• While loop orchestration
+• Message history array
+• Tool call parsing
+• Tool execution loop
+• Response handling
+• Multi-turn conversations
+All with ONE line: Runner.run()
+""")
+```
+
+---
+
+### Concept 4: Agent SDK Primitives
+
+```python
+"""
+AGENT SDK CORE PRIMITIVES
+
+The SDK has a small, focused set of building blocks:
+
+1. AGENT
+   - The main building block
+   - Has name, instructions, tools, model
+   - Defines WHAT the agent does
+
+2. RUNNER
+   - Executes the agent
+   - Manages the orchestration loop
+   - Returns results
+
+3. HANDOFF
+   - Pass control to another agent
+   - Build multi-agent systems
+
+4. GUARDRAILS
+   - Input validation
+   - Output safety checks
+   - Prevent unwanted behaviors
+
+5. SESSIONS
+   - Maintain conversation state
+   - Long-running agent memory
+"""
+
+from agents import Agent, Runner, handoff, guardrail
+
+print("\n📚 SDK Primitives:")
+print("• Agent - The brain (LLM + instructions + tools)")
+print("• Runner - The executor (handles the loop)")
+print("• Handoff - Pass to another agent")
+print("• Guardrails - Safety checks")
+print("• Sessions - Conversation memory")
+```
+
+---
+
+### Concept 5: Manual vs SDK Comparison
+
+```python
+"""
+COMPARISON: Manual Agent (Your code) vs Agent SDK
+
+MANUAL AGENT (From your weather agent):
+┌─────────────────────────────────────────────────────────────────┐
+│   # ~50-100 lines of code                                      │
+│   messages = [{"role": "system", "content": prompt}]           │
+│   while True:                                                   │
+│       response = client.chat.completions.create(...)           │
+│       if response.choices[0].finish_reason == "tool_calls":    │
+│           for tool in response.choices[0].message.tool_calls:  │
+│               # Parse tool call                                │
+│               # Execute tool                                   │
+│               # Add to messages                                │
+│               # Continue loop                                  │
+│       else:                                                     │
+│           return response.content                              │
+└─────────────────────────────────────────────────────────────────┘
+
+AGENT SDK (Same functionality):
+┌─────────────────────────────────────────────────────────────────┐
+│   # ~10-15 lines of code                                       │
+│   agent = Agent(                                                │
+│       name="Weather Agent",                                     │
+│       instructions="You help with weather",                     │
+│       tools=[get_weather]                                       │
+│   )                                                             │
+│   result = await Runner.run(agent, user_input)                 │
+│   print(result.final_output)                                   │
+└─────────────────────────────────────────────────────────────────┘
+
+REDUCTION: 80% less code, 100% more maintainable!
+"""
+
+print("=" * 50)
+print("CODE COMPARISON")
+print("=" * 50)
+print("""
+Manual Agent:   100+ lines of boilerplate
+Agent SDK:      ~15 lines of logic
+
+You focus on WHAT the agent does, not HOW it runs.
+""")
+```
+
+---
+
+### Concept 6: Complete Working Example
+
+```python
+# complete_agent_sdk_example.py
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner
+
+load_dotenv()
+
+# Create agent with custom instructions
+greeting_agent = Agent(
+    name="Funny Greeting Agent",
+    instructions="""You are a hilarious greeting agent. 
+    Always greet users with a joke or funny observation.
+    Use emojis liberally. Make people smile!
+    Keep responses under 3 sentences.""",
+)
+
+story_agent = Agent(
+    name="Story Agent", 
+    instructions="""You tell very short, engaging stories.
+    Keep stories under 100 words.
+    End with a cliffhanger or lesson.""",
+)
+
+async def main():
+    # Run the greeting agent
+    print("=" * 50)
+    print("RUNNING GREETING AGENT")
+    print("=" * 50)
+    
+    result1 = await Runner.run(
+        greeting_agent,
+        "My name is Alex, I'm feeling tired"
+    )
+    print(f"Agent: {result1.final_output}\n")
+    
+    # Run the story agent
+    print("=" * 50)
+    print("RUNNING STORY AGENT")
+    print("=" * 50)
+    
+    result2 = await Runner.run(
+        story_agent,
+        "Tell me a story about a cat"
+    )
+    print(f"Agent: {result2.final_output}\n")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 7: Adding Tools (Preview)
+
+```python
+"""
+PREVIEW: Adding Tools to Agent (Next Video)
+
+With Agent SDK, adding tools is simple:
+
+from agents import Agent, function_tool
+
+@function_tool
+def get_weather(city: str) -> str:
+    \"\"\"Get current weather for a city\"\"\"
+    return f"The weather in {city} is sunny"
+
+@function_tool  
+def get_time(timezone: str) -> str:
+    \"\"\"Get current time in a timezone\"\"\"
+    return f"The time is 2:30 PM"
+
+agent = Agent(
+    name="Weather Assistant",
+    instructions="Help users with weather and time",
+    tools=[get_weather, get_time]  # Just add tools here!
+)
+
+# SDK automatically:
+# 1. Converts functions to tool schemas
+# 2. Detects when to call tools
+# 3. Executes tools
+# 4. Handles the loop
+# 5. Returns final answer
+
+result = await Runner.run(agent, "What's the weather in Tokyo?")
+"""
+
+print("\n🔜 NEXT VIDEO: Adding tools to agents!")
+print("   Just use @function_tool decorator and add to tools array!")
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Agent SDK** | OpenAI's framework for building agents |
+| **Agent** | LLM + instructions + tools |
+| **Runner** | Executes the agent (handles orchestration) |
+| **Abstraction** | Hiding complex details behind simple interfaces |
+| **Orchestration** | The while loop and tool-calling logic |
+| **Primitives** | Basic building blocks (Agent, Runner, Handoff) |
+| **final_output** | The final response from the agent |
+
+---
+
+## 📊 Manual vs SDK Comparison
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    MANUAL APPROACH                              │
+│                                                                  │
+│   You write:                                                     │
+│   • While loop                                                  │
+│   • Message history array                                        │
+│   • Tool call parsing                                           │
+│   • Tool execution                                              │
+│   • Response handling                                           │
+│   • Error handling                                              │
+│                                                                  │
+│   ~100+ lines of code                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+                              ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    AGENT SDK APPROACH                           │
+│                                                                  │
+│   You write:                                                     │
+│   • Agent definition with instructions                          │
+│   • Tool functions (with decorators)                            │
+│   • Runner.run()                                                │
+│                                                                  │
+│   ~15 lines of code                                             │
+│                                                                  │
+│   SDK handles EVERYTHING else!                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Agent SDK** = OpenAI's lightweight framework for building agents
+2. **Primitives**: Agent, Runner, Handoff, Guardrails, Sessions
+3. **Agent = LLM + Instructions + Tools** (same definition as before)
+4. **Install**: `pip install openai-agents`
+5. **Create agent**: `Agent(name="...", instructions="...")`
+6. **Run agent**: `Runner.run(agent, user_input)`
+7. **SDK abstracts** all the while loops, message history, and tool orchestration you used to write manually
+
+**Bottom line:** The OpenAI Agent SDK reduces agent code from ~100 lines to ~15 lines. Everything you used to do manually (while loops, message history, tool parsing) is now abstracted behind `Runner.run()`. You focus on agent logic - the SDK handles the orchestration! 🚀
+
+- [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
+
+---
+
+## 253. Hosted Tools in Agent SDK (05:15)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
