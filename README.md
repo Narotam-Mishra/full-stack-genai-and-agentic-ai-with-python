@@ -56338,6 +56338,371 @@ print("   Just use @function_tool decorator and add to tools array!")
 
 ## 253. Hosted Tools in Agent SDK (05:15)
 
+## 📝 Simple Summary
+
+The OpenAI Agent SDK supports **three types of tools**: (1) **Hosted Tools** (built by OpenAI - web search, file search, code interpreter, computer use), (2) **Function Tools** (your custom Python functions), and (3) **Agent as Tool** (using one agent as a tool for another). Hosted tools are the easiest - you just import and add them to the `tools` array. The SDK automatically handles the tool-calling loop. For example, adding `WebSearchTool()` instantly gives your agent internet search capability with zero custom code.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Three types of tools** in Agent SDK: Hosted, Function, Agent-as-Tool |
+| 2 | **Hosted Tools** = Built by OpenAI (web search, file search, code interpreter, computer use, image generation, local shell) |
+| 3 | **Function Tools** = Your custom Python functions (decorated with `@function_tool`) |
+| 4 | **Agent as Tool** = Use one agent as a tool for another agent |
+| 5 | Import hosted tool: `from agents import WebSearchTool` |
+| 6 | Add to agent: `tools=[WebSearchTool()]` |
+| 7 | SDK handles ALL tool-calling orchestration automatically |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Three Types of Tools in Agent SDK
+
+```python
+"""
+THREE TYPES OF TOOLS IN AGENT SDK
+
+1. HOSTED TOOLS (Built by OpenAI)
+   - No code to write - just import and use
+   - Examples: WebSearch, FileSearch, CodeInterpreter
+
+2. FUNCTION TOOLS (Your custom code)
+   - Write Python functions with @function_tool decorator
+   - Example: get_weather(city), send_email(to, subject)
+
+3. AGENT AS TOOL (Agent composition)
+   - Use one agent as a tool for another agent
+   - Example: MathAgent used by PhysicsAgent
+"""
+
+print("=" * 50)
+print("AGENT SDK TOOL TYPES")
+print("=" * 50)
+print("""
+1. Hosted Tools → OpenAI provides (web search, etc.)
+2. Function Tools → You write (weather, email, etc.)
+3. Agent as Tool → Compose agents together
+""")
+```
+
+---
+
+### Concept 2: Hosted Tools - Web Search Example
+
+```python
+# agent_with_web_search.py
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner, WebSearchTool
+
+load_dotenv()
+
+# Create agent with built-in web search capability
+web_agent = Agent(
+    name="Web Search Assistant",
+    instructions="""You are a helpful assistant that can search the web.
+    When users ask about current information, use the web search tool.
+    Provide accurate, up-to-date information from your searches.""",
+    tools=[WebSearchTool()]  # ← Just add this! No custom code needed!
+)
+
+async def main():
+    # Question that requires web search
+    result = await Runner.run(
+        web_agent,
+        "What is on piyushgarg.dev website? Tell me about it."
+    )
+    print(f"Agent: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Output (SDK automatically searches web and returns answer):**
+```
+Agent: Hey there tech adventurer! Piyush Garg's website is a personal 
+portfolio showcasing his courses, video content, and introduction. 
+Here are some links from the site...
+```
+
+**Note:** The SDK handles everything - it detects when web search is needed, calls the tool, gets results, and incorporates them into the response.
+
+---
+
+### Concept 3: With vs Without Tool - Comparison
+
+```python
+# DEMONSTRATION: With tool vs Without tool
+
+"""
+WITH WEB SEARCH TOOL:
+┌─────────────────────────────────────────────────────────────────┐
+│   User: "What's the weather in Patiala?"                        │
+│   Agent: (SDK detects need for web search)                     │
+│   Agent: Calls WebSearchTool() automatically                   │
+│   Agent: Returns weather information from the internet         │
+│   ✅ Works perfectly!                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+WITHOUT WEB SEARCH TOOL:
+┌─────────────────────────────────────────────────────────────────┐
+│   User: "What's the weather in Patiala?"                        │
+│   Agent: "I can't fetch live weather data. You can check       │
+│            Google or weather.com for that information."        │
+│   ❌ Can't answer because no tool available                    │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+# Code comparison
+print("=" * 50)
+print("WITH TOOL (3 extra lines)")
+print("=" * 50)
+print("""
+from agents import WebSearchTool
+
+agent = Agent(
+    name="Assistant",
+    tools=[WebSearchTool()]  # ← Just this line!
+)
+""")
+
+print("\n" + "=" * 50)
+print("WITHOUT TOOL (no web access)")
+print("=" * 50)
+print("""
+agent = Agent(
+    name="Assistant",
+    tools=[]  # No web search capability
+)
+""")
+```
+
+---
+
+### Concept 4: Available Hosted Tools (as of Nov 2025)
+
+```python
+"""
+AVAILABLE HOSTED TOOLS FROM OPENAI
+
+OpenAI provides these built-in tools (no code needed from you):
+
+┌─────────────────────────────────────────────────────────────────┐
+│   TOOL                    | PURPOSE                             │
+├─────────────────────────────────────────────────────────────────┤
+│   WebSearchTool()         | Search the internet                │
+│   FileSearchTool()        | Search through files/documents     │
+│   CodeInterpreterTool()   | Execute Python code                │
+│   ComputerTool()          | Control computer (mouse/keyboard)  │
+│   ImageGenerationTool()   | Generate images                    │
+│   LocalShellTool()        | Run shell commands locally         │
+└─────────────────────────────────────────────────────────────────┘
+
+Usage is identical for all:
+    from agents import ToolName
+    tools=[ToolName()]
+"""
+
+available_tools = {
+    "WebSearchTool": "Search the internet for current information",
+    "FileSearchTool": "Search through uploaded files and documents",
+    "CodeInterpreterTool": "Run and execute Python code",
+    "ComputerTool": "Control computer (mouse, keyboard, screen)",
+    "ImageGenerationTool": "Generate images from text prompts",
+    "LocalShellTool": "Execute shell commands on local machine"
+}
+
+print("=" * 50)
+print("HOSTED TOOLS (OpenAI Provided)")
+print("=" * 50)
+for tool, purpose in available_tools.items():
+    print(f"• {tool}: {purpose}")
+```
+
+---
+
+### Concept 5: Complete Example with Multiple Hosted Tools
+
+```python
+# agent_with_multiple_tools.py
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner, WebSearchTool, FileSearchTool
+
+load_dotenv()
+
+# Agent with multiple built-in tools
+multi_tool_agent = Agent(
+    name="Super Assistant",
+    instructions="""You are a helpful assistant with access to:
+    - Web search for current information
+    - File search for document lookup
+    
+    Use the appropriate tool based on what the user needs.""",
+    tools=[
+        WebSearchTool(),    # For internet search
+        FileSearchTool(),   # For document search
+    ]
+)
+
+async def main():
+    # Example 1: Web search query
+    print("=" * 50)
+    print("QUERY 1: Web Search")
+    print("=" * 50)
+    result1 = await Runner.run(
+        multi_tool_agent,
+        "What is the latest news about AI?"
+    )
+    print(f"Agent: {result1.final_output[:200]}...\n")
+    
+    # Example 2: Another web search (weather)
+    print("=" * 50)
+    print("QUERY 2: Weather Search")
+    print("=" * 50)
+    result2 = await Runner.run(
+        multi_tool_agent,
+        "What's the weather in London today?"
+    )
+    print(f"Agent: {result2.final_output[:200]}...\n")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 6: How Hosted Tools Work Internally
+
+```python
+"""
+HOW HOSTED TOOLS WORK (Behind the Scenes)
+
+When you add WebSearchTool() to your agent:
+
+1. SDK automatically generates the tool schema for OpenAI's API
+2. When user asks a question requiring web search, SDK detects
+3. SDK makes the API call to OpenAI's hosted web search
+4. Results come back, SDK passes to LLM
+5. LLM formulates final answer with search results
+
+ALL THIS IS ABSTRACTED - you just write tools=[WebSearchTool()]!
+
+MANUAL APPROACH (What SDK saves you from):
+┌─────────────────────────────────────────────────────────────────┐
+│   # Custom tool definition (20+ lines)                         │
+│   tools = [{                                                   │
+│       "type": "function",                                      │
+│       "function": {                                            │
+│           "name": "web_search",                                │
+│           "description": "Search the web",                     │
+│           "parameters": {...}                                  │
+│       }                                                         │
+│   }]                                                           │
+│                                                                │
+│   # Custom API call to search service                         │
+│   response = requests.get(f"https://api.search.com?q={query}")│
+│                                                                │
+│   # Custom parsing and integration                            │
+│   search_results = response.json()                            │
+└─────────────────────────────────────────────────────────────────┘
+
+AGENT SDK APPROACH (What you write):
+┌─────────────────────────────────────────────────────────────────┐
+│   from agents import WebSearchTool                             │
+│   tools=[WebSearchTool()]  # That's it!                        │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+print("💡 Hosted tools = Zero code tools!")
+print("   OpenAI provides the implementation - you just use them!")
+```
+
+---
+
+### Concept 7: Preview - Function Tools (Next Video)
+
+```python
+"""
+PREVIEW: FUNCTION TOOLS (Custom Tools)
+
+In the next video, you'll learn to create your own custom tools:
+
+@function_tool
+def get_weather(city: str) -> str:
+    \"\"\"Get current weather for a city\"\"\"
+    # Your custom logic here
+    return f"Weather in {city}: Sunny, 72°F"
+
+@function_tool
+def send_email(to: str, subject: str, body: str) -> str:
+    \"\"\"Send an email\"\"\"
+    # Your email sending logic
+    return f"Email sent to {to}"
+
+agent = Agent(
+    name="Custom Assistant",
+    tools=[get_weather, send_email],  # Your custom tools!
+    instructions="Help users with weather and email"
+)
+
+# SDK automatically:
+# - Converts function signatures to tool schemas
+# - Parses tool calls
+# - Executes your functions
+# - Handles the loop
+"""
+
+print("\n🔜 NEXT VIDEO: Creating Function Tools (Your custom code!)")
+print("   Use @function_tool decorator - SDK handles the rest!")
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Hosted Tools** | Built-in tools provided by OpenAI (web search, file search, etc.) |
+| **Function Tools** | Your custom Python functions decorated with `@function_tool` |
+| **Agent as Tool** | Using one agent as a tool for another agent |
+| **WebSearchTool** | OpenAI's built-in internet search capability |
+| **Zero Code Tools** | Tools that require no implementation from you |
+
+---
+
+## 📊 Tool Types Comparison
+
+| Tool Type | Who Builds | Code Required | Example |
+|-----------|------------|---------------|---------|
+| **Hosted Tools** | OpenAI | None (just import) | WebSearchTool |
+| **Function Tools** | You | Write Python function | get_weather() |
+| **Agent as Tool** | You | Create sub-agent | MathAgent used by PhysicsAgent |
+
+---
+
+## 💡 Key Takeaways
+
+1. **Three tool types**: Hosted (OpenAI), Function (yours), Agent as Tool (composition)
+2. **Hosted tools require ZERO code** - just import and add to `tools` array
+3. **WebSearchTool** gives your agent internet search capability instantly
+4. **SDK handles all orchestration** - tool detection, calling, result processing
+5. **Without tools** - agent can't fetch live data (weather, current info)
+6. **With one line** `tools=[WebSearchTool()]` - agent can search the web
+7. **More hosted tools available**: FileSearch, CodeInterpreter, Computer, ImageGeneration, LocalShell
+
+**Bottom line:** Adding tools to Agent SDK agents is incredibly simple. Hosted tools from OpenAI work with zero code - just import and add to the tools array. The SDK automatically handles the entire tool-calling loop. One line `tools=[WebSearchTool()]` gives your agent full internet search capability! 🛠️
+
+- [Tools](https://openai.github.io/openai-agents-python/tools/)
+
+---
+
+## 254. Function Tools in Agent SDK (03:16)
+
 summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
 
 - Command to activate venv - `source .venv/bin/activate`
