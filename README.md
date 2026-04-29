@@ -56703,7 +56703,931 @@ print("   Use @function_tool decorator - SDK handles the rest!")
 
 ## 254. Function Tools in Agent SDK (03:16)
 
-summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
+## 📝 Simple Summary
+
+**Function Tools** are custom Python functions that you can use as tools for your agent. You create them using the `@function_tool` decorator from the Agent SDK. The decorator automatically converts your Python function into a tool that the agent can call. You can also provide a **docstring** to help the LLM understand what the tool does and what arguments it takes. After creating your function tools, simply add them to the `tools` array when creating your agent. The SDK handles everything else - tool detection, argument parsing, function execution, and result integration.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Function Tool** = Any Python function turned into a tool |
+| 2 | Use `@function_tool` decorator from `agents` module |
+| 3 | **Docstring is important** - helps LLM understand tool usage |
+| 4 | Decorator supports `name_override` parameter (optional) |
+| 5 | Add function tools to `tools` array (without calling them) |
+| 6 | SDK handles argument parsing and function execution automatically |
+| 7 | You can mix hosted tools and function tools together |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: Basic Function Tool Creation
+
+```python
+# function_tool_basic.py
+import asyncio
+import requests
+from dotenv import load_dotenv
+from agents import Agent, Runner, function_tool
+
+load_dotenv()
+
+# Create a custom function tool with @function_tool decorator
+@function_tool
+def get_weather(city: str) -> str:
+    """Fetch the weather for a given city name.
+    
+    Args:
+        city: The city name to fetch weather for.
+    """
+    # Your custom weather logic here
+    # This is a mock implementation
+    weather_data = {
+        "London": "Cloudy, 15°C",
+        "New York": "Sunny, 25°C",
+        "Tokyo": "Rainy, 20°C"
+    }
+    return weather_data.get(city, f"Weather data not available for {city}")
+
+# Create agent with the function tool
+weather_agent = Agent(
+    name="Weather Assistant",
+    instructions="You help users with weather information. Use the get_weather tool.",
+    tools=[
+        get_weather,  # ← Just pass the function reference (don't call it!)
+    ]
+)
+
+async def main():
+    result = await Runner.run(
+        weather_agent,
+        "What's the weather in London?"
+    )
+    print(f"Agent: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 2: Function Tool with Name Override
+
+```python
+# function_tool_with_name_override.py
+from agents import Agent, Runner, function_tool
+
+@function_tool(name_override="fetch_current_weather")
+def get_weather(city: str) -> str:
+    """Fetch the current weather for a specific city.
+    
+    Args:
+        city: The name of the city to get weather for.
+    """
+    # Your weather logic
+    return f"The weather in {city} is sunny and 72°F"
+
+# The tool will be known to the agent as "fetch_current_weather"
+# instead of the function name "get_weather"
+```
+
+---
+
+### Concept 3: Complete Example - Weather Tool with Real API
+
+```python
+# weather_function_tool.py
+import asyncio
+import requests
+from dotenv import load_dotenv
+from agents import Agent, Runner, function_tool
+
+load_dotenv()
+
+# Custom function tool for weather
+@function_tool
+def get_weather(city: str) -> str:
+    """Fetch the current weather for a given city.
+    
+    This tool retrieves real-time weather data.
+    
+    Args:
+        city: The city name to fetch weather for (e.g., "London", "New York").
+    
+    Returns:
+        A string with temperature and weather conditions.
+    """
+    # Mock weather data (replace with real API call)
+    # In production, you'd call something like:
+    # response = requests.get(f"https://api.weather.com?city={city}")
+    weather_data = {
+        "London": "15°C, Cloudy ☁️",
+        "New York": "25°C, Sunny ☀️",
+        "Tokyo": "20°C, Rainy 🌧️",
+        "Patiala": "27°C, Toasty and sunny 🕶️"
+    }
+    
+    return weather_data.get(city, f"Weather data not found for {city}")
+
+# Agent with custom function tool
+weather_agent = Agent(
+    name="Weather Expert",
+    instructions="""You are a weather assistant. 
+    Use the get_weather tool to fetch weather information.
+    Be helpful and conversational in your responses.""",
+    tools=[
+        get_weather,  # Custom function tool
+    ]
+)
+
+async def main():
+    # Test the agent
+    result = await Runner.run(
+        weather_agent,
+        "What's the weather like in Patiala?"
+    )
+    print(f"Agent: {result.final_output}")
+    # Output: The temperature is toasty, 27 degrees Celsius. 
+    # Perfect weather to rock those shades! 🕶️
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 4: Multiple Function Tools Together
+
+```python
+# multiple_function_tools.py
+import asyncio
+from agents import Agent, Runner, function_tool
+
+# Tool 1: Weather
+@function_tool
+def get_weather(city: str) -> str:
+    """Get current weather for a city."""
+    return f"Weather in {city}: Sunny, 72°F"
+
+# Tool 2: Time
+@function_tool
+def get_current_time(timezone: str) -> str:
+    """Get current time for a timezone.
+    
+    Args:
+        timezone: Timezone like "UTC", "EST", "PST"
+    """
+    # Mock time data
+    times = {"UTC": "14:30", "EST": "09:30", "PST": "06:30"}
+    return f"Current time in {timezone}: {times.get(timezone, 'Unknown')}"
+
+# Tool 3: Calculator
+@function_tool  
+def calculate(expression: str) -> str:
+    """Evaluate a mathematical expression.
+    
+    Args:
+        expression: Math expression like "2+2" or "10*5"
+    """
+    try:
+        result = eval(expression)
+        return f"{expression} = {result}"
+    except:
+        return f"Could not calculate: {expression}"
+
+# Agent with multiple tools
+assistant = Agent(
+    name="Multi-Tool Assistant",
+    instructions="""You have access to weather, time, and calculator tools.
+    Use them as needed to help users.""",
+    tools=[
+        get_weather,
+        get_current_time,
+        calculate
+    ]
+)
+
+async def main():
+    # Test all tools
+    queries = [
+        "What's the weather in Tokyo?",
+        "What time is it in EST?",
+        "Calculate 15 * 8"
+    ]
+    
+    for query in queries:
+        print(f"\n📝 User: {query}")
+        result = await Runner.run(assistant, query)
+        print(f"🤖 Agent: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 5: Mixing Hosted Tools and Function Tools
+
+```python
+# hosted_and_function_tools.py
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner, WebSearchTool, function_tool
+
+load_dotenv()
+
+# Custom function tool
+@function_tool
+def get_weather(city: str) -> str:
+    """Get current weather for a city.
+    
+    Args:
+        city: The city name to get weather for.
+    """
+    # Mock implementation
+    return f"Weather in {city}: 72°F and sunny ☀️"
+
+# Agent with BOTH hosted and function tools
+hybrid_agent = Agent(
+    name="Super Assistant",
+    instructions="""You have access to:
+    - WebSearchTool for internet search
+    - get_weather for weather information
+    
+    Use the appropriate tool based on user needs.""",
+    tools=[
+        WebSearchTool(),  # Hosted tool (OpenAI provided)
+        get_weather,      # Function tool (your custom code)
+    ]
+)
+
+async def main():
+    # This will use the custom get_weather tool
+    result = await Runner.run(
+        hybrid_agent,
+        "What's the weather in Patiala?"
+    )
+    print(f"Agent: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 6: Important - Don't Call the Function!
+
+```python
+"""
+⚠️ IMPORTANT: Pass function reference, NOT function call!
+
+CORRECT ✅:
+tools=[get_weather]  # Pass the function object
+
+WRONG ❌:
+tools=[get_weather()]  # This calls the function immediately!
+
+WHY?
+- The SDK needs the function reference to call it when needed
+- If you call it, the function runs immediately at agent creation
+- The agent won't have the tool available at runtime
+"""
+
+# Correct example
+@function_tool
+def get_weather(city: str) -> str:
+    return f"Weather in {city}: Sunny"
+
+agent = Agent(
+    name="Assistant",
+    tools=[get_weather]  # ✅ No parentheses!
+)
+
+# Wrong example (will cause issues)
+agent = Agent(
+    name="Assistant",
+    tools=[get_weather()]  # ❌ This calls the function now! Wrong!
+)
+```
+
+---
+
+### Concept 7: Complete Working Example
+
+```python
+# complete_function_tool_demo.py
+"""
+Complete demonstration of Function Tools in OpenAI Agent SDK
+"""
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner, function_tool
+
+load_dotenv()
+
+# ============================================
+# Define custom function tools
+# ============================================
+
+@function_tool
+def get_weather(city: str) -> str:
+    """Get the current weather for a specific city.
+    
+    Use this tool when users ask about weather conditions.
+    
+    Args:
+        city: The name of the city (e.g., "London", "Tokyo", "New York")
+    """
+    # Mock weather database
+    weather_db = {
+        "london": "Cloudy, 15°C 🌥️",
+        "tokyo": "Rainy, 20°C 🌧️",
+        "new york": "Sunny, 25°C ☀️",
+        "patiala": "Toasty, 27°C 🕶️",
+    }
+    return weather_db.get(city.lower(), f"Weather data not available for {city}")
+
+
+@function_tool
+def calculate(expression: str) -> str:
+    """Perform mathematical calculations.
+    
+    Use this for any math calculations.
+    
+    Args:
+        expression: Mathematical expression like "5+3" or "10*2"
+    """
+    try:
+        # Remove any dangerous characters
+        allowed = set("0123456789+-*/(). ")
+        cleaned = ''.join(c for c in expression if c in allowed)
+        result = eval(cleaned)
+        return f"{expression} = {result}"
+    except Exception as e:
+        return f"Error calculating {expression}: {str(e)}"
+
+
+# ============================================
+# Create agent with function tools
+# ============================================
+
+assistant = Agent(
+    name="Function Tool Assistant",
+    instructions="""You are a helpful assistant with these tools:
+    - get_weather: Get weather for any city
+    - calculate: Perform math calculations
+    
+    Use the tools when appropriate. Be conversational.""",
+    tools=[
+        get_weather,   # Custom function tool
+        calculate,     # Custom function tool
+    ]
+)
+
+
+# ============================================
+# Run the agent
+# ============================================
+
+async def main():
+    print("=" * 50)
+    print("FUNCTION TOOLS DEMONSTRATION")
+    print("=" * 50)
+    
+    # Test weather query
+    print("\n📝 User: What's the weather in Patiala?")
+    result1 = await Runner.run(assistant, "What's the weather in Patiala?")
+    print(f"🤖 Agent: {result1.final_output}")
+    
+    # Test calculation query
+    print("\n📝 User: Can you calculate 25 * 4?")
+    result2 = await Runner.run(assistant, "Can you calculate 25 * 4?")
+    print(f"🤖 Agent: {result2.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Function Tool** | Custom Python function turned into an agent tool |
+| **@function_tool** | Decorator that converts function to tool |
+| **Docstring** | Documentation that helps LLM understand tool usage |
+| **name_override** | Optional parameter to rename the tool |
+| **Tool Reference** | Pass function object, not function call |
+
+---
+
+## 📊 Function Tool Anatomy
+
+```python
+@function_tool                    # ← Decorator (required)
+def tool_name(param: type) -> str:  # ← Any Python function
+    """Docstring - Helps LLM understand the tool"""
+    # Your custom logic
+    return result
+
+# Then add to agent:
+# agent = Agent(tools=[tool_name])  # NO parentheses!
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **@function_tool decorator** - Converts any Python function into an agent tool
+2. **Docstring is crucial** - LLM uses it to understand when/how to use the tool
+3. **Pass reference, not call** - `tools=[get_weather]` (no parentheses)
+4. **Mix and match** - Can combine hosted tools and function tools
+5. **SDK handles everything** - Argument parsing, execution, result integration
+6. **You can have multiple function tools** - Just add them to the tools array
+7. **Works even without hosted tools** - Function tools alone are powerful
+
+**Bottom line:** Function tools let you turn any Python function into an agent tool with just a `@function_tool` decorator. The SDK automatically handles all the complexity - you just write your function logic and add it to the tools array. This is the cleanest way to add custom capabilities to your agents! 🛠️
+
+- [Tools](https://openai.github.io/openai-agents-python/tools/)
+
+---
+
+## 255. Agent as a Tool (06:18)
+
+Here's a simple summary of the tutorial transcript about **Agent as a Tool** in OpenAI Agent SDK.
+
+## 📝 Simple Summary
+
+**Agent as a Tool** lets you use one agent as a tool inside another agent. For example, a Physics agent can use a Math agent as a tool to solve equations, or a Sales agent can use a Technical agent as a tool to answer technical questions. The orchestrator agent (the one talking to the user) can offload tasks to specialized sub-agents. When the orchestrator agent needs help with a specific domain (like Spanish translation or French translation), it calls the appropriate sub-agent as a tool, gets the result, and responds to the user - all handled automatically by the SDK.
+
+---
+
+## ✅ Important Pointers
+
+| # | Pointer |
+|---|---------|
+| 1 | **Agent as Tool** = Using one agent inside another agent |
+| 2 | Orchestrator agent talks to user, sub-agents handle specific tasks |
+| 3 | Example: Physics agent uses Math agent to solve equations |
+| 4 | Example: Sales agent uses Technical agent for technical questions |
+| 5 | Spanish agent and French agent can be tools for a Translation agent |
+| 6 | When you run the orchestrator, it automatically calls the right sub-agent |
+| 7 | SDK handles all the internal tool-calling between agents |
+
+---
+
+## 📚 Key Concepts with Code Examples
+
+### Concept 1: What is Agent as a Tool?
+
+```python
+"""
+AGENT AS A TOOL - CONCEPT
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    USER (Asks Question)                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              ORCHESTRATOR AGENT (Talks to User)                 │
+│                                                                  │
+│   "I need to translate this to Spanish"                        │
+│                              │                                   │
+│                              ▼                                   │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │           SUB-AGENT (Used as a Tool)                    │   │
+│   │                                                          │   │
+│   │   Spanish Agent: Translates text to Spanish             │   │
+│   │   French Agent:  Translates text to French              │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│                              ▼                                   │
+│                    Returns translation                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    USER (Gets Response)                         │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+print("=" * 50)
+print("AGENT AS A TOOL")
+print("=" * 50)
+print("""
+• One agent delegates tasks to another agent
+• Sub-agent acts like a specialized tool
+• SDK handles communication between agents
+""")
+```
+
+---
+
+### Concept 2: Complete Example - Translation Agents
+
+```python
+# agent_as_tool.py
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner
+
+load_dotenv()
+
+# ============================================
+# SUB-AGENT 1: Spanish Translation Agent
+# ============================================
+spanish_agent = Agent(
+    name="Spanish Agent",
+    instructions="You translate the user's message to Spanish",
+)
+
+# ============================================
+# SUB-AGENT 2: French Translation Agent
+# ============================================
+french_agent = Agent(
+    name="French Agent",
+    instructions="You translate the user's message to French",
+)
+
+# ============================================
+# ORCHESTRATOR AGENT (Uses sub-agents as tools)
+# ============================================
+orchestrator_agent = Agent(
+    name="Translation Orchestrator",
+    instructions="""You are a translation agent.
+    You can use the Spanish Agent and French Agent as tools to translate.
+    If the user asks for Spanish translation, use the Spanish Agent tool.
+    If the user asks for French translation, use the French Agent tool.""",
+    tools=[
+        spanish_agent.as_tool(
+            tool_name="translate_to_spanish",
+            tool_description="Translate text to Spanish"
+        ),
+        french_agent.as_tool(
+            tool_name="translate_to_french", 
+            tool_description="Translate text to French"
+        ),
+    ]
+)
+
+# ============================================
+# RUN THE AGENT
+# ============================================
+async def main():
+    # Ask for Spanish translation
+    result = await Runner.run(
+        orchestrator_agent,
+        "Say 'Hello, how are you?' in Spanish"
+    )
+    print(f"Result: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 3: How Agent as Tool Works Internally
+
+```python
+"""
+HOW AGENT AS TOOL WORKS
+
+When you run the orchestrator agent:
+
+1. User asks: "Say 'Hello' in Spanish"
+
+2. Orchestrator agent receives the query
+   - It knows it has a tool called "translate_to_spanish"
+
+3. SDK automatically detects that Spanish translation is needed
+   - Makes a tool call to "translate_to_spanish"
+
+4. The Spanish agent (sub-agent) runs internally
+   - It translates "Hello" to "Hola"
+   - Returns the result to the orchestrator
+
+5. Orchestrator receives the translation
+   - Incorporates it into final response
+   - Returns to user: "In Spanish, you say 'Hola'"
+
+ALL THIS HAPPENS AUTOMATICALLY WITH THE SDK!
+"""
+
+print("\n" + "=" * 50)
+print("INTERNAL FLOW")
+print("=" * 50)
+print("""
+User → Orchestrator Agent → Tool Call → Sub-Agent → Result → User
+      (one agent)          (detected)   (executes)  (returns)
+""")
+```
+
+---
+
+### Concept 4: Real-World Use Cases
+
+```python
+"""
+REAL-WORLD USE CASES FOR AGENT AS TOOL
+
+1. Physics + Math Agent
+   - Physics agent solves physics problems
+   - Uses Math agent as tool for calculations
+
+2. Sales + Technical Agent
+   - Sales agent handles pricing, quotes
+   - Uses Technical agent for product questions
+
+3. Customer Support + Knowledge Base Agent
+   - Support agent handles conversation
+   - Uses Knowledge Base agent to search docs
+
+4. Code Review + Code Generation Agent
+   - Code Review agent analyzes code
+   - Uses Code Generation agent to fix issues
+
+5. Travel + Weather Agent
+   - Travel agent books flights
+   - Uses Weather agent to check destination weather
+"""
+
+use_cases = {
+    "Physics + Math": "Physics agent uses Math agent for calculations",
+    "Sales + Technical": "Sales agent uses Technical agent for product questions",
+    "Support + Knowledge": "Support agent uses KB agent for documentation",
+    "Code Review + Gen": "Review agent uses Gen agent to fix issues",
+    "Travel + Weather": "Travel agent uses Weather agent for forecasts"
+}
+
+print("=" * 50)
+print("AGENT AS TOOL - USE CASES")
+print("=" * 50)
+for case, description in use_cases.items():
+    print(f"• {case}: {description}")
+```
+
+---
+
+### Concept 5: Looking Under the Hood - Tool Calls
+
+```python
+"""
+VIEWING THE TOOL CALLS
+
+When you run agent_as_tool.py, the SDK shows:
+- The function call to the sub-agent
+- The input passed to the sub-agent
+- The output from the sub-agent
+
+Example raw response:
+{
+    "function_call": {
+        "name": "translate_to_spanish",
+        "arguments": "{\"text\": \"Hello, how are you?\"}"
+    },
+    "output": "Hola, ¿cómo estás?"
+}
+
+The orchestrator agent can see:
+- That it made a tool call
+- What was passed to the sub-agent
+- What the sub-agent returned
+"""
+
+print("\n🔍 SDK automatically logs all agent-to-agent tool calls!")
+```
+
+---
+
+### Concept 6: Multiple Sub-Agents as Tools
+
+```python
+# multi_sub_agents.py
+import asyncio
+from dotenv import load_dotenv
+from agents import Agent, Runner
+
+load_dotenv()
+
+# Create specialized sub-agents
+spanish_agent = Agent(
+    name="Spanish Agent",
+    instructions="Translate user messages to Spanish"
+)
+
+french_agent = Agent(
+    name="French Agent", 
+    instructions="Translate user messages to French"
+)
+
+german_agent = Agent(
+    name="German Agent",
+    instructions="Translate user messages to German"
+)
+
+italian_agent = Agent(
+    name="Italian Agent",
+    instructions="Translate user messages to Italian"
+)
+
+# Orchestrator agent with ALL language agents as tools
+translation_agent = Agent(
+    name="Multi-Language Translator",
+    instructions="""You are a translation agent.
+    You have tools to translate to Spanish, French, German, and Italian.
+    Use the appropriate tool based on what language the user requests.""",
+    tools=[
+        spanish_agent.as_tool(
+            tool_name="to_spanish",
+            tool_description="Translate text to Spanish"
+        ),
+        french_agent.as_tool(
+            tool_name="to_french",
+            tool_description="Translate text to French"
+        ),
+        german_agent.as_tool(
+            tool_name="to_german",
+            tool_description="Translate text to German"
+        ),
+        italian_agent.as_tool(
+            tool_name="to_italian",
+            tool_description="Translate text to Italian"
+        ),
+    ]
+)
+
+async def main():
+    # This will automatically use the Italian sub-agent
+    result = await Runner.run(
+        translation_agent,
+        "Say 'Welcome to our restaurant' in Italian"
+    )
+    print(f"Result: {result.final_output}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### Concept 7: Key Syntax - Agent as Tool
+
+```python
+"""
+KEY SYNTAX FOR AGENT AS TOOL
+
+# Create a sub-agent
+sub_agent = Agent(
+    name="Sub Agent Name",
+    instructions="What the sub-agent does"
+)
+
+# Use it as a tool in another agent
+orchestrator = Agent(
+    name="Orchestrator",
+    tools=[
+        sub_agent.as_tool(
+            tool_name="tool_name_for_llm",
+            tool_description="Description for LLM"
+        )
+    ]
+)
+
+# That's it! The SDK handles everything else.
+"""
+
+# Minimal example
+math_agent = Agent(name="Math Expert", instructions="Solve math problems")
+
+physics_agent = Agent(
+    name="Physics Expert",
+    tools=[
+        math_agent.as_tool(
+            tool_name="solve_math",
+            tool_description="Use this for calculations"
+        )
+    ]
+)
+
+print("\n✅ Agent as Tool syntax is simple and clean!")
+```
+
+---
+
+### Concept 8: Comparison - Manual vs SDK Approach
+
+```python
+"""
+MANUAL APPROACH (Without SDK):
+┌─────────────────────────────────────────────────────────────────┐
+│   # Need to manually:                                           │
+│   • Define tool schemas for each sub-agent                     │
+│   • Parse tool calls                                           │
+│   • Run sub-agent manually                                     │
+│   • Handle results manually                                    │
+│   • Manage conversation history between agents                 │
+│   • 100+ lines of complex code                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+AGENT SDK APPROACH:
+┌─────────────────────────────────────────────────────────────────┐
+│   # Just define agents and use .as_tool()                      │
+│   sub_agent = Agent(...)                                        │
+│   orchestrator = Agent(                                         │
+│       tools=[sub_agent.as_tool(...)]                           │
+│   )                                                             │
+│   # ~10 lines of clean code                                    │
+└─────────────────────────────────────────────────────────────────┘
+"""
+
+print("=" * 50)
+print("MANUAL vs SDK")
+print("=" * 50)
+print("""
+Manual:  100+ lines, complex orchestration
+Agent SDK: 10 lines, automatic orchestration
+
+SDK handles:
+✅ Tool schema generation
+✅ Tool call detection
+✅ Sub-agent execution
+✅ Result integration
+✅ Multi-agent communication
+""")
+```
+
+---
+
+## 🔑 Key Vocabulary
+
+| Term | Meaning |
+|------|---------|
+| **Agent as Tool** | Using one agent as a tool inside another agent |
+| **Orchestrator Agent** | The main agent that talks to the user |
+| **Sub-Agent** | Specialized agent used as a tool |
+| **.as_tool()** | Method to convert agent into a tool |
+| **tool_name** | Name the LLM uses to call the tool |
+| **tool_description** | Helps LLM know when to use the tool |
+
+---
+
+## 📊 Agent as Tool Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      USER                                       │
+│            "Say hello in Spanish"                              │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              ORCHESTRATOR AGENT                                 │
+│         (Translation Orchestrator)                             │
+│                                                                  │
+│   Has tools:                                                    │
+│   ┌─────────────────┐  ┌─────────────────┐                     │
+│   │ Spanish Agent   │  │ French Agent    │                     │
+│   │ as Tool         │  │ as Tool         │                     │
+│   └────────┬────────┘  └────────┬────────┘                     │
+│            │                    │                               │
+└────────────┼────────────────────┼───────────────────────────────┘
+             │                    │
+             ▼                    ▼
+┌─────────────────┐      ┌─────────────────┐
+│  SPANISH AGENT  │      │  FRENCH AGENT   │
+│  (Sub-Agent)    │      │  (Sub-Agent)    │
+│                 │      │                 │
+│  Translates to  │      │  Translates to  │
+│  Spanish        │      │  French         │
+└─────────────────┘      └─────────────────┘
+```
+
+---
+
+## 💡 Key Takeaways
+
+1. **Agent as Tool** = One agent uses another agent as a tool
+2. **Orchestrator agent** talks to the user and coordinates
+3. **Sub-agents** handle specialized tasks (Spanish, French, Math, etc.)
+4. **Use `.as_tool()`** method to convert any agent into a tool
+5. **SDK handles everything** - tool detection, execution, result integration
+6. **View tool calls** in raw responses to see what happened internally
+7. **Mix and match** - can have multiple sub-agents as tools
+
+**Bottom line:** Agent as a Tool is a powerful pattern where specialized agents become building blocks for more capable orchestrator agents. The SDK's `.as_tool()` method makes it incredibly simple - just define your sub-agents and add them as tools to the orchestrator. The SDK automatically handles the rest! 🚀
+
+---
 
 - Command to activate venv - `source .venv/bin/activate`
+
+summaries this python tutorial transcript in simple words, make note of all important pointers and also explain each important concepts with basic code examples
+
+
 

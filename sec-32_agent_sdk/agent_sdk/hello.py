@@ -1,5 +1,5 @@
 
-# create first agent
+# create first agent using openai agent sdk
 
 from dotenv import load_dotenv
 from pathlib import Path
